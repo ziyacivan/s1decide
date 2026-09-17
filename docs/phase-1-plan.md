@@ -271,6 +271,73 @@ Cost: one scoring pass over ~65k stage-1 rows plus one retrain.
 
 ## Step 2e — Teacher-labelled `Score` (data-engineer) — approved, needs a final go
 
+### Teacher-2 proposal (2026-09-17) — **awaiting go, nothing downloaded**
+
+Researched candidates, all open-weight, all fitting the 3090 at 4-bit, all from a family other
+than Qwen (which is the point: two teachers whose errors correlate are one teacher).
+
+| candidate | licence | size | family | reasoning control | download |
+|---|---|---|---|---|---|
+| **`unsloth/Magistral-Small-2509-unsloth-bnb-4bit`** | Apache-2.0 | 24B | Mistral | `[THINK]` traces, **no effort knob** — bounded by `max_new_tokens` | **~15 GB** |
+| `openai/gpt-oss-20b` | Apache-2.0 | 21B MoE, 3.6B active | OpenAI | **native low/medium/high** via system prompt | ~14 GB (MXFP4) |
+| `allenai/Olmo-3.1-32B-Think` | Apache-2.0 | 32B | AllenAI | `<think>` traces, no effort knob | **~64 GB** (bf16; no bnb-4bit mirror found) |
+| `deepseek-ai/DeepSeek-R1-Distill-Qwen-32B` | MIT | 32B | **Qwen base** | traces, no knob | ~19 GB |
+
+**Rejected: the DeepSeek R1 distill.** MIT and a good model, but it is distilled onto a *Qwen*
+base. Its failure modes would correlate with teacher 1's, which defeats the reason ADR 0005
+asks for two independent teachers.
+
+**Rejected for this run: Olmo-3.1-32B-Think.** The most open option by a distance — open data,
+open checkpoints, Apache-2.0 — and the one to revisit. But the only weights are bf16 at ~64 GB,
+against the ~30 GB approved, and there is no 4-bit mirror to load from.
+
+**Recommended: Magistral-Small-2509 at 4-bit.** Apache-2.0, genuinely a different family, 15 GB,
+and a real reasoning model rather than an instruct model asked to think. Its one gap against the
+brief is that reasoning effort is not a parameter, so "low effort" has to be enforced as a
+`max_new_tokens` cap rather than requested — recorded in the dataset card as what it actually is.
+
+**Open question for the owner: `gpt-oss-20b`.** It is the only candidate with a *native*
+low/medium/high effort control, which is exactly what ADR 0005 specifies, and it is Apache-2.0
+open weights run locally — not an API. But `CLAUDE.md`'s hard rule reads "No distillation from
+closed APIs (OpenAI, Anthropic, Google, TypeSafe)", naming OpenAI. Two readings:
+
+- *the rule bans closed APIs, and names OpenAI as an example of one* — then Apache-2.0 weights
+  downloaded and run on our own GPU are fine, and this is the best technical fit;
+- *the rule bans those organisations as teacher sources at all* — then it is out.
+
+Not resolved here. The recommendation above does not depend on the answer.
+
+### Wall time: **measure before committing**
+
+An estimate spanning 8 to 24 hours is not an estimate. Decode on this card is
+memory-bandwidth-bound — roughly 15–20 tok/s single-stream for a 27B at nf4, perhaps 150–200
+tok/s aggregate at batch 16 — so the cost is dominated by how long the reasoning traces actually
+run, and published traces for "Think" models vary from ~300 to ~2,000 tokens for a short
+judgement.
+
+For 8,000 candidate rows through both teachers:
+
+| mean trace | teacher 1 (27B) | teacher 2 (24B) | total |
+|---|---|---|---|
+| 300 tokens | ~4.4 h | ~3.3 h | **~8 h** |
+| 800 tokens | ~12 h | ~9 h | **~21 h** |
+
+So the plan is a **100-row pilot first** — both teachers, the real rubric, `max_new_tokens`
+capped at 384 — which takes minutes and produces the three numbers the overnight run needs:
+observed tokens/s, mean trace length, and the truncation rate at the cap. The overnight run is
+sized from those, not from this table.
+
+8,000 candidates targets 4,000–6,000 kept rows at a 25–50% drop rate; the pilot's agreement rate
+will refine that too.
+
+### Still to confirm before any download
+
+- Magistral 2509 is a vision-language checkpoint. It must load **text-only**, the same way
+  Qwen3.8-27B does — that took three attempts last time and the fixes are in `engine/hf.py`.
+- The teacher run generates with a decode loop. That is fine and is not the inference path;
+  `CLAUDE.md`'s no-decode-loop rule is about `decide()`, not about data generation.
+
+
 Approved 2026-09-17 including the ~30 GB download and overnight GPU time, on these terms:
 
 - **Teachers run with reasoning ON at low effort, not single-token.** We are distilling
