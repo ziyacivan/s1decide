@@ -130,7 +130,12 @@ def plot_risk_coverage(
         xs = [point["coverage"] for point in points]
         ys = [point["accuracy"] for point in points]
         selective = curve.get("selective_accuracy", {})
-        annotation = "  ".join(f"acc@{float(k):.0%}={v:.3f}" for k, v in sorted(selective.items()))
+        thresholds = curve.get("selective_threshold", {})
+        annotation = "  ".join(
+            f"acc@{float(k):.0%}={v:.3f}"
+            + (f" (conf>={thresholds[k]:.2f})" if k in thresholds else "")
+            for k, v in sorted(selective.items())
+        )
         ax.plot(xs, ys, "o-", color=colour, lw=1.6, ms=4, label=f"{label}  {annotation}")
         # Full coverage is plain accuracy: the point every selective claim is measured against.
         ax.plot([1.0], [ys[-1]], "o", color=colour, ms=8, mfc="none", mew=1.6)
@@ -255,6 +260,7 @@ def plot_run(run_dir: str | Path) -> list[Path]:
                 ]
                 + [{"coverage": 1.0, "accuracy": control["accuracy"]}],
                 "selective_accuracy": control["selective_accuracy"],
+                "selective_threshold": control.get("selective_threshold", {}),
             }
     if curves:
         written.append(

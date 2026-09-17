@@ -169,3 +169,37 @@ def test_aurc_is_lower_for_the_model_that_ranks_its_errors_better() -> None:
         summarize(ranks_well, labels)["accuracy"], summarize(ranks_badly, labels)["accuracy"]
     )
     assert summarize(ranks_well, labels)["aurc"] < summarize(ranks_badly, labels)["aurc"]
+
+
+def test_the_threshold_is_the_confidence_that_produces_that_coverage() -> None:
+    """acc@80% is what an operator gets; thr@80% is what they set to get it."""
+    probabilities = [
+        [c, 1 - c] for c in (0.99, 0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60, 0.55)
+    ]
+    labels = [0] * 10
+    curve = risk_coverage(probabilities, labels)
+    # 80% of 10 questions is the 8 most confident; the cut is the 8th confidence down.
+    assert curve["selective_threshold"]["0.8"] == pytest.approx(0.65)
+    assert curve["selective_threshold"]["0.9"] == pytest.approx(0.60)
+
+
+def test_thresholds_fall_as_coverage_rises() -> None:
+    """Answering more questions always means accepting less confident ones."""
+    probabilities = [[0.5 + i / 100, 0.5 - i / 100] for i in range(40)]
+    curve = risk_coverage(probabilities, [0] * 40)
+    assert curve["selective_threshold"]["0.9"] < curve["selective_threshold"]["0.8"]
+
+
+def test_every_selective_accuracy_has_a_matching_threshold() -> None:
+    summary = summarize([[0.9, 0.1], [0.6, 0.4], [0.3, 0.7]] * 5, [0, 1, 1] * 5)
+    assert set(summary["selective_threshold"]) == set(summary["selective_accuracy"])
+
+
+def test_the_threshold_actually_retains_the_promised_coverage() -> None:
+    """The contract: keep everything at or above the threshold and you get that coverage."""
+    probabilities = [[0.5 + i / 200, 0.5 - i / 200] for i in range(100)]
+    labels = [0] * 100
+    curve = risk_coverage(probabilities, labels)
+    threshold = curve["selective_threshold"]["0.8"]
+    kept = [row for row in probabilities if max(row) >= threshold]
+    assert len(kept) == 80

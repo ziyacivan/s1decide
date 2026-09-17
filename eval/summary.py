@@ -26,8 +26,14 @@ _COLUMNS = (
     ("mean_confidence", "conf", "{:.3f}"),
 )
 
-#: Selective-accuracy columns, pulled out of the nested `selective_accuracy` mapping.
-_SELECTIVE_COLUMNS = (("0.8", "acc@80%"), ("0.9", "acc@90%"))
+#: Selective columns, pulled out of the nested risk-coverage mappings. Accuracy is what a
+#: coverage buys; the threshold is the confidence cut an operator sets to buy it.
+_SELECTIVE_COLUMNS = (
+    ("selective_accuracy", "0.8", "acc@80%"),
+    ("selective_threshold", "0.8", "thr@80%"),
+    ("selective_accuracy", "0.9", "acc@90%"),
+    ("selective_threshold", "0.9", "thr@90%"),
+)
 
 
 def _stale_format_banner(run_format: str | None) -> list[str]:
@@ -61,15 +67,14 @@ def _row(label: str, summary: Mapping[str, Any]) -> str:
     for key, _title, fmt in _COLUMNS:
         value = summary.get(key)
         cells.append("n/a" if value is None else fmt.format(value))
-    selective = summary.get("selective_accuracy") or {}
-    for key, _title in _SELECTIVE_COLUMNS:
-        value = selective.get(key)
+    for source, key, _title in _SELECTIVE_COLUMNS:
+        value = (summary.get(source) or {}).get(key)
         cells.append("n/a" if value is None else f"{value:.4f}")
     return f"| {label} | " + " | ".join(cells) + " |"
 
 
 def _table(rows: Sequence[tuple[str, Mapping[str, Any]]], first: str = "") -> list[str]:
-    titles = [t for _k, t, _f in _COLUMNS] + [t for _k, t in _SELECTIVE_COLUMNS]
+    titles = [t for _k, t, _f in _COLUMNS] + [t for _s, _k, t in _SELECTIVE_COLUMNS]
     head = f"| {first} | " + " | ".join(titles) + " |"
     rule = "|---" * (len(titles) + 1) + "|"
     return [head, rule, *[_row(label, s) for label, s in rows]]
@@ -94,19 +99,27 @@ def _skill_section(report: Mapping[str, Any]) -> list[str]:
         "that way, so stating the result as skill *against that control* puts the comparison in "
         "the open.",
         "",
-        "| model | control | BSS (multiclass) | BSS (top label) | accuracy gain |",
-        "|---|---|---|---|---|",
+        "| model | control | BSS | accuracy gain |",
+        "|---|---|---|---|",
     ]
+
+    def fmt(value: float | None) -> str:
+        return "n/a" if value is None else f"{value:+.4f}"
+
     for label, block in pairs:
         for control, skill in block.items():
-
-            def fmt(value: float | None) -> str:
-                return "n/a" if value is None else f"{value:+.4f}"
-
             out.append(
                 f"| {label} | {control} | {fmt(skill.get('brier_multiclass'))} | "
-                f"{fmt(skill.get('brier_top_label'))} | {fmt(skill.get('accuracy_gain'))} |"
+                f"{fmt(skill.get('accuracy_gain'))} |"
             )
+    out += [
+        "",
+        "**BSS here is the multiclass Brier skill**, over the full distribution — one number, "
+        "so the report never shows two things both called BSS. The top-label variant is in "
+        "`metrics.json` under `skill.*.brier_top_label` for anyone who wants the confidence-only "
+        "view; it is systematically smaller because the top-label score ignores how the "
+        "remaining mass is spread.",
+    ]
     return out
 
 
@@ -127,13 +140,17 @@ def _risk_coverage_section(report: Mapping[str, Any]) -> list[str]:
         "`1 - c` are abstained on. This is the deployment question — *if the least confident "
         "20% go to a human, how good is what is left?* — and it depends only on the **order** "
         "of the confidences, not on their values, which makes it a second opinion rather than a "
-        "restatement of the reliability diagram. Calibration still moves it, because our "
+        "restatement of the reliability diagram. `thr@80%` is the confidence cut that "
+        "produces 80% coverage — the number an operator configures, where `acc@80%` is what "
+        "they get for it. Calibration still moves it, because our "
         "temperatures are fitted per option-count bucket and therefore re-rank questions across "
         "buckets; a single global temperature would leave these rows identical. "
         "`AURC` is the area under the risk curve; lower is better.",
         "",
-        "| model | " + " | ".join(f"acc@{c:.0%}" for c in (0.2, 0.4, 0.6, 0.8, 1.0)) + " | AURC |",
-        "|---|---|---|---|---|---|---|",
+        "| model | "
+        + " | ".join(f"acc@{c:.0%}" for c in (0.2, 0.4, 0.6, 0.8, 1.0))
+        + " | thr@80% | AURC |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     for label, curve in curves:
         by_coverage = {round(point["coverage"], 2): point["accuracy"] for point in curve["curve"]}
@@ -141,9 +158,13 @@ def _risk_coverage_section(report: Mapping[str, Any]) -> list[str]:
             f"{by_coverage[c]:.4f}" if c in by_coverage else "n/a"
             for c in (0.2, 0.4, 0.6, 0.8, 1.0)
         ]
+        threshold = (curve.get("selective_threshold") or {}).get("0.8")
         aurc = curve.get("aurc")
         out.append(
-            f"| {label} | " + " | ".join(cells) + f" | {'n/a' if aurc is None else f'{aurc:.4f}'} |"
+            f"| {label} | "
+            + " | ".join(cells)
+            + f" | {'n/a' if threshold is None else f'{threshold:.4f}'}"
+            + f" | {'n/a' if aurc is None else f'{aurc:.4f}'} |"
         )
     out += ["", "Drawn in `risk-coverage.png`, with the negative controls on the same axes."]
     return out

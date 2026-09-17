@@ -380,8 +380,11 @@ def risk_coverage(
 
     Returns:
         ``{"curve": [{"coverage", "n_kept", "accuracy", "min_confidence"}, ...],
-        "selective_accuracy": {"0.8": ..., "0.9": ...}, "aurc": ...}`` where ``aurc`` is the
-        area under the *risk* (1 - accuracy) curve over the grid, lower being better.
+        "selective_accuracy": {"0.8": ..., "0.9": ...}, "selective_threshold": {...},
+        "aurc": ...}``. ``selective_threshold`` is the confidence at which to stop answering to
+        reach that coverage — the setting an operator configures, where the accuracy is what
+        they get for it. ``aurc`` is the area under the *risk* (1 - accuracy) curve over the
+        grid, lower being better.
 
     Raises:
         ValueError: If any coverage is outside ``(0, 1]``.
@@ -407,15 +410,24 @@ def risk_coverage(
             }
         )
 
-    selective = {
-        f"{c:g}": float(ranked_correct[: max(1, math.ceil(c * n))].mean())
-        for c in SELECTIVE_COVERAGES
-    }
+    # Accuracy is what a coverage buys; the threshold is what an operator actually configures
+    # to buy it — "answer when confidence >= 0.62" is the deployable form of "answer 80%".
+    selective: dict[str, float] = {}
+    selective_threshold: dict[str, float] = {}
+    for c in SELECTIVE_COVERAGES:
+        keep = max(1, math.ceil(c * n))
+        selective[f"{c:g}"] = float(ranked_correct[:keep].mean())
+        selective_threshold[f"{c:g}"] = float(ranked_confidence[keep - 1])
     # Trapezoid over the grid; only comparable between runs scored on the same grid.
     xs = [point["coverage"] for point in curve]
     risks = [1.0 - point["accuracy"] for point in curve]
     aurc = float(np.trapezoid(risks, xs) / (xs[-1] - xs[0])) if len(xs) > 1 else None
-    return {"curve": curve, "selective_accuracy": selective, "aurc": aurc}
+    return {
+        "curve": curve,
+        "selective_accuracy": selective,
+        "selective_threshold": selective_threshold,
+        "aurc": aurc,
+    }
 
 
 def summarize(
@@ -448,6 +460,7 @@ def summarize(
         "mean_confidence": float(confidence.mean()),
         "mean_options": float(np.mean([r.size for r in rows])),
         "selective_accuracy": coverage["selective_accuracy"],
+        "selective_threshold": coverage["selective_threshold"],
         "aurc": coverage["aurc"],
         "n_bins": len(bins),
         "bins": [asdict(b) | {"gap": b.gap} for b in bins],
