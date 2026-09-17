@@ -31,6 +31,7 @@ from data.build.teach import (
 )
 
 from s1decide.jobs import JobPaths, job_status, run_job, spawn_detached
+from s1decide.kernels import kernel_report
 
 __all__ = ["TEACHERS", "load_teacher", "main", "teacher_rows"]
 
@@ -286,6 +287,7 @@ def run(
             "setting": setting.to_json(),
             "rubric": list(RUBRIC),
             "batch_size": batch_size,
+            "kernels": kernel_report(),
             "started": datetime.now(UTC).isoformat(timespec="seconds"),
         },
     )

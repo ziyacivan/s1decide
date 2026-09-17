@@ -21,7 +21,7 @@ from typing import Any
 import torch
 
 from s1decide.engine.base import EngineOutput
-from s1decide.engine.qwen3_5_patch import patch_gated_deltanet
+from s1decide.engine.qwen3_5_patch import force_torch_gdn_kernels, patch_gated_deltanet
 from s1decide.hardware import HardwareProfile, detect_profile, get_profile
 from s1decide.tokens import allowed_token_ids
 
@@ -283,6 +283,9 @@ class HFEngine:
         # transformers 5.5.0 ignores the cached GDN state on multi-token continuation — which is
         # every suffix we score. See engine/qwen3_5_patch.py. Off only for tests that demonstrate the bug.
         self.gdn_patched = patch_gated_deltanet(model) if patch_gdn else 0
+        # The fla kernels are CUDA-only and transformers binds them without knowing where the
+        # model will run, so a CPU model has to be pointed back at the torch path explicitly.
+        self.torch_gdn_forced = force_torch_gdn_kernels(model) if self.device.type != "cuda" else 0
         pad = getattr(tokenizer, "pad_token_id", None)
         if pad is None:
             pad = getattr(tokenizer, "eos_token_id", None)
@@ -459,6 +462,7 @@ class HFEngine:
                 "hardware": self.hardware.to_json(),
                 "cache_expanded": expanded,
                 "gdn_patched": self.gdn_patched,
+                "torch_gdn_forced": self.torch_gdn_forced,
                 "prefill_seconds": prefill_seconds,
                 "suffix_seconds": suffix_seconds,
                 "device": str(self.device),

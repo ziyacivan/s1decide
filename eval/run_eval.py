@@ -29,6 +29,7 @@ from eval.case_control import DEFAULT_EVAL_NEGATIVES, EVAL_MODES
 from eval.data import Coverage, EvalItem, bundle_stats, group_by_state, load_system_one_decisions
 from eval.metrics import DEFAULT_BINS, Prediction, build_report
 from s1decide.calibrate import Calibration, fit_calibration
+from s1decide.kernels import kernel_report
 from s1decide.prompt import DEFAULT_TEMPLATE, FORMAT_VERSION, ChatTemplate, render
 
 __all__ = ["RunConfig", "main", "report_from_predictions", "run", "score_items"]
@@ -385,6 +386,7 @@ def run(config: RunConfig, out_root: Path | None = None) -> Path:
             # numbers — rows per pass is an allocation choice, not a numerical one — but a
             # result should record the configuration that produced it.
             "hardware": getattr(getattr(engine, "hardware", None), "name", None),
+            "kernels": kernel_report(),
         },
     )
     (directory / "metrics.json").write_text(

@@ -53,7 +53,14 @@ def tiny_model(tokenizer):
     )
     small._attn_implementation = "sdpa"
     torch.manual_seed(0)
-    return Qwen3_5ForCausalLM(small).eval()
+    # flash-linear-attention's kernels are CUDA-only, and transformers wires them in at
+    # construction — including the gated RMS norm, which is a module and cannot be swapped
+    # afterwards. Installing fla broke every test in this file with "Pointer argument cannot be
+    # accessed from Triton (cpu tensor?)" until the model was built as if it were absent.
+    from s1decide.engine.qwen3_5_patch import without_fla_kernels
+
+    with without_fla_kernels():
+        return Qwen3_5ForCausalLM(small).eval()
 
 
 @pytest.fixture(scope="module")
@@ -310,7 +317,11 @@ def fresh_tiny_model(tokenizer):
         max_position_embeddings=4096,
     )
     torch.manual_seed(0)
-    return Qwen3_5ForCausalLM(small).eval()
+    # CUDA-only fla kernels on a CPU model — see the fixture above.
+    from s1decide.engine.qwen3_5_patch import without_fla_kernels
+
+    with without_fla_kernels():
+        return Qwen3_5ForCausalLM(small).eval()
 
 
 def cached_vs_joint(model, prefix_len: int, suffix_len: int) -> float:

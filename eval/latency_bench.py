@@ -31,6 +31,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from s1decide.kernels import kernel_report
 from s1decide.primitives import Choice, Noul, Question, Score
 from s1decide.prompt import FORMAT_VERSION, render
 from s1decide.tokens import labels_for_question
@@ -495,6 +496,8 @@ def run(config: BenchConfig, out_root: Path | None = None) -> Path:
             # Which per-hardware tuning produced these numbers, and whether it is itself
             # measured on this class of machine or still an assumption.
             "hardware": getattr(getattr(engine, "hardware", None), "name", None),
+            # A kernel change is a new result row, never a silent upgrade (CLAUDE.md).
+            "kernels": kernel_report(),
             "hardware_profile": (
                 engine.hardware.to_json() if hasattr(engine, "hardware") else None
             ),

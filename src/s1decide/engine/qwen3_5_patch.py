@@ -17,13 +17,28 @@ contract test — which is the test that caught it.
 
 from __future__ import annotations
 
+import contextlib
 import types
+from collections.abc import Iterator
 from typing import Any
 
 import torch
 import torch.nn.functional as F
 
-__all__ = ["is_patched", "patch_gated_deltanet"]
+#: The module-level kernel names transformers resolves from fla at import time.
+_FLA_NAMES = (
+    "chunk_gated_delta_rule",
+    "fused_recurrent_gated_delta_rule",
+    "causal_conv1d_fn",
+    "causal_conv1d_update",
+)
+
+__all__ = [
+    "force_torch_gdn_kernels",
+    "is_patched",
+    "patch_gated_deltanet",
+    "without_fla_kernels",
+]
 
 _ORIGINAL = "_s1decide_original_forward"
 
@@ -140,3 +155,65 @@ def patch_gated_deltanet(model: Any) -> int:
             module.forward = types.MethodType(_patched_forward, module)
             patched += 1
     return patched
+
+
+def force_torch_gdn_kernels(model: Any) -> int:
+    """Point every gated-deltanet layer at its torch implementation.
+
+    Needed on CPU. transformers binds these kernels in ``__init__`` with no idea where the model
+    will live — ``self.chunk_gated_delta_rule = chunk_gated_delta_rule or torch_...`` — so once
+    `flash-linear-attention` is installed, a CPU model gets CUDA-only Triton kernels and fails
+    with "Pointer argument (at 0) cannot be accessed from Triton (cpu tensor?)".
+
+    That is how installing fla broke 35 CPU contract tests that had nothing to do with CUDA.
+    The engine forces the torch path for a CPU model rather than letting the test suite depend
+    on which packages happen to be installed.
+
+    Args:
+        model: A loaded Qwen3.5-family model.
+
+    Returns:
+        How many layers were switched.
+    """
+    from transformers.models.qwen3_5 import modeling_qwen3_5 as qwen
+
+    replacements = {
+        "causal_conv1d_fn": None,
+        "causal_conv1d_update": getattr(qwen, "torch_causal_conv1d_update", None),
+        "chunk_gated_delta_rule": getattr(qwen, "torch_chunk_gated_delta_rule", None),
+        "recurrent_gated_delta_rule": getattr(qwen, "torch_recurrent_gated_delta_rule", None),
+    }
+    switched = 0
+    for module in model.modules():
+        if not hasattr(module, "chunk_gated_delta_rule"):
+            continue
+        for name, value in replacements.items():
+            if hasattr(module, name):
+                setattr(module, name, value)
+        switched += 1
+    return switched
+
+
+@contextlib.contextmanager
+def without_fla_kernels() -> Iterator[None]:
+    """Build Qwen3.5 models as if flash-linear-attention were not installed.
+
+    Needed for CPU models, and it has to happen at **construction** because transformers picks
+    the gated RMS norm *class* there: ``Qwen3_5RMSNormGated(...) if FusedRMSNormGated is None
+    else FusedRMSNormGated(...)``. Swapping the four kernel function attributes afterwards is
+    not enough — the norm is a module carrying its own Triton kernel, and that is where the CPU
+    contract tests actually failed once fla was installed.
+
+    Replacing the module after the fact was tried first and produced a device mismatch, which
+    is a good sign that reconstructing someone else's layer from outside is the wrong move.
+    """
+    from transformers.models.qwen3_5 import modeling_qwen3_5 as qwen
+
+    saved = {name: getattr(qwen, name, None) for name in (*_FLA_NAMES, "FusedRMSNormGated")}
+    try:
+        for name in saved:
+            setattr(qwen, name, None)
+        yield
+    finally:
+        for name, value in saved.items():
+            setattr(qwen, name, value)

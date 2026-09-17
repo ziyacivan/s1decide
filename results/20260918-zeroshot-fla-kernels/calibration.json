@@ -1,0 +1,31 @@
+{
+  "version": "0.1",
+  "quantization": "nf4-bf16",
+  "default": 1.0,
+  "temperatures": {
+    "2": 2.506426117036263,
+    "3-5": 2.252588474223627
+  },
+  "meta": {
+    "run_id": "20260918-zeroshot-fla-kernels",
+    "fit_split": "val",
+    "model": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+    "fitted_at": "2026-09-17T22:01:44+00:00",
+    "n_predictions": 1292,
+    "min_count": 30,
+    "buckets": {
+      "2": {
+        "n": 695,
+        "temperature": 2.506426117036263,
+        "nll_before": 0.673689696312832,
+        "nll_after": 0.5252718371819993
+      },
+      "3-5": {
+        "n": 597,
+        "temperature": 2.252588474223627,
+        "nll_before": 0.9603717886648212,
+        "nll_after": 0.7407861415099508
+      }
+    }
+  }
+}

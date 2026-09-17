@@ -1,0 +1,311 @@
+{
+  "meta": {
+    "model": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+    "quantization": "nf4-bf16",
+    "state_tokens": 1500,
+    "question_counts": [
+      1,
+      4,
+      16,
+      64
+    ],
+    "repeats": 20,
+    "warmup": 2,
+    "separate_repeats": 2,
+    "run_id": "20260917-220416-qwen38-27b-unsloth-bnb-4bit-nf4-bf16-latency",
+    "reuse_buffer": false,
+    "rows_per_pass": null,
+    "created": "2026-09-17T22:13:20+00:00",
+    "format_version": "0.2",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "torch": "2.10.0+cu130",
+    "platform": "Windows 10.0.26200",
+    "prefix_tokens": 1617,
+    "state_tokens_actual": 1554,
+    "hardware": "rtx3090_windows",
+    "kernels": {
+      "packages": {
+        "fla": true,
+        "causal_conv1d": false,
+        "triton": true,
+        "triton_kernels": false,
+        "kernels": false
+      },
+      "gated_deltanet": {
+        "chunk_gated_delta_rule": "accelerated",
+        "fused_recurrent_gated_delta_rule": "accelerated",
+        "causal_conv1d_fn": "torch",
+        "causal_conv1d_update": "torch"
+      },
+      "fast_path_all": false,
+      "attention": "sdpa",
+      "notes": [
+        "2 of 4 gated-deltanet kernels are accelerated, but transformers reports is_fast_path_available=False because it is an all() over the four; the 'falling back to torch' warning in the log understates what is active",
+        "causal-conv1d has no Windows wheel and fails to build; its two functions use the torch path (a 4-wide depthwise convolution, the cheap part)",
+        "triton_kernels requires triton>=3.8, which has no Windows wheel; MXFP4 models therefore dequantize to bf16 and will not fit on a 24 GB card"
+      ]
+    },
+    "hardware_profile": {
+      "name": "rtx3090_windows",
+      "peak_ceiling_fraction": 0.92,
+      "peak_bytes_per_cache_byte": {
+        "False": 1.4,
+        "True": 2.1
+      },
+      "reuse_buffer": false,
+      "measured": true
+    }
+  },
+  "targets": {
+    "speedup_16": {
+      "description": "bundled vs 16 separate calls",
+      "threshold": 8.0,
+      "direction": "at least",
+      "measured": 9.524299251820802,
+      "met": true
+    },
+    "speedup_64": {
+      "description": "bundled vs 64 separate calls",
+      "threshold": 12.0,
+      "direction": "at least",
+      "measured": 16.947234143327304,
+      "met": true
+    },
+    "marginal_ms_64": {
+      "description": "marginal ms per question at 64",
+      "threshold": 150.0,
+      "direction": "at most",
+      "measured": 68.76205396826937,
+      "met": true
+    },
+    "format_overhead_controllable": {
+      "description": "format overhead excluding the model's chat tail",
+      "threshold": 0.25,
+      "direction": "at most",
+      "measured": 0.21951219512195122,
+      "met": true
+    },
+    "format_overhead": {
+      "description": "all-in format boilerplate, including the model's chat tail",
+      "measured": 0.43902439024390244
+    },
+    "amortised_ms_64": {
+      "description": "informational: median(64) / 64",
+      "measured": 91.36080703120797
+    },
+    "all_met": true
+  },
+  "format_overhead": {
+    "by_qtype": {
+      "noul": {
+        "suffix_tokens": 28,
+        "tail_tokens": 9,
+        "our_overhead_tokens": 7,
+        "content_tokens": 12,
+        "boilerplate_tokens": 16,
+        "boilerplate_fraction": 0.5714285714285714,
+        "controllable_fraction": 0.25
+      },
+      "choice": {
+        "suffix_tokens": 45,
+        "tail_tokens": 9,
+        "our_overhead_tokens": 7,
+        "content_tokens": 29,
+        "boilerplate_tokens": 16,
+        "boilerplate_fraction": 0.35555555555555557,
+        "controllable_fraction": 0.15555555555555556
+      },
+      "score": {
+        "suffix_tokens": 50,
+        "tail_tokens": 9,
+        "our_overhead_tokens": 13,
+        "content_tokens": 28,
+        "boilerplate_tokens": 22,
+        "boilerplate_fraction": 0.44,
+        "controllable_fraction": 0.26
+      }
+    },
+    "boilerplate_fraction": 0.43902439024390244,
+    "controllable_fraction": 0.21951219512195122,
+    "chat_tail_fraction": 0.21951219512195122,
+    "mean_suffix_tokens": 41.0,
+    "worst_qtype": "noul",
+    "worst_fraction": 0.5714285714285714
+  },
+  "retired_target": {
+    "rule": "64-question call < 2x the 1-question call (retired by ADR 0003)",
+    "ratio_64_over_1": 3.859256914937414,
+    "met": false
+  },
+  "decomposition": {
+    "per_pass_ms": 113.62653258570766,
+    "per_token_ms": 1.196475096170087,
+    "r_squared": 0.9993911828476535
+  },
+  "points": [
+    {
+      "n_questions": 1,
+      "median_ms": 1515.0822499963397,
+      "min_ms": 1492.6638000033563,
+      "max_ms": 1600.7171999954153,
+      "p10_ms": 1493.3768999981112,
+      "p90_ms": 1580.990299997211,
+      "stdev_ms": 36.498427197354204,
+      "median_prefill_ms": 1402.4874000024283,
+      "median_suffix_ms": 108.23185000117519,
+      "median_separate_ms": 1549.9216499993054,
+      "passes": 1,
+      "rows_per_pass": 6,
+      "prefix_tokens": 1617,
+      "suffix_tokens": 28,
+      "ms_per_suffix_token": 3.865423214327685,
+      "peak_gib": 20.49772071838379,
+      "samples": 20,
+      "wall_ms": [
+        1493.3768999981112,
+        1492.6638000033563,
+        1498.0976000006194,
+        1502.9711999959545,
+        1500.1101000016206,
+        1508.9049999951385,
+        1521.2594999975408,
+        1501.5981000033207,
+        1503.4532999998191,
+        1547.3407000026782,
+        1600.7171999954153,
+        1563.3994000017992,
+        1600.0878999984707,
+        1578.1040000001667,
+        1553.2353000016883,
+        1580.990299997211,
+        1535.016200003156,
+        1505.7984000013676,
+        1508.862800001225,
+        1521.3492000038968
+      ]
+    },
+    {
+      "n_questions": 4,
+      "median_ms": 1760.8157499998924,
+      "min_ms": 1734.13260000234,
+      "max_ms": 1838.5753000038676,
+      "p10_ms": 1736.9010000038543,
+      "p90_ms": 1777.3704999999609,
+      "stdev_ms": 21.974889905163074,
+      "median_prefill_ms": 1427.1563499969488,
+      "median_suffix_ms": 330.9104500003741,
+      "median_separate_ms": 6207.091799999034,
+      "passes": 1,
+      "rows_per_pass": 7,
+      "prefix_tokens": 1617,
+      "suffix_tokens": 151,
+      "ms_per_suffix_token": 2.191459933777312,
+      "peak_gib": 21.055994987487793,
+      "samples": 20,
+      "wall_ms": [
+        1760.2152000035858,
+        1777.3704999999609,
+        1774.7777000040514,
+        1734.13260000234,
+        1772.0374999989872,
+        1742.809200004558,
+        1742.443800001638,
+        1773.859499997343,
+        1736.9010000038543,
+        1775.3893999979482,
+        1758.8872999986052,
+        1838.5753000038676,
+        1783.356100000674,
+        1762.1251000018674,
+        1758.625900001789,
+        1762.5062000006437,
+        1760.124899999937,
+        1760.186800005613,
+        1760.602199996356,
+        1761.029300003429
+      ]
+    },
+    {
+      "n_questions": 16,
+      "median_ms": 2614.29859999771,
+      "min_ms": 2607.273100002203,
+      "max_ms": 2678.8315000012517,
+      "p10_ms": 2609.5466000042506,
+      "p90_ms": 2677.1148999978323,
+      "stdev_ms": 30.45210985133712,
+      "median_prefill_ms": 1426.579250000941,
+      "median_suffix_ms": 1181.5452000009827,
+      "median_separate_ms": 24899.362199994357,
+      "passes": 3,
+      "rows_per_pass": 7,
+      "prefix_tokens": 1617,
+      "suffix_tokens": 649,
+      "ms_per_suffix_token": 1.8205627118659211,
+      "peak_gib": 21.685999870300293,
+      "samples": 20,
+      "wall_ms": [
+        2673.1891999952495,
+        2614.259199996013,
+        2677.1148999978323,
+        2678.4442999996827,
+        2610.508199999458,
+        2607.273100002203,
+        2616.1291999960667,
+        2676.8833000023733,
+        2609.5466000042506,
+        2678.8315000012517,
+        2611.408000004303,
+        2611.304600002768,
+        2611.3798000005772,
+        2610.7210000045598,
+        2614.3379999994067,
+        2614.8410999958287,
+        2611.3693000006606,
+        2614.7060000002966,
+        2676.740700000664,
+        2614.1751000031945
+      ]
+    },
+    {
+      "n_questions": 64,
+      "median_ms": 5847.09164999731,
+      "min_ms": 5844.83669999463,
+      "max_ms": 6254.887500006589,
+      "p10_ms": 5845.1605000009295,
+      "p90_ms": 5849.329399999988,
+      "stdev_ms": 125.50481357241024,
+      "median_prefill_ms": 1417.992549999326,
+      "median_suffix_ms": 4421.208899999328,
+      "median_separate_ms": 99092.0312499984,
+      "passes": 11,
+      "rows_per_pass": 6,
+      "prefix_tokens": 1617,
+      "suffix_tokens": 2665,
+      "ms_per_suffix_token": 1.658990206378735,
+      "peak_gib": 21.685999870300293,
+      "samples": 20,
+      "wall_ms": [
+        5847.9455999986385,
+        5847.017299995059,
+        5844.83669999463,
+        5845.481099997414,
+        5847.192099994572,
+        5845.1605000009295,
+        6254.156000002695,
+        5845.362300002307,
+        5849.329399999988,
+        5846.589000000677,
+        5847.352099997806,
+        5845.777700000326,
+        5847.165999999561,
+        5848.588399996515,
+        5848.332499997923,
+        5845.884200003638,
+        5847.610500000883,
+        5845.843499999319,
+        5846.6487000041525,
+        6254.887500006589
+      ]
+    }
+  ]
+}

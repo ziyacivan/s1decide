@@ -1,0 +1,289 @@
+{
+  "meta": {
+    "model": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+    "quantization": "nf4-bf16",
+    "state_tokens": 1500,
+    "question_counts": [
+      1,
+      4,
+      16,
+      64
+    ],
+    "repeats": 20,
+    "warmup": 2,
+    "separate_repeats": 2,
+    "run_id": "20260917-213733-qwen38-27b-unsloth-bnb-4bit-nf4-bf16-latency",
+    "reuse_buffer": false,
+    "rows_per_pass": null,
+    "created": "2026-09-17T21:47:20+00:00",
+    "format_version": "0.2",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "torch": "2.10.0+cu130",
+    "platform": "Windows 10.0.26200",
+    "prefix_tokens": 1617,
+    "state_tokens_actual": 1554,
+    "hardware": "rtx3090_windows",
+    "hardware_profile": {
+      "name": "rtx3090_windows",
+      "peak_ceiling_fraction": 0.92,
+      "peak_bytes_per_cache_byte": {
+        "False": 1.4,
+        "True": 2.1
+      },
+      "reuse_buffer": false,
+      "measured": true
+    }
+  },
+  "targets": {
+    "speedup_16": {
+      "description": "bundled vs 16 separate calls",
+      "threshold": 8.0,
+      "direction": "at least",
+      "measured": 9.552032270281352,
+      "met": true
+    },
+    "speedup_64": {
+      "description": "bundled vs 64 separate calls",
+      "threshold": 12.0,
+      "direction": "at least",
+      "measured": 16.955251919149706,
+      "met": true
+    },
+    "marginal_ms_64": {
+      "description": "marginal ms per question at 64",
+      "threshold": 150.0,
+      "direction": "at most",
+      "measured": 69.27928174598723,
+      "met": true
+    },
+    "format_overhead_controllable": {
+      "description": "format overhead excluding the model's chat tail",
+      "threshold": 0.25,
+      "direction": "at most",
+      "measured": 0.21951219512195122,
+      "met": true
+    },
+    "format_overhead": {
+      "description": "all-in format boilerplate, including the model's chat tail",
+      "measured": 0.43902439024390244
+    },
+    "amortised_ms_64": {
+      "description": "informational: median(64) / 64",
+      "measured": 91.74218515624943
+    },
+    "all_met": true
+  },
+  "format_overhead": {
+    "by_qtype": {
+      "noul": {
+        "suffix_tokens": 28,
+        "tail_tokens": 9,
+        "our_overhead_tokens": 7,
+        "content_tokens": 12,
+        "boilerplate_tokens": 16,
+        "boilerplate_fraction": 0.5714285714285714,
+        "controllable_fraction": 0.25
+      },
+      "choice": {
+        "suffix_tokens": 45,
+        "tail_tokens": 9,
+        "our_overhead_tokens": 7,
+        "content_tokens": 29,
+        "boilerplate_tokens": 16,
+        "boilerplate_fraction": 0.35555555555555557,
+        "controllable_fraction": 0.15555555555555556
+      },
+      "score": {
+        "suffix_tokens": 50,
+        "tail_tokens": 9,
+        "our_overhead_tokens": 13,
+        "content_tokens": 28,
+        "boilerplate_tokens": 22,
+        "boilerplate_fraction": 0.44,
+        "controllable_fraction": 0.26
+      }
+    },
+    "boilerplate_fraction": 0.43902439024390244,
+    "controllable_fraction": 0.21951219512195122,
+    "chat_tail_fraction": 0.21951219512195122,
+    "mean_suffix_tokens": 41.0,
+    "worst_qtype": "noul",
+    "worst_fraction": 0.5714285714285714
+  },
+  "retired_target": {
+    "rule": "64-question call < 2x the 1-question call (retired by ADR 0003)",
+    "ratio_64_over_1": 3.8963965613953904,
+    "met": false
+  },
+  "decomposition": {
+    "per_pass_ms": 107.33514703495518,
+    "per_token_ms": 1.266148882024095,
+    "r_squared": 0.9997201568670798
+  },
+  "points": [
+    {
+      "n_questions": 1,
+      "median_ms": 1506.9051000027684,
+      "min_ms": 1489.330999997037,
+      "max_ms": 1514.1340999980457,
+      "p10_ms": 1489.90529999719,
+      "p90_ms": 1512.3419000010472,
+      "stdev_ms": 7.622810467121069,
+      "median_prefill_ms": 1397.0395999967877,
+      "median_suffix_ms": 107.24879999906989,
+      "median_separate_ms": 1513.4020499972394,
+      "passes": 1,
+      "rows_per_pass": 7,
+      "prefix_tokens": 1617,
+      "suffix_tokens": 28,
+      "ms_per_suffix_token": 3.8303142856810672,
+      "peak_gib": 20.49772071838379,
+      "samples": 20,
+      "wall_ms": [
+        1489.330999997037,
+        1489.90529999719,
+        1497.9669000022113,
+        1497.5288999994518,
+        1501.0875000007218,
+        1499.9102000001585,
+        1498.7417000011192,
+        1503.0584999985876,
+        1500.998299998173,
+        1506.9174000018393,
+        1506.8928000036976,
+        1510.0540999992518,
+        1511.2902000037138,
+        1511.1993000027724,
+        1509.8907999999938,
+        1510.5513999951654,
+        1511.722400005965,
+        1512.3419000010472,
+        1513.8044000050286,
+        1514.1340999980457
+      ]
+    },
+    {
+      "n_questions": 4,
+      "median_ms": 1746.408649996738,
+      "min_ms": 1738.7041999973007,
+      "max_ms": 1751.4506000006804,
+      "p10_ms": 1741.1150999978418,
+      "p90_ms": 1749.2989000020316,
+      "stdev_ms": 3.123358607819354,
+      "median_prefill_ms": 1413.0201499974646,
+      "median_suffix_ms": 329.7981499963498,
+      "median_separate_ms": 6166.067850001127,
+      "passes": 1,
+      "rows_per_pass": 7,
+      "prefix_tokens": 1617,
+      "suffix_tokens": 151,
+      "ms_per_suffix_token": 2.184093708585098,
+      "peak_gib": 21.055994987487793,
+      "samples": 20,
+      "wall_ms": [
+        1738.7041999973007,
+        1746.095399998012,
+        1744.2618000059156,
+        1742.8470000013476,
+        1751.4506000006804,
+        1748.208600001817,
+        1741.1150999978418,
+        1745.0958999979775,
+        1743.9778999978444,
+        1745.4658999995445,
+        1749.2989000020316,
+        1747.5783999980194,
+        1751.0739999997895,
+        1749.2229999988922,
+        1744.7906000015792,
+        1746.306299995922,
+        1746.5109999975539,
+        1746.716199995717,
+        1747.437500001979,
+        1747.5097000060487
+      ]
+    },
+    {
+      "n_questions": 16,
+      "median_ms": 2602.369150001323,
+      "min_ms": 2589.0589999980875,
+      "max_ms": 2669.149199995445,
+      "p10_ms": 2590.4876999993576,
+      "p90_ms": 2667.2428000019863,
+      "stdev_ms": 31.2472417010411,
+      "median_prefill_ms": 1421.2939499993809,
+      "median_suffix_ms": 1176.0532000043895,
+      "median_separate_ms": 24857.914099997288,
+      "passes": 3,
+      "rows_per_pass": 7,
+      "prefix_tokens": 1617,
+      "suffix_tokens": 649,
+      "ms_per_suffix_token": 1.8121004622563783,
+      "peak_gib": 21.685999870300293,
+      "samples": 20,
+      "wall_ms": [
+        2654.509700005292,
+        2591.1854000005405,
+        2589.0589999980875,
+        2592.1490999971866,
+        2590.4876999993576,
+        2590.7170999998925,
+        2656.9049000027007,
+        2663.842800000566,
+        2603.4239000000525,
+        2601.7911000017193,
+        2667.2428000019863,
+        2669.149199995445,
+        2601.92459999962,
+        2599.953999997524,
+        2601.4926999996533,
+        2668.818799997098,
+        2602.8137000030256,
+        2600.2001999950153,
+        2603.9952999999514,
+        2604.590900002222
+      ]
+    },
+    {
+      "n_questions": 64,
+      "median_ms": 5871.499849999964,
+      "min_ms": 5867.362299999513,
+      "max_ms": 6280.090899999777,
+      "p10_ms": 5868.177500000456,
+      "p90_ms": 6279.3124000018,
+      "stdev_ms": 149.53613434192243,
+      "median_prefill_ms": 1424.48819999845,
+      "median_suffix_ms": 4438.369499999681,
+      "median_separate_ms": 99552.7590999991,
+      "passes": 10,
+      "rows_per_pass": 7,
+      "prefix_tokens": 1617,
+      "suffix_tokens": 2665,
+      "ms_per_suffix_token": 1.665429455909824,
+      "peak_gib": 21.685999870300293,
+      "samples": 20,
+      "wall_ms": [
+        5867.362299999513,
+        5868.177500000456,
+        5872.693100005563,
+        5869.6859999981825,
+        6280.090899999777,
+        5876.0340000008,
+        6279.54779999709,
+        5873.389600004884,
+        5869.613599999866,
+        5874.582900003588,
+        5871.241799999552,
+        5875.393000002077,
+        5869.887399996514,
+        5870.2209999974,
+        5870.0430000026245,
+        5871.098499999789,
+        5871.757900000375,
+        6279.3124000018,
+        5873.969100000977,
+        5870.636100000411
+      ]
+    }
+  ]
+}

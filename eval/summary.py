@@ -62,6 +62,33 @@ def _stale_format_banner(run_format: str | None) -> list[str]:
     ]
 
 
+def _kernel_banner(meta: Mapping[str, Any]) -> list[str]:
+    """State which accelerated kernels produced a run, or that it predates the recording.
+
+    `CLAUDE.md`: a kernel or attention backend change is a new result row, never a silent
+    upgrade. A run with no `meta.kernels` was produced before the configuration was recorded —
+    on this machine that means the gated-deltanet layers were on the torch fallback — and
+    saying so is the difference between a comparable row and a misleading one.
+    """
+    kernels = meta.get("kernels")
+    if not kernels:
+        return [
+            "> **Kernels not recorded — torch fallback.** This run predates kernel reporting; "
+            "on the reference machine that means the gated-deltanet layers ran the torch "
+            "implementation. Compare it only with other runs carrying the same note.",
+            "",
+        ]
+    gated = kernels.get("gated_deltanet", {})
+    accelerated = sorted(k for k, v in gated.items() if v == "accelerated")
+    fallback = sorted(k for k, v in gated.items() if v != "accelerated")
+    parts = [f"**Kernels**: attention `{kernels.get('attention', '?')}`"]
+    if accelerated:
+        parts.append("accelerated: " + ", ".join(f"`{k}`" for k in accelerated))
+    if fallback:
+        parts.append("torch: " + ", ".join(f"`{k}`" for k in fallback))
+    return ["- " + " · ".join(parts), ""]
+
+
 def _row(label: str, summary: Mapping[str, Any]) -> str:
     cells = []
     for key, _title, fmt in _COLUMNS:
@@ -194,6 +221,7 @@ def render_summary(report: Mapping[str, Any]) -> str:
         + (" **(tree dirty at run time)**" if git.get("dirty") else ""),
         f"- **Created**: {meta.get('created', '?')} · {meta.get('platform', '?')}",
         "",
+        *_kernel_banner(meta),
         *_stale_format_banner(meta.get("format_version")),
         "## Coverage",
         "",
@@ -314,6 +342,7 @@ def render_latency(payload: Mapping[str, Any]) -> str:
         f"system prompt) · median of {meta['repeats']} timed runs after {meta['warmup']} warm-ups",
         f"- **Created**: {meta.get('created', '?')} · torch {meta.get('torch', '?')}",
         "",
+        *_kernel_banner(meta),
         "## Targets",
         "",
         "| target | measured | threshold | met |",

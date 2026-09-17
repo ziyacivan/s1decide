@@ -525,6 +525,23 @@ def check_utf8() -> CheckResult:
     )
 
 
+def check_kernels() -> CheckResult:
+    """Report which accelerated kernels are actually active.
+
+    Not a pass/fail. The point is that the configuration is *recorded*, because a kernel change
+    is a result change (`CLAUDE.md` conventions) and transformers' own log line understates
+    what is on: it reports availability as an all() over four functions, so two accelerated
+    gated-deltanet kernels plus a missing depthwise convolution still prints "falling back to
+    torch implementation".
+    """
+    from s1decide.kernels import kernel_report, kernel_summary
+
+    report = kernel_report()
+    accelerated = sum(1 for v in report["gated_deltanet"].values() if v == "accelerated")
+    status = Status.OK if accelerated else Status.WARN
+    return CheckResult("kernels", status, kernel_summary())
+
+
 def check_sysmem_fallback() -> CheckResult:
     """Check that the driver refuses to page device memory to host RAM.
 
@@ -603,6 +620,7 @@ DOCTOR_CHECKS: tuple[Callable[[], CheckResult], ...] = (
     check_hf_cache,
     check_utf8,
     check_long_paths,
+    check_kernels,
     # Last: it allocates on the GPU, so it must not pollute the readings above.
     check_sysmem_fallback,
 )
@@ -685,6 +703,20 @@ def task_gpu_kill(argv: list[str]) -> int:
     for process in gpu_processes():
         if not process.is_ours:
             print(f"  (not ours, left alone) {process.describe()}")
+    return 0
+
+
+@register("readme", "Regenerate the README's metric blocks from results/")
+def task_readme(_argv: list[str]) -> int:
+    """Fill the README's ``<!--metrics:*-->`` blocks from committed runs.
+
+    The README is where a hand-typed number survives longest, so it is generated like every
+    other number in the repository. `tests/test_readme.py` fails if it drifts.
+    """
+    ensure_repo_on_path()
+    from eval.readme_slots import update_readme
+
+    print(f"wrote {update_readme().relative_to(repo_root())}")
     return 0
 
 

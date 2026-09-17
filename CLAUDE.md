@@ -235,6 +235,12 @@ Tasks that aren't implementable yet fail loudly with "not implemented".
   load_in_4bit=True)` + `get_peft_model`, save adapters with
   `save_pretrained` (BF16 safetensors), and GGUF export via our own
   `scripts/convert_gguf.py` so the artefact path is identical on Linux.
+- **A kernel or attention backend change is a new result row, never a silent
+  upgrade.** Installing or losing an accelerated kernel changes the numbers a run
+  produces, so every run records its kernel configuration in `meta.kernels` and
+  results produced under different configurations are reported as separate rows.
+  `uv run task doctor` prints the active configuration; `docs/windows-setup.md`
+  records which fast paths this machine can and cannot have.
 - Commit messages: `area: imperative summary` (e.g. `engine: add KV broadcast for hf engine`).
   Small commits. Never amend a commit that has been pushed.
 - Language of code, docs, commits, model card: English.
