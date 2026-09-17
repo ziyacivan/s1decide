@@ -26,6 +26,7 @@ from s1decide.tokens import allowed_token_ids
 
 __all__ = [
     "CACHE_BATCH_TENSORS",
+    "BroadcastCache",
     "HFEngine",
     "expand_cache",
     "force_quantized_model_dtype",
@@ -88,6 +89,60 @@ def expand_cache(cache: Any, repeats: int) -> dict[str, list[str]]:
             )
         expanded.setdefault(type(layer).__name__, touched)
     return expanded
+
+
+class BroadcastCache:
+    """A pre-expanded copy of a batch-1 prefix cache, reused across passes (ADR 0003 option C).
+
+    The naive loop deep-copies the prefix cache and re-expands it for every pass, which
+    allocates and frees the whole broadcast cache each time — on the 27B at a 1.5k-token state
+    that is roughly 250 MB per row, twice over, per pass. Worse, the transient double allocation
+    has to fit alongside the model, so it lowers the row count every pass can afford.
+
+    This allocates the expanded buffers **once** and refills them in place between passes.
+
+    Refilling is not optional: the model mutates the cache as it runs. Gated-deltanet layers
+    update ``conv_states`` and ``recurrent_states`` in place, and attention layers *rebind*
+    ``keys``/``values`` to a longer concatenated tensor. :meth:`reset` therefore both rebinds
+    the layer back to our buffer and copies the pristine prefix values into it.
+    """
+
+    def __init__(self, prefix_cache: Any, rows: int) -> None:
+        if rows < 1:
+            raise ValueError(f"rows must be >= 1, got {rows}")
+        layers = getattr(prefix_cache, "layers", None)
+        if layers is None:
+            raise NotImplementedError(
+                f"cannot broadcast a {type(prefix_cache).__name__}: it has no `.layers`"
+            )
+        # Keep a pristine batch-1 copy: `prefix_cache` itself belongs to the caller and the
+        # model would otherwise mutate the thing we refill from.
+        self._pristine = copy.deepcopy(prefix_cache)
+        self.cache = copy.deepcopy(prefix_cache)
+        self.rows = rows
+        self.expanded = expand_cache(self.cache, rows)
+        self._buffers: dict[tuple[int, str], torch.Tensor] = {}
+        for index, layer in enumerate(self.cache.layers):
+            for attr in CACHE_BATCH_TENSORS:
+                tensor = getattr(layer, attr, None)
+                if torch.is_tensor(tensor):
+                    self._buffers[(index, attr)] = tensor
+
+    @property
+    def bytes_held(self) -> int:
+        """VRAM held by the expanded buffers, for the engine's diagnostics."""
+        return sum(t.numel() * t.element_size() for t in self._buffers.values())
+
+    def reset(self) -> Any:
+        """Restore the buffers to the pristine prefix state and return the cache to score with."""
+        for (index, attr), buffer in self._buffers.items():
+            layer = self.cache.layers[index]
+            # The model may have rebound this attribute to a longer tensor; point it back.
+            if getattr(layer, attr, None) is not buffer:
+                setattr(layer, attr, buffer)
+            source = getattr(self._pristine.layers[index], attr)
+            buffer.copy_(source.expand_as(buffer))
+        return self.cache
 
 
 def nf4_config(compute_dtype: torch.dtype = torch.bfloat16) -> Any:
@@ -183,9 +238,14 @@ class HFEngine:
         *,
         max_rows_per_pass: int = 16,
         patch_gdn: bool = True,
+        reuse_buffer: bool = True,
     ) -> None:
         if max_rows_per_pass < 1:
             raise ValueError("max_rows_per_pass must be >= 1")
+        # False restores the pre-ADR-0003-option-C path: deep-copy and re-expand the prefix
+        # cache every pass. Kept so the two can be benchmarked against each other rather than
+        # the improvement being asserted.
+        self.reuse_buffer = reuse_buffer
         self.model = model.eval()
         self.tokenizer = tokenizer
         self.max_rows_per_pass = max_rows_per_pass
@@ -215,6 +275,7 @@ class HFEngine:
         device_map: str | dict[str, Any] = "cuda",
         max_rows_per_pass: int = 16,
         prefer_fla: bool = True,
+        reuse_buffer: bool = True,
         **kwargs: Any,
     ) -> HFEngine:
         """Load a causal LM text-only with SDPA attention and wrap it.
@@ -286,7 +347,7 @@ class HFEngine:
             model_name,
             **{k: v for k, v in kwargs.items() if k in {"local_files_only", "revision", "token"}},
         )
-        return cls(model, tokenizer, max_rows_per_pass=max_rows_per_pass)
+        return cls(model, tokenizer, max_rows_per_pass=max_rows_per_pass, reuse_buffer=reuse_buffer)
 
     def encode(self, text: str) -> list[int]:
         """Tokenize without special tokens — the chat template already supplies them."""
@@ -326,16 +387,28 @@ class HFEngine:
         rows_per_pass, cache_bytes_per_row = self._rows_per_pass(prefix_cache)
         rows: list[tuple[float, ...]] = []
         passes = 0
-        expanded: dict[str, list[str]] = {}
         started = time.perf_counter()
+        # One buffer, refilled between passes rather than rebuilt (ADR 0003 option C).
+        buffer: BroadcastCache | None = None
+        expanded: dict[str, list[str]] = {}
         for start in range(0, len(suffix_ids), rows_per_pass):
             chunk = suffix_ids[start : start + rows_per_pass]
             chunk_labels = label_ids[start : start + rows_per_pass]
-            cache = copy.deepcopy(prefix_cache)
-            expanded = expand_cache(cache, len(chunk))
+            if self.reuse_buffer:
+                # Chunks are all `rows_per_pass` except possibly the last, so this allocates at
+                # most twice; the old buffer is released first so the two sizes never coexist.
+                if buffer is None or buffer.rows != len(chunk):
+                    buffer = None
+                    buffer = BroadcastCache(prefix_cache, len(chunk))
+                    expanded = buffer.expanded
+                cache = buffer.reset()
+            else:
+                cache = copy.deepcopy(prefix_cache)
+                expanded = expand_cache(cache, len(chunk))
             rows.extend(self._score_chunk(cache, len(prefix_ids), chunk, chunk_labels))
             del cache
             passes += 1
+        buffer = None
         self._sync()
         suffix_seconds = time.perf_counter() - started
 
@@ -350,6 +423,7 @@ class HFEngine:
                 "max_rows_per_pass": self.max_rows_per_pass,
                 "rows_per_pass": rows_per_pass,
                 "cache_bytes_per_row": cache_bytes_per_row,
+                "reuse_buffer": self.reuse_buffer,
                 "cache_expanded": expanded,
                 "gdn_patched": self.gdn_patched,
                 "prefill_seconds": prefill_seconds,
@@ -380,11 +454,17 @@ class HFEngine:
             return self.max_rows_per_pass, per_row
         # Device-free memory plus what the caching allocator already holds but is not using;
         # keep a fixed reserve for bitsandbytes' dequantisation temporaries and the pass's
-        # activations, then spend most of the rest on rows.
+        # activations, then spend part of the rest on rows.
+        #
+        # The budget must cover the *long-lived* broadcast buffer (`rows` copies) plus the one
+        # pristine batch-1 copy `BroadcastCache` keeps to refill from — and, because the buffer
+        # now outlives each pass, the allocator cannot recycle its block for activations. A
+        # first attempt spent 80% here and peaked at 24.65 GiB on a 24 GiB card, which on
+        # Windows pages to host memory instead of failing. Hence the headroom below.
         free, _total = torch.cuda.mem_get_info(self.device)
         cached = torch.cuda.memory_reserved(self.device) - torch.cuda.memory_allocated(self.device)
         available = free + max(0, cached) - self.VRAM_RESERVE_BYTES
-        affordable = max(1, int(available * 0.8 // per_row))
+        affordable = max(1, int(available * 0.55 // per_row) - 1)
         return min(self.max_rows_per_pass, affordable), per_row
 
     def _score_chunk(

@@ -393,3 +393,145 @@ def test_engine_reports_the_patch_and_can_disable_it(tokenizer) -> None:
     on = HFEngine(model, tokenizer)
     assert on.gdn_patched == 3
     assert HFEngine(model, tokenizer).gdn_patched == 0  # already patched
+
+
+# --- BroadcastCache: buffer reuse across passes (ADR 0003 option C) ----------
+
+
+def test_broadcast_cache_expands_every_layer(tiny_model) -> None:
+    from s1decide.engine.hf import BroadcastCache
+
+    buffer = BroadcastCache(prefill_cache(tiny_model), 3)
+    assert set(buffer.expanded) == {"LinearAttentionLayer", "DynamicLayer"}
+    assert buffer.rows == 3
+    assert buffer.bytes_held > 0
+    for layer in buffer.cache.layers:
+        for attr in CACHE_BATCH_TENSORS:
+            tensor = getattr(layer, attr, None)
+            if torch.is_tensor(tensor):
+                assert tensor.shape[0] == 3
+
+
+def test_reset_restores_the_prefix_state_after_the_model_mutates_it(tiny_model) -> None:
+    """The model updates GDN states in place and rebinds attention keys; reset must undo both."""
+    from s1decide.engine.hf import BroadcastCache
+
+    prefix = torch.randint(0, 1000, (1, 9))
+    with torch.inference_mode():
+        prefix_cache = tiny_model(input_ids=prefix, use_cache=True).past_key_values
+    buffer = BroadcastCache(prefix_cache, 2)
+
+    before = {
+        (i, a): getattr(layer, a).clone()
+        for i, layer in enumerate(buffer.cache.layers)
+        for a in CACHE_BATCH_TENSORS
+        if torch.is_tensor(getattr(layer, a, None))
+    }
+    with torch.inference_mode():
+        tiny_model(
+            input_ids=torch.randint(0, 1000, (2, 4)), past_key_values=buffer.reset(), use_cache=True
+        )
+
+    # After a pass the cache has moved on: GDN states changed, attention keys grew.
+    grew = any(
+        getattr(buffer.cache.layers[i], a).shape != before[(i, a)].shape
+        or not torch.equal(getattr(buffer.cache.layers[i], a), before[(i, a)])
+        for (i, a) in before
+    )
+    assert grew, "the model did not mutate the cache; this test would prove nothing"
+
+    buffer.reset()
+    for (i, a), original in before.items():
+        restored = getattr(buffer.cache.layers[i], a)
+        assert restored.shape == original.shape, (i, a)
+        assert torch.equal(restored, original), (i, a)
+
+
+def test_scoring_the_same_chunk_twice_gives_identical_logits(
+    engine, ticket_state, questions
+) -> None:
+    """The real risk of buffer reuse: pass 2 inheriting pass 1's state."""
+    rendered = render(ticket_state, questions)
+    first = engine.score(rendered.prefix, rendered.suffixes, rendered.labels)
+    second = engine.score(rendered.prefix, rendered.suffixes, rendered.labels)
+    for a, b in zip(first.logits, second.logits):
+        assert torch.allclose(torch.tensor(a), torch.tensor(b), atol=1e-6)
+
+
+def test_many_short_passes_still_match_one_wide_pass(
+    tiny_model, tokenizer, ticket_state, questions
+) -> None:
+    """Every row count must agree, including the padded final chunk."""
+    rendered = render(ticket_state, questions)
+    reference = HFEngine(tiny_model, tokenizer, max_rows_per_pass=16).score(
+        rendered.prefix, rendered.suffixes, rendered.labels
+    )
+    for rows_per_pass in (1, 2, 3, 4, 5):
+        chunked = HFEngine(tiny_model, tokenizer, max_rows_per_pass=rows_per_pass).score(
+            rendered.prefix, rendered.suffixes, rendered.labels
+        )
+        assert len(chunked.logits) == len(questions)
+        for a, b in zip(reference.logits, chunked.logits):
+            assert torch.allclose(torch.tensor(a), torch.tensor(b), atol=1e-4), rows_per_pass
+
+
+def test_broadcast_cache_rejects_a_bad_row_count(tiny_model) -> None:
+    from s1decide.engine.hf import BroadcastCache
+
+    with pytest.raises(ValueError, match="rows must be >= 1"):
+        BroadcastCache(prefill_cache(tiny_model), 0)
+
+
+def test_broadcast_cache_refuses_an_unknown_cache() -> None:
+    from s1decide.engine.hf import BroadcastCache
+
+    with pytest.raises(NotImplementedError, match=r"no `\.layers`"):
+        BroadcastCache(object(), 2)
+
+
+def test_the_caller_prefix_cache_is_not_mutated_by_scoring(
+    tiny_model, tokenizer, ticket_state, questions
+) -> None:
+    """BroadcastCache keeps its own pristine copy; the prefill it was built from stays clean."""
+    from s1decide.engine.hf import BroadcastCache
+
+    with torch.inference_mode():
+        prefix_cache = tiny_model(
+            input_ids=torch.randint(0, 1000, (1, 11)), use_cache=True
+        ).past_key_values
+    snapshot = {
+        (i, a): getattr(layer, a).clone()
+        for i, layer in enumerate(prefix_cache.layers)
+        for a in CACHE_BATCH_TENSORS
+        if torch.is_tensor(getattr(layer, a, None))
+    }
+    buffer = BroadcastCache(prefix_cache, 2)
+    with torch.inference_mode():
+        tiny_model(
+            input_ids=torch.randint(0, 1000, (2, 3)), past_key_values=buffer.reset(), use_cache=True
+        )
+    for (i, a), original in snapshot.items():
+        assert torch.equal(getattr(prefix_cache.layers[i], a), original), (i, a)
+
+
+def test_reuse_buffer_flag_reaches_the_engine(tiny_model, tokenizer) -> None:
+    """A/B flags that silently default are worse than no flag: this one is load-bearing."""
+    assert HFEngine(tiny_model, tokenizer).reuse_buffer is True
+    assert HFEngine(tiny_model, tokenizer, reuse_buffer=False).reuse_buffer is False
+
+
+def test_both_cache_paths_give_the_same_logits(
+    tiny_model, tokenizer, ticket_state, questions
+) -> None:
+    """Buffer reuse is an optimisation; it must not change a single number."""
+    rendered = render(ticket_state, questions)
+    reused = HFEngine(tiny_model, tokenizer, max_rows_per_pass=2, reuse_buffer=True).score(
+        rendered.prefix, rendered.suffixes, rendered.labels
+    )
+    copied = HFEngine(tiny_model, tokenizer, max_rows_per_pass=2, reuse_buffer=False).score(
+        rendered.prefix, rendered.suffixes, rendered.labels
+    )
+    assert reused.meta["reuse_buffer"] is True
+    assert copied.meta["reuse_buffer"] is False
+    for a, b in zip(reused.logits, copied.logits):
+        assert torch.allclose(torch.tensor(a), torch.tensor(b), atol=1e-5)

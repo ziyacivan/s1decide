@@ -49,6 +49,9 @@ class RunConfig:
         max_options: Questions above this are dropped and the drop reported.
         limit: Optional cap on items per split, for smoke runs.
         n_bins: Equal-mass bins.
+        reuse_buffer: Whether the engine keeps one pre-expanded broadcast cache across passes
+            (ADR 0003 option C). Recorded because it is an engine change, and the condition on
+            option C is that it must not move the metrics.
         run_id: Output directory name under ``results/``.
     """
 
@@ -60,6 +63,7 @@ class RunConfig:
     max_options: int = 26
     limit: int | None = None
     n_bins: int = DEFAULT_BINS
+    reuse_buffer: bool = True
     run_id: str = ""
 
     def to_json(self) -> dict[str, Any]:
@@ -73,6 +77,7 @@ class RunConfig:
             "max_options": self.max_options,
             "limit": self.limit,
             "n_bins": self.n_bins,
+            "reuse_buffer": self.reuse_buffer,
         }
 
 
@@ -133,7 +138,11 @@ def build_engine(config: RunConfig) -> Any:
         from s1decide.engine.hf import HFEngine
 
         return HFEngine.from_pretrained(
-            config.model, dtype=torch.bfloat16, device_map="cuda", local_files_only=True
+            config.model,
+            dtype=torch.bfloat16,
+            device_map="cuda",
+            local_files_only=True,
+            reuse_buffer=config.reuse_buffer,
         )
     raise ValueError(f"unknown engine {config.engine!r}; expected 'hf' or 'mock'")
 
@@ -386,6 +395,7 @@ def rescore(run_dir: Path, n_bins: int = DEFAULT_BINS) -> Path:
         max_options=meta["max_options"],
         limit=meta.get("limit"),
         n_bins=n_bins,
+        reuse_buffer=meta.get("reuse_buffer", True),
         run_id=meta["run_id"],
     )
     test_predictions = [
@@ -439,6 +449,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--bins", type=int, default=DEFAULT_BINS)
     parser.add_argument("--run-id", default="")
+    parser.add_argument(
+        "--no-buffer-reuse",
+        action="store_true",
+        help="deep-copy the prefix cache each pass instead of reusing one expanded buffer",
+    )
     parser.add_argument("--rescore", default=None, help="recompute metrics for an existing run dir")
     parser.add_argument("--summary", default=None, help="regenerate SUMMARY.md for a run dir")
     args = parser.parse_args(list(argv) if argv is not None else None)
@@ -462,6 +477,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             max_options=args.max_options,
             limit=args.limit,
             n_bins=args.bins,
+            reuse_buffer=not args.no_buffer_reuse,
             run_id=args.run_id,
         )
     )

@@ -164,6 +164,46 @@ targeting the measurement.
   A latency win that moves calibration is not a win; the project's differentiator is the
   calibration, not the milliseconds.
 
+  **C, first move — done (2026-09-17, Phase 1): a pre-expanded reusable broadcast buffer.**
+  The scoring loop used to `deepcopy` the batch-1 prefix cache and re-expand it for every pass:
+  16 allocate/free cycles of the whole broadcast cache for a 64-question call.
+  `engine.BroadcastCache` allocates the expanded buffers once and refills them in place between
+  passes (`reset()` both rebinds the layer attributes the model may have replaced and copies the
+  pristine prefix values back in — the gated-deltanet layers mutate their state in place, the
+  attention layers *rebind* `keys`/`values` to a longer tensor).
+
+  Measured as a clean A/B on the 27B at 4-bit, same build, 8 repeats, 1,554-token state
+  (`results/ab-buffer-off` and `results/ab-buffer-on`, `--no-buffer-reuse` toggles it):
+
+  | | reuse off | reuse on | delta |
+  |---|---|---|---|
+  | 64-question call, median | 6,887.7 ms | 6,807.8 ms | **-79.9 ms (-1.2%)** |
+  | 64-question suffix phase | 5,445.3 ms | 5,372.6 ms | -72.7 ms (-1.3%) |
+  | 16-question call, median | 2,758.9 ms | 2,741.8 ms | -17.1 ms (-0.6%) |
+  | peak VRAM | 21.06 GiB | 21.63 GiB | **+0.57 GiB** |
+  | rows per pass | 4 | 4 | unchanged |
+
+  The gain is small but not noise: the two p10–p90 bands do not overlap (off 6,873.7–6,891.9,
+  on 6,803.1–6,813.3). Kept on by default; `--no-buffer-reuse` exists so the A/B stays
+  reproducible rather than being a one-off measurement.
+
+  **Both conditions are discharged.** The contract tests stay green, and on the 27B the two
+  paths produce **bitwise-identical logits** — worst absolute difference `0.000e+00`, pinned by
+  `test_buffer_reuse_does_not_move_a_single_logit`. Identity is strictly stronger than the ECE
+  comparison the condition asks for: no metric can move if no logit moves. The format-0.2
+  zero-shot re-run is reported separately, as the measurement of **B**, not of C.
+
+  **What this did not fix, and what the rest of C is.** Rows per pass is **4**, not the 7 quoted
+  above — the number fell when the VRAM budget was tightened after a 24.65 GiB peak on a 24 GiB
+  card (Windows pages to host memory instead of raising OOM, so the regression was slow rather
+  than loud). At 4 rows a 64-question call needs 16 forward passes, and the fitted cost model
+  charges ~62–70 ms each: roughly **1.1 s of the 5.4 s suffix phase is pass overhead**. Halving
+  the pass count is worth ~15x more than buffer reuse was. That is the remaining work in C —
+  bf16 gated-deltanet recurrent state, and quantizing the GDN input projections the checkpoint
+  leaves in 16-bit — and it is the move that actually needs the ECE check, because it changes
+  the numerics rather than the allocator. Buffer reuse costs 0.57 GiB of the headroom that work
+  will want; if it becomes the binding constraint, turn reuse off.
+
 - **B** — **done** (2026-09-17, Phase 1 Step 2a). `FORMAT_VERSION` 0.2 dropped the
   `### Question` / `### Options` headers and the verbose `### Answer` block for a one-line
   answer cue. Mean suffix tokens 57.3 → 41.0; controllable overhead ~41% → **21.95%**

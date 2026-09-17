@@ -269,3 +269,29 @@ def test_answer_depends_on_the_state(engine: HFEngine) -> None:
         f"\n[27B lang] en={en.choice} ({en.confidence:.2f}) tr={tr.choice} ({tr.confidence:.2f}) de={de.choice} ({de.confidence:.2f})"
     )
     assert (en.choice, tr.choice, de.choice) == ("English", "Turkish", "German")
+
+
+def test_buffer_reuse_does_not_move_a_single_logit(
+    engine: HFEngine, ticket_state, questions
+) -> None:
+    """ADR 0003 option C is an allocation change, not a numerics change — on real weights.
+
+    Same batch shapes on both sides, so unlike ``test_chunked_passes_equal_single_pass`` there is
+    no kernel-shape noise to allow for: the two paths differ only in where the cache tensors
+    live. If this holds, no metric can move, which is what the condition on option C asks.
+    """
+    rendered = render(ticket_state, questions)
+    engine.reuse_buffer = True
+    reused = engine.score(rendered.prefix, rendered.suffixes, rendered.labels)
+    engine.reuse_buffer = False
+    try:
+        copied = engine.score(rendered.prefix, rendered.suffixes, rendered.labels)
+    finally:
+        engine.reuse_buffer = True
+    assert reused.meta["rows_per_pass"] == copied.meta["rows_per_pass"]
+    worst = max(
+        (torch.tensor(a) - torch.tensor(b)).abs().max().item()
+        for a, b in zip(reused.logits, copied.logits)
+    )
+    print(f"\n[option C] worst |logit| difference reuse-on vs reuse-off: {worst:.3e}")
+    assert worst == 0.0, f"buffer reuse changed the logits by {worst:.3e}"
