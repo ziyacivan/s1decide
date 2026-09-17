@@ -38,6 +38,7 @@ and runs in llama.cpp unchanged.
 | **Trained on** | 1× RTX 3090, 24 GB, Windows |
 | **Commit** | TBD — the exact commit hash of the release |
 | **Status** | **pre-release** |
+| **Evaluation mode** | `full` — every stage-1 candidate enumerated, which is what the deployed two-stage path faces (~96:1) |
 
 ## Read this before the numbers
 
@@ -53,6 +54,13 @@ needs a rented H100 (ADR 0006).
 option-count bucket on a held-out validation split, at the deployment quantization. The model
 was not trained to be calibrated; it was trained to be accurate and then its confidences were
 rescaled. Learned calibration (S3, GRPO against a proper scoring rule) is v0.2.
+
+**Stage-1 negatives were chosen at random, not mined.** Expanding a high-cardinality
+question into per-candidate yes/no rows keeps the positive plus six negatives for training, and
+in v0.1 those six are a random sample rather than the candidates the model finds hardest. The
+machinery for hard negatives exists and the data to rank by does not yet; a second round that
+scores stage-1 candidates with the S1 model and retrains is planned after v0.1, with the delta
+reported either way.
 
 **`Score` is trained largely on synthetic labels.** There is no permissively licensed ordinal
 corpus we could use ([ADR 0005](adr/0005-ambiguous-source-licences.md)), so `Score` training

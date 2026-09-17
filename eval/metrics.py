@@ -72,6 +72,10 @@ class Prediction:
         qtype: ``choice``, ``score`` or ``noul``.
         logits: Raw masked logits, one per option, in the question's option order.
         answer_idx: Index of the correct option.
+        weight: Importance weight. 1.0 for a question that represents itself; larger for one
+            that stands in for others under case-control sampling, where every stage-1 positive
+            is kept and the negatives are sampled. Weighting them back is what makes a 30-minute
+            evaluation report the same numbers as a 3.3-hour one.
     """
 
     id: str
@@ -79,6 +83,7 @@ class Prediction:
     qtype: str
     logits: tuple[float, ...]
     answer_idx: int
+    weight: float = 1.0
 
     def __post_init__(self) -> None:
         if len(self.logits) < 2:
@@ -91,6 +96,9 @@ class Prediction:
                 f"{self.id}: answer_idx {self.answer_idx} out of range for "
                 f"{len(self.logits)} options"
             )
+        object.__setattr__(self, "weight", float(self.weight))
+        if not self.weight > 0 or not math.isfinite(self.weight):
+            raise ValueError(f"{self.id}: weight must be finite and positive, got {self.weight}")
 
     @property
     def n_options(self) -> int:
@@ -126,6 +134,7 @@ class Prediction:
             qtype=str(row["qtype"]),
             logits=tuple(float(x) for x in row["logits"]),
             answer_idx=int(row["answer_idx"]),
+            weight=float(row.get("weight", 1.0)),
         )
 
 
@@ -137,9 +146,12 @@ class ReliabilityBin:
         count: Predictions in the bin.
         lo: Lowest confidence in the bin.
         hi: Highest confidence in the bin.
-        mean_confidence: Mean predicted confidence.
-        accuracy: Fraction actually correct. A calibrated model has this equal to
+        mean_confidence: Mean predicted confidence, weighted.
+        accuracy: Fraction actually correct, weighted. A calibrated model has this equal to
             ``mean_confidence``.
+        weight: Total importance weight in the bin. Equals ``count`` for an unweighted run;
+            under case-control sampling it is the size of the population the bin stands for,
+            and it is what ECE averages over.
     """
 
     count: int
@@ -147,11 +159,41 @@ class ReliabilityBin:
     hi: float
     mean_confidence: float
     accuracy: float
+    weight: float = 0.0
+
+    def __post_init__(self) -> None:
+        # An unweighted caller should not have to know this field exists.
+        if self.weight == 0.0:
+            object.__setattr__(self, "weight", float(self.count))
 
     @property
     def gap(self) -> float:
         """Signed calibration gap: positive means over-confident."""
         return self.mean_confidence - self.accuracy
+
+
+def _weights(weights: Sequence[float] | None, n: int) -> np.ndarray:
+    """Validate importance weights, defaulting to uniform.
+
+    Args:
+        weights: One positive weight per prediction, or ``None`` for unweighted.
+        n: How many predictions there are.
+
+    Returns:
+        A float array of length ``n``.
+
+    Raises:
+        ValueError: If the length is wrong or a weight is not finite and positive. A zero
+            weight would silently delete a prediction, which is not the same as not having it.
+    """
+    if weights is None:
+        return np.ones(n, dtype=np.float64)
+    w = np.asarray(weights, dtype=np.float64)
+    if w.size != n:
+        raise ValueError(f"{w.size} weights for {n} predictions")
+    if not np.all(np.isfinite(w)) or np.any(w <= 0):
+        raise ValueError("weights must be finite and positive")
+    return w
 
 
 def _as_arrays(
@@ -187,19 +229,34 @@ def _confidence_and_correct(
     return confidence, (predicted == labels).astype(np.float64)
 
 
-def accuracy(probabilities: Sequence[Sequence[float]], labels: Sequence[int]) -> float:
-    """Top-1 accuracy."""
+def accuracy(
+    probabilities: Sequence[Sequence[float]],
+    labels: Sequence[int],
+    weights: Sequence[float] | None = None,
+) -> float:
+    """Top-1 accuracy, importance-weighted when ``weights`` is given."""
     rows, y = _as_arrays(probabilities, labels)
-    return float(_confidence_and_correct(rows, y)[1].mean())
+    w = _weights(weights, len(rows))
+    return float(np.average(_confidence_and_correct(rows, y)[1], weights=w))
 
 
-def nll(probabilities: Sequence[Sequence[float]], labels: Sequence[int]) -> float:
+def nll(
+    probabilities: Sequence[Sequence[float]],
+    labels: Sequence[int],
+    weights: Sequence[float] | None = None,
+) -> float:
     """Mean negative log-likelihood of the correct option, in nats."""
     rows, y = _as_arrays(probabilities, labels)
-    return float(-np.mean([math.log(max(float(r[t]), _EPS)) for r, t in zip(rows, y)]))
+    w = _weights(weights, len(rows))
+    per_row = np.array([-math.log(max(float(r[t]), _EPS)) for r, t in zip(rows, y)])
+    return float(np.average(per_row, weights=w))
 
 
-def brier_multiclass(probabilities: Sequence[Sequence[float]], labels: Sequence[int]) -> float:
+def brier_multiclass(
+    probabilities: Sequence[Sequence[float]],
+    labels: Sequence[int],
+    weights: Sequence[float] | None = None,
+) -> float:
     """Multiclass Brier score: mean squared error against the one-hot answer.
 
     Summed over options, so it lies in ``[0, 2]``. Reported alongside
@@ -207,36 +264,49 @@ def brier_multiclass(probabilities: Sequence[Sequence[float]], labels: Sequence[
     across the eval set.
     """
     rows, y = _as_arrays(probabilities, labels)
-    total = 0.0
-    for row, target in zip(rows, y):
+    w = _weights(weights, len(rows))
+    per_row = np.empty(len(rows), dtype=np.float64)
+    for i, (row, target) in enumerate(zip(rows, y)):
         onehot = np.zeros_like(row)
         onehot[target] = 1.0
-        total += float(np.sum((row - onehot) ** 2))
-    return total / len(rows)
+        per_row[i] = float(np.sum((row - onehot) ** 2))
+    return float(np.average(per_row, weights=w))
 
 
-def brier_top_label(probabilities: Sequence[Sequence[float]], labels: Sequence[int]) -> float:
+def brier_top_label(
+    probabilities: Sequence[Sequence[float]],
+    labels: Sequence[int],
+    weights: Sequence[float] | None = None,
+) -> float:
     """Brier score of the top-label confidence against whether it was correct.
 
     In ``[0, 1]`` and comparable across questions with different option counts. This is the
     quantity the reliability diagram decomposes.
     """
     rows, y = _as_arrays(probabilities, labels)
+    w = _weights(weights, len(rows))
     confidence, correct = _confidence_and_correct(rows, y)
-    return float(np.mean((confidence - correct) ** 2))
+    return float(np.average((confidence - correct) ** 2, weights=w))
 
 
 def equal_mass_bins(
     probabilities: Sequence[Sequence[float]],
     labels: Sequence[int],
     n_bins: int = DEFAULT_BINS,
+    weights: Sequence[float] | None = None,
 ) -> list[ReliabilityBin]:
-    """Bin predictions into ``n_bins`` groups of (almost) equal count, sorted by confidence.
+    """Bin predictions into ``n_bins`` groups of (almost) equal **weight**, by confidence.
+
+    Unweighted, equal mass is equal count. With importance weights it is equal weight, which is
+    the thing ECE actually needs: under case-control sampling one retained negative may stand
+    for ninety, and binning it as a single observation would put the bin edges in the wrong
+    place and misreport the gap.
 
     Args:
         probabilities: One row per question.
         labels: Correct option index per question.
-        n_bins: Number of bins. Bins are as equal in size as the count allows.
+        n_bins: Number of bins. Bins are as equal in weight as the data allows.
+        weights: Importance weight per question.
 
     Returns:
         Non-empty bins, in increasing confidence order.
@@ -248,20 +318,47 @@ def equal_mass_bins(
     if n_bins < 1:
         raise ValueError(f"n_bins must be >= 1, got {n_bins}")
     rows, y = _as_arrays(probabilities, labels)
+    w = _weights(weights, len(rows))
     confidence, correct = _confidence_and_correct(rows, y)
     order = np.argsort(confidence, kind="mergesort")
+
+    # Cut at cumulative-weight quantiles rather than at equal counts. A heavy prediction has to
+    # fill a bin the way the population it stands for would; with uniform weights this reduces
+    # to equal counts, which is what it must do. (A greedy "close the bin once it is full" pass
+    # does not: it overshoots on every bin and leaves the remainder in the last one.)
+    ordered_weight = w[order]
+    cumulative = np.cumsum(ordered_weight)
+    total = float(cumulative[-1])
+    count = min(n_bins, len(order))
+    edges = [
+        int(np.searchsorted(cumulative, total * (i + 1) / count, side="left")) + 1
+        for i in range(count)
+    ]
+
+    chunks: list[np.ndarray] = []
+    start = 0
+    for edge in edges:
+        stop = min(max(edge, start), len(order))
+        if stop > start:
+            chunks.append(order[start:stop])
+            start = stop
+    if start < len(order):
+        chunks.append(order[start:])
+
     bins: list[ReliabilityBin] = []
-    for chunk in np.array_split(order, min(n_bins, len(order))):
-        if chunk.size == 0:  # pragma: no cover - array_split only empties when n_bins > n
+    for chunk in chunks:
+        if chunk.size == 0:  # pragma: no cover - defensive
             continue
         c = confidence[chunk]
+        cw = w[chunk]
         bins.append(
             ReliabilityBin(
                 count=int(chunk.size),
                 lo=float(c.min()),
                 hi=float(c.max()),
-                mean_confidence=float(c.mean()),
-                accuracy=float(correct[chunk].mean()),
+                mean_confidence=float(np.average(c, weights=cw)),
+                accuracy=float(np.average(correct[chunk], weights=cw)),
+                weight=float(cw.sum()),
             )
         )
     return bins
@@ -271,6 +368,7 @@ def ece(
     probabilities: Sequence[Sequence[float]],
     labels: Sequence[int],
     n_bins: int = DEFAULT_BINS,
+    weights: Sequence[float] | None = None,
 ) -> float:
     """Expected calibration error over equal-mass bins.
 
@@ -278,18 +376,19 @@ def ece(
     it says nothing about whether the model is *right*, which is why it is always reported
     with Brier, accuracy and the base-rate control.
     """
-    bins = equal_mass_bins(probabilities, labels, n_bins)
-    total = sum(b.count for b in bins)
-    return sum(b.count * abs(b.gap) for b in bins) / total
+    bins = equal_mass_bins(probabilities, labels, n_bins, weights)
+    total = sum(b.weight for b in bins)
+    return sum(b.weight * abs(b.gap) for b in bins) / total
 
 
 def mce(
     probabilities: Sequence[Sequence[float]],
     labels: Sequence[int],
     n_bins: int = DEFAULT_BINS,
+    weights: Sequence[float] | None = None,
 ) -> float:
     """Maximum calibration error: the worst single-bin gap."""
-    return max(abs(b.gap) for b in equal_mass_bins(probabilities, labels, n_bins))
+    return max(abs(b.gap) for b in equal_mass_bins(probabilities, labels, n_bins, weights))
 
 
 def _average_ranks(values: np.ndarray) -> np.ndarray:
@@ -307,12 +406,21 @@ def _average_ranks(values: np.ndarray) -> np.ndarray:
     return ranks
 
 
-def auroc(scores: Sequence[float], positive: Sequence[float]) -> float | None:
-    """Area under the ROC curve, computed from ranks so ties are handled exactly.
+def auroc(
+    scores: Sequence[float],
+    positive: Sequence[float],
+    weights: Sequence[float] | None = None,
+) -> float | None:
+    """Area under the ROC curve, with ties handled exactly.
+
+    Computed as the weighted probability that a random positive outscores a random negative,
+    counting ties as half — the definition the rank formula implements, written out so that
+    importance weights fit into it.
 
     Args:
         scores: Higher means more likely positive.
         positive: 1 for a positive case, 0 for a negative one.
+        weights: Importance weight per case.
 
     Returns:
         The AUROC, or ``None`` when one class is absent and the quantity is undefined.
@@ -321,12 +429,31 @@ def auroc(scores: Sequence[float], positive: Sequence[float]) -> float | None:
     y = np.asarray(positive, dtype=np.float64)
     if s.size != y.size:
         raise ValueError(f"{s.size} scores but {y.size} labels")
-    n_pos = float(y.sum())
-    n_neg = float(y.size - n_pos)
-    if n_pos == 0 or n_neg == 0:
+    w = _weights(weights, s.size)
+    pos_mass = float(w[y == 1].sum())
+    neg_mass = float(w[y == 0].sum())
+    if pos_mass == 0 or neg_mass == 0:
         return None
-    ranks = _average_ranks(s)
-    return float((ranks[y == 1].sum() - n_pos * (n_pos + 1) / 2) / (n_pos * n_neg))
+
+    # Sweep the distinct scores in increasing order, accumulating negative mass below each.
+    # Each positive contributes the negative mass strictly beneath it, plus half of any tied
+    # negative mass — the standard tie convention, weighted.
+    order = np.argsort(s, kind="mergesort")
+    s_sorted, y_sorted, w_sorted = s[order], y[order], w[order]
+    total = 0.0
+    below = 0.0
+    index = 0
+    while index < s_sorted.size:
+        end = index
+        while end < s_sorted.size and s_sorted[end] == s_sorted[index]:
+            end += 1
+        block = slice(index, end)
+        tie_pos = float(w_sorted[block][y_sorted[block] == 1].sum())
+        tie_neg = float(w_sorted[block][y_sorted[block] == 0].sum())
+        total += tie_pos * (below + 0.5 * tie_neg)
+        below += tie_neg
+        index = end
+    return float(total / (pos_mass * neg_mass))
 
 
 def brier_skill_score(brier: float, reference_brier: float) -> float | None:
@@ -357,6 +484,7 @@ def risk_coverage(
     probabilities: Sequence[Sequence[float]],
     labels: Sequence[int],
     coverages: Sequence[float] = RISK_COVERAGE_GRID,
+    weights: Sequence[float] | None = None,
 ) -> dict[str, Any]:
     """Accuracy on the retained set as a function of how much of it is retained.
 
@@ -390,23 +518,37 @@ def risk_coverage(
         ValueError: If any coverage is outside ``(0, 1]``.
     """
     rows, y = _as_arrays(probabilities, labels)
+    w = _weights(weights, len(rows))
     confidence, correct = _confidence_and_correct(rows, y)
     order = np.argsort(-confidence, kind="stable")
     ranked_correct = correct[order]
     ranked_confidence = confidence[order]
-    n = len(rows)
+    ranked_weight = w[order]
+    cumulative = np.cumsum(ranked_weight)
+    total_weight = float(cumulative[-1])
+
+    def _at(coverage: float) -> tuple[int, float, float]:
+        """How many to keep for a coverage, and the accuracy and threshold it buys.
+
+        Coverage is a fraction of *weight*, not of rows: under case-control sampling answering
+        "80% of questions" means 80% of the population the sample stands for.
+        """
+        keep = int(np.searchsorted(cumulative, coverage * total_weight, side="left") + 1)
+        keep = min(max(keep, 1), len(rows))
+        kept_accuracy = float(np.average(ranked_correct[:keep], weights=ranked_weight[:keep]))
+        return keep, kept_accuracy, float(ranked_confidence[keep - 1])
 
     curve: list[dict[str, Any]] = []
     for coverage in coverages:
         if not 0 < coverage <= 1:
             raise ValueError(f"coverage must be in (0, 1], got {coverage}")
-        keep = max(1, math.ceil(coverage * n))
+        keep, kept_accuracy, threshold = _at(coverage)
         curve.append(
             {
                 "coverage": float(coverage),
                 "n_kept": keep,
-                "accuracy": float(ranked_correct[:keep].mean()),
-                "min_confidence": float(ranked_confidence[keep - 1]),
+                "accuracy": kept_accuracy,
+                "min_confidence": threshold,
             }
         )
 
@@ -415,9 +557,9 @@ def risk_coverage(
     selective: dict[str, float] = {}
     selective_threshold: dict[str, float] = {}
     for c in SELECTIVE_COVERAGES:
-        keep = max(1, math.ceil(c * n))
-        selective[f"{c:g}"] = float(ranked_correct[:keep].mean())
-        selective_threshold[f"{c:g}"] = float(ranked_confidence[keep - 1])
+        _keep, kept_accuracy, threshold = _at(c)
+        selective[f"{c:g}"] = kept_accuracy
+        selective_threshold[f"{c:g}"] = threshold
     # Trapezoid over the grid; only comparable between runs scored on the same grid.
     xs = [point["coverage"] for point in curve]
     risks = [1.0 - point["accuracy"] for point in curve]
@@ -434,6 +576,7 @@ def summarize(
     probabilities: Sequence[Sequence[float]],
     labels: Sequence[int],
     n_bins: int = DEFAULT_BINS,
+    weights: Sequence[float] | None = None,
 ) -> dict[str, Any]:
     """Compute the full metric set for one group of predictions.
 
@@ -444,21 +587,23 @@ def summarize(
         ``auroc_confidence`` is ``None`` when every prediction is right or every one is wrong.
     """
     rows, y = _as_arrays(probabilities, labels)
+    w = _weights(weights, len(rows))
     confidence, correct = _confidence_and_correct(rows, y)
-    bins = equal_mass_bins(probabilities, labels, n_bins)
-    total = sum(b.count for b in bins)
-    coverage = risk_coverage(probabilities, labels)
+    bins = equal_mass_bins(probabilities, labels, n_bins, weights)
+    total = sum(b.weight for b in bins)
+    coverage = risk_coverage(probabilities, labels, weights=weights)
     return {
         "n": len(rows),
-        "accuracy": float(correct.mean()),
-        "ece": sum(b.count * abs(b.gap) for b in bins) / total,
+        "effective_n": float(w.sum()),
+        "accuracy": float(np.average(correct, weights=w)),
+        "ece": sum(b.weight * abs(b.gap) for b in bins) / total,
         "mce": max(abs(b.gap) for b in bins),
-        "brier_multiclass": brier_multiclass(probabilities, labels),
-        "brier_top_label": brier_top_label(probabilities, labels),
-        "nll": nll(probabilities, labels),
-        "auroc_confidence": auroc(confidence, correct),
-        "mean_confidence": float(confidence.mean()),
-        "mean_options": float(np.mean([r.size for r in rows])),
+        "brier_multiclass": brier_multiclass(probabilities, labels, w),
+        "brier_top_label": brier_top_label(probabilities, labels, w),
+        "nll": nll(probabilities, labels, w),
+        "auroc_confidence": auroc(confidence, correct, w),
+        "mean_confidence": float(np.average(confidence, weights=w)),
+        "mean_options": float(np.average([r.size for r in rows], weights=w)),
         "selective_accuracy": coverage["selective_accuracy"],
         "selective_threshold": coverage["selective_threshold"],
         "aurc": coverage["aurc"],
@@ -473,6 +618,7 @@ def summarize_by(
     groups: Sequence[str],
     n_bins: int = DEFAULT_BINS,
     min_count: int = 1,
+    weights: Sequence[float] | None = None,
 ) -> dict[str, dict[str, Any]]:
     """Run :func:`summarize` separately for each group label.
 
@@ -496,7 +642,12 @@ def summarize_by(
         idx = buckets[key]
         if len(idx) < min_count:
             continue
-        out[key] = summarize([probabilities[i] for i in idx], [labels[i] for i in idx], n_bins)
+        out[key] = summarize(
+            [probabilities[i] for i in idx],
+            [labels[i] for i in idx],
+            n_bins,
+            None if weights is None else [weights[i] for i in idx],
+        )
     return out
 
 
@@ -544,7 +695,10 @@ def base_rate_probabilities(
         key = (p.family, p.n_options)
         if key not in counts:
             counts[key] = np.full(p.n_options, alpha)
-        counts[key][int(p.answer_idx)] += 1.0
+        # Weighted, so the control learns the *population* label frequencies rather than the
+        # sample's. Under case-control sampling those differ by two orders of magnitude, and an
+        # unweighted control would be a much easier baseline than the real one.
+        counts[key][int(p.answer_idx)] += float(p.weight)
     rows = []
     for p in evaluate:
         c = counts.get((p.family, p.n_options))
@@ -623,18 +777,19 @@ def build_report(
 
     probs = [p.probabilities(temp_for(p)) for p in predictions]
     labels = [p.answer_idx for p in predictions]
+    weights = [p.weight for p in predictions]
 
     controls: dict[str, dict[str, Any]] = {
         "uniform": summarize(
-            uniform_probabilities([p.n_options for p in predictions]), labels, n_bins
+            uniform_probabilities([p.n_options for p in predictions]), labels, n_bins, weights
         )
     }
     if control_fit:
         controls["base_rate"] = summarize(
-            base_rate_probabilities(control_fit, predictions), labels, n_bins
+            base_rate_probabilities(control_fit, predictions), labels, n_bins, weights
         )
 
-    overall = summarize(probs, labels, n_bins)
+    overall = summarize(probs, labels, n_bins, weights)
     # Skill against every control we computed. `base_rate` is the one that matters: it is the
     # strategy that beats us on ECE, so beating it on a proper scoring rule is the claim.
     skill = {
@@ -653,12 +808,20 @@ def build_report(
     return Report(
         overall=overall,
         by_option_count=summarize_by(
-            probs, labels, [option_count_bucket(p.n_options) for p in predictions], n_bins
+            probs,
+            labels,
+            [option_count_bucket(p.n_options) for p in predictions],
+            n_bins,
+            weights=weights,
         ),
-        by_family=summarize_by(probs, labels, [p.family for p in predictions], n_bins),
-        by_qtype=summarize_by(probs, labels, [p.qtype for p in predictions], n_bins),
+        by_family=summarize_by(
+            probs, labels, [p.family for p in predictions], n_bins, weights=weights
+        ),
+        by_qtype=summarize_by(
+            probs, labels, [p.qtype for p in predictions], n_bins, weights=weights
+        ),
         controls=controls,
         skill=skill,
-        risk_coverage=risk_coverage(probs, labels),
+        risk_coverage=risk_coverage(probs, labels, weights=weights),
         meta=dict(meta or {}),
     )

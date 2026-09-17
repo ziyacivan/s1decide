@@ -220,14 +220,54 @@ of having 726 rows. Step 2e's teacher run is the fix, not a bigger weight.
 **The floors now apply to the effective mix**, as approved: genuine `Noul` is 11.6% of rows and
 **27.0%** of what the model draws, against the 15% floor from two families.
 
-### Consequence that needs a decision
+### Evaluation modes — DECIDED (2026-09-17): both
 
-Full fan-out in `val` and `test` takes the evaluation from ~13 minutes to **~3.3 hours**
-(117,767 + 114,563 questions, bundled ~96 to a state). That is the price of evaluating the
-distribution we actually deploy. The cheaper alternative is **case-control sampling**: keep all
-positives, sample k negatives, and importance-weight them back to the true base rate when
-fitting temperature and computing ECE. It is unbiased and would cost ~30 minutes, but it needs
-weighted metrics in `eval/metrics.py`. Flagged rather than chosen.
+Full fan-out takes an evaluation from ~13 minutes to **~3.3 hours** (117,767 + 114,563
+questions). Both modes now exist, chosen with `--eval-mode` and recorded in `metrics.json`.
+
+| mode | what it does | when |
+|---|---|---|
+| `case-control` (default) | every positive, 16 negatives per question, importance-weighted | smoke runs, iteration |
+| `full` | every candidate | **mandatory** for any run feeding the model card |
+
+"Feeding the model card" means: baseline tags, the S1 final run, the quantization table, the
+fair LLM baselines, and the head-to-head.
+
+Weights are threaded through **every** statistic — accuracy, ECE, MCE, Brier, NLL, AUROC, the
+risk-coverage curve, the base-rate control, and the fitted temperature. Equal-mass bins are now
+equal-*weight* bins, cut at cumulative-weight quantiles.
+
+**The gate:** `tests/test_case_control.py` builds a full fan-out, samples it, and checks each
+weighted statistic against the unweighted population. It passes, and it must keep passing before
+any 3.3-hour run is started — otherwise the cheap mode is not a cheaper route to the same
+number, it is a different number, and nothing would say which runs were affected.
+
+One honest note from writing that gate: **top-line accuracy is inherently insensitive to this
+sampling.** Going from 1:95 to 1:16 moves the positives from 1.0% of the set to 5.9%, so
+accuracy can shift by at most ~5pp times the gap in per-class accuracy — under a point here.
+The quantity that genuinely breaks without weights is anything reading the label marginal, and
+the base-rate control is the canary: weighted it recovers 0.9896, unweighted it learns the
+sample's marginal and reports 0.9412, becoming a much easier baseline to beat.
+
+## S1-round-2 — hard negatives from the S1 model (post-v0.1, not blocking)
+
+Approved 2026-09-17. Random negatives are accepted for v0.1 and **the model card says so**.
+
+The hook is already in place: `subsample_stage1` takes `{parent_id: {option: P(yes)}}` and
+ranks by descending score, falling back to random and recording which was used. What is missing
+is a scorer — the committed zero-shot baseline does not cover stage-1 rows.
+
+Round 2, after S1 lands:
+
+1. Score every stage-1 train candidate with the **S1 model** (not the zero-shot base — the
+   point is negatives that the trained model finds hard).
+2. Rebuild with `stage1_scores`, selecting the top-`k` by `P(yes)`.
+3. Retrain with identical hyperparameters and **measure the delta** — accuracy, BSS, ECE, and
+   the stage-1 confusion — against the random-negative run.
+4. Report the delta whether or not it is positive. A hard-negative round that does not help is
+   worth publishing; it is the kind of result that is usually left out.
+
+Cost: one scoring pass over ~65k stage-1 rows plus one retrain.
 
 ## Step 2e — Teacher-labelled `Score` (data-engineer) — approved, needs a final go
 

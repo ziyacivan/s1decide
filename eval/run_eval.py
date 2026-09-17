@@ -25,6 +25,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from eval.case_control import DEFAULT_EVAL_NEGATIVES, EVAL_MODES
 from eval.data import Coverage, EvalItem, bundle_stats, group_by_state, load_system_one_decisions
 from eval.metrics import DEFAULT_BINS, Prediction, build_report
 from s1decide.calibrate import Calibration, fit_calibration
@@ -49,6 +50,11 @@ class RunConfig:
         max_options: Questions above this are dropped and the drop reported.
         limit: Optional cap on items per split, for smoke runs.
         n_bins: Equal-mass bins.
+        eval_mode: ``full`` enumerates every stage-1 candidate — the deployed distribution, and
+            mandatory for any run that reaches the model card. ``case-control`` keeps every
+            positive and :data:`~eval.case_control.DEFAULT_EVAL_NEGATIVES` negatives per
+            question and weights them back, which is unbiased and roughly thirty times cheaper.
+        eval_negatives: Negatives kept per stage-1 question under ``case-control``.
         reuse_buffer: Whether the engine keeps one pre-expanded broadcast cache across passes
             (ADR 0003 option C). Recorded because it is an engine change, and the condition on
             option C is that it must not move the metrics.
@@ -63,6 +69,8 @@ class RunConfig:
     max_options: int = 26
     limit: int | None = None
     n_bins: int = DEFAULT_BINS
+    eval_mode: str = "case-control"
+    eval_negatives: int = DEFAULT_EVAL_NEGATIVES
     reuse_buffer: bool = False
     run_id: str = ""
 
@@ -77,6 +85,8 @@ class RunConfig:
             "max_options": self.max_options,
             "limit": self.limit,
             "n_bins": self.n_bins,
+            "eval_mode": self.eval_mode,
+            "eval_negatives": self.eval_negatives if self.eval_mode == "case-control" else None,
             "reuse_buffer": self.reuse_buffer,
         }
 
@@ -417,6 +427,8 @@ def rescore(run_dir: Path, n_bins: int = DEFAULT_BINS) -> Path:
         max_options=meta["max_options"],
         limit=meta.get("limit"),
         n_bins=n_bins,
+        eval_mode=meta.get("eval_mode", "full"),
+        eval_negatives=meta.get("eval_negatives") or DEFAULT_EVAL_NEGATIVES,
         reuse_buffer=meta.get("reuse_buffer", False),
         run_id=meta["run_id"],
     )
@@ -470,6 +482,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--max-options", type=int, default=26)
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--bins", type=int, default=DEFAULT_BINS)
+    parser.add_argument(
+        "--eval-mode",
+        default=RunConfig.eval_mode,
+        choices=EVAL_MODES,
+        help="'full' enumerates every stage-1 candidate (required for model-card runs); "
+        "'case-control' samples negatives and weights them back (default, ~30x cheaper)",
+    )
+    parser.add_argument(
+        "--eval-negatives",
+        type=int,
+        default=RunConfig.eval_negatives,
+        help="negatives kept per stage-1 question under --eval-mode case-control",
+    )
     parser.add_argument("--run-id", default="")
     parser.add_argument(
         "--buffer-reuse",
@@ -499,6 +524,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             max_options=args.max_options,
             limit=args.limit,
             n_bins=args.bins,
+            eval_mode=args.eval_mode,
+            eval_negatives=args.eval_negatives,
             reuse_buffer=args.buffer_reuse,
             run_id=args.run_id,
         )

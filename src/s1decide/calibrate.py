@@ -79,8 +79,36 @@ TEMPERATURE_BOUNDS = (0.05, 20.0)
 _GOLDEN = (math.sqrt(5.0) - 1.0) / 2.0
 
 
+def _validate_weights(weights: Sequence[float] | None, n: int) -> np.ndarray:
+    """Validate importance weights, defaulting to uniform.
+
+    Args:
+        weights: One positive weight per question, or ``None``.
+        n: How many questions there are.
+
+    Returns:
+        A float array of length ``n``.
+
+    Raises:
+        ValueError: If the length is wrong, or a weight is not finite and positive. Zero is
+            refused rather than treated as "ignore this row": dropping a question and giving it
+            no weight are different statements, and only one of them is honest.
+    """
+    if weights is None:
+        return np.ones(n, dtype=np.float64)
+    w = np.asarray(weights, dtype=np.float64)
+    if w.size != n:
+        raise ValueError(f"{w.size} weights for {n} questions")
+    if not np.all(np.isfinite(w)) or np.any(w <= 0):
+        raise ValueError("weights must be finite and positive")
+    return w
+
+
 def nll_at_temperature(
-    logits: Sequence[Sequence[float]], labels: Sequence[int], temperature: float
+    logits: Sequence[Sequence[float]],
+    labels: Sequence[int],
+    temperature: float,
+    weights: Sequence[float] | None = None,
 ) -> float:
     """Mean negative log-likelihood of the correct option at a given temperature.
 
@@ -88,17 +116,22 @@ def nll_at_temperature(
         logits: Raw masked logits, one row per question (rows may differ in length).
         labels: Index of the correct option per question.
         temperature: Positive scalar to divide the logits by.
+        weights: Importance weight per question. Under case-control sampling these are what
+            make the fitted temperature the population's rather than the sample's — a
+            temperature fitted on a 6:1 sample and deployed at 96:1 is fitted to the wrong
+            distribution, which is the whole reason weights exist here.
 
     Returns:
-        Mean NLL in nats.
+        Weighted mean NLL in nats.
     """
     if temperature <= 0:
         raise ValueError(f"temperature must be positive, got {temperature}")
+    w = _validate_weights(weights, len(labels))
     total = 0.0
-    for row, target in zip(logits, labels):
+    for row, target, weight in zip(logits, labels, w):
         z = np.asarray(row, dtype=np.float64) / temperature
-        total += float(np.logaddexp.reduce(z) - z[target])
-    return total / len(labels)
+        total += weight * float(np.logaddexp.reduce(z) - z[target])
+    return total / float(w.sum())
 
 
 def fit_temperature(
@@ -106,6 +139,7 @@ def fit_temperature(
     labels: Sequence[int],
     bounds: tuple[float, float] = TEMPERATURE_BOUNDS,
     tolerance: float = 1e-4,
+    weights: Sequence[float] | None = None,
 ) -> float:
     """Find the temperature minimising NLL, by golden-section search on the inverse temperature.
 
@@ -118,6 +152,8 @@ def fit_temperature(
         labels: Index of the correct option per question.
         bounds: ``(min_temperature, max_temperature)``.
         tolerance: Absolute tolerance on ``beta``.
+        weights: Importance weight per question. A weighted NLL is still convex in ``beta`` —
+            a non-negative combination of convex functions — so the search is unchanged.
 
     Returns:
         The fitted temperature. A value at a bound means the optimum lies outside the search
@@ -136,13 +172,15 @@ def fit_temperature(
 
     rows = [np.asarray(r, dtype=np.float64) for r in logits]
     targets = np.asarray(labels, dtype=np.int64)
+    w = _validate_weights(weights, len(rows))
+    mass = float(w.sum())
 
     def objective(beta: float) -> float:
         total = 0.0
-        for row, target in zip(rows, targets):
+        for row, target, weight in zip(rows, targets, w):
             z = row * beta
-            total += float(np.logaddexp.reduce(z) - z[target])
-        return total / len(rows)
+            total += weight * float(np.logaddexp.reduce(z) - z[target])
+        return total / mass
 
     lo, hi = 1.0 / high_t, 1.0 / low_t
     b, c = hi - _GOLDEN * (hi - lo), lo + _GOLDEN * (hi - lo)

@@ -78,3 +78,28 @@ audit, and finding that out before the GPU-hours is the point.
 
 No teacher model has been used for synthetic labels yet; when one is, it will be an open-weight
 model, and its licence and the prompt hash are recorded here.
+
+## File format guarantees
+
+Every split is UTF-8 JSONL with LF line endings, one JSON object per line, and these hold for
+every row:
+
+- **No raw line-breaking characters anywhere in the file.** `json.dumps(..., ensure_ascii=False)`
+  writes U+0085 (NEL), U+2028 (LINE SEPARATOR), U+2029 (PARAGRAPH SEPARATOR) and the C0
+  separators U+000B, U+000C, U+001C–U+001E out **unescaped**, and `str.splitlines()`, most
+  JavaScript, and several JSONL readers treat all of them as line terminators. One inside a
+  state silently splits a row in two. Four reached an early build from MMLU question text.
+  They are now replaced with a space at ingestion, and a test asserts that every split parses
+  **identically** whether a reader splits on `"\n"` alone or on Unicode line boundaries.
+- **Whitespace is collapsed and trimmed** in `state`, `instructions` and every option.
+- **Options within a question are distinct** after case-folding; rows that collide are dropped
+  at build time rather than producing a question with two right answers.
+- **`state` is non-empty** and `answer_idx` is always a valid index into `options`.
+
+You can therefore read a split with any of these and get the same rows:
+
+```python
+[json.loads(line) for line in path.read_text(encoding="utf-8").split("\n") if line.strip()]
+[json.loads(line) for line in path.open(encoding="utf-8") if line.strip()]
+[json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+```
