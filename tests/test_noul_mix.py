@@ -13,6 +13,7 @@ import json
 
 import pytest
 from data.build.pipeline import (
+    MAX_STAGE1_NO_YES_RATIO,
     MIN_GENUINE_NOUL_FAMILIES,
     MIN_GENUINE_NOUL_SHARE,
     primitive_mix,
@@ -76,12 +77,84 @@ def manifest() -> dict:
 
 
 def test_the_built_corpus_meets_the_genuine_noul_floor(manifest: dict) -> None:
-    noul = manifest["by_primitive"]["train"]["noul"]
-    assert noul["genuine_share"] >= MIN_GENUINE_NOUL_SHARE, (
-        f"genuine Noul is {noul['genuine_share']:.1%} of training, below the "
-        f"{MIN_GENUINE_NOUL_SHARE:.0%} floor — {noul['stage1']} of {noul['total']} noul rows are "
-        "stage-1 option-membership questions, which are a different task"
+    """Asserted on the **effective** mix, not on row counts.
+
+    Raw counts are stage-1-heavy on purpose — training keeps six negatives per question and the
+    expansion is what it is. What the model sees is the weighted draw, so that is what the floor
+    applies to. The raw share is reported beside it precisely so the gap stays visible instead
+    of looking like the floor was met by accident.
+    """
+    effective = manifest["effective_mix"]["noul"]["effective_share"]
+    raw = manifest["effective_mix"]["noul"]["raw_share"]
+    assert effective >= MIN_GENUINE_NOUL_SHARE, (
+        f"genuine Noul is {effective:.1%} of the effective training mix (raw {raw:.1%}), below "
+        f"the {MIN_GENUINE_NOUL_SHARE:.0%} floor — raise the target share in DEFAULT_TARGET_MIX "
+        "or add genuine Noul sources; do not lower the floor"
     )
+
+
+def test_the_raw_noul_share_is_reported_even_when_it_is_below_the_floor(manifest: dict) -> None:
+    """The gap between raw and effective is the point of reporting both."""
+    noul = manifest["effective_mix"]["noul"]
+    assert "raw_share" in noul and "effective_share" in noul
+    assert noul["rows"] > 0
+
+
+def test_stage_one_training_rows_are_within_the_no_yes_ceiling(manifest: dict) -> None:
+    """The reason item 4 exists: uncapped, this ratio is ~96:1 and the model learns to say no."""
+    import json as _json
+
+    from s1decide.tasks import repo_root
+
+    path = repo_root() / "data" / "processed" / "train.jsonl"
+    if not path.is_file():
+        pytest.skip("no built corpus; run `uv run task data`")
+    stage1 = [
+        row
+        for row in (
+            _json.loads(line)
+            for line in path.read_text(encoding="utf-8").split("\n")
+            if line.strip()
+        )
+        if row.get("stage") == 1
+    ]
+    yes = sum(1 for row in stage1 if row["answer_idx"] == 1)
+    no = len(stage1) - yes
+    assert yes, "no positive stage-1 rows at all — the expansion is broken, not merely unbalanced"
+    assert no / yes <= MAX_STAGE1_NO_YES_RATIO, (
+        f"train stage-1 is {no / yes:.1f}:1 no:yes, above the {MAX_STAGE1_NO_YES_RATIO}:1 ceiling"
+    )
+
+
+def test_evaluation_splits_keep_the_full_fan_out(manifest: dict) -> None:
+    """val and test must carry the deployed ratio, not a comfortable one.
+
+    A temperature fitted on a 6:1 sample and deployed at 96:1 is fitted to the wrong
+    distribution, so the subsampling is deliberately train-only.
+    """
+    import json as _json
+
+    from s1decide.tasks import repo_root
+
+    for split in ("val", "test"):
+        path = repo_root() / "data" / "processed" / f"{split}.jsonl"
+        if not path.is_file():
+            pytest.skip("no built corpus; run `uv run task data`")
+        stage1 = [
+            row
+            for row in (
+                _json.loads(line)
+                for line in path.read_text(encoding="utf-8").split("\n")
+                if line.strip()
+            )
+            if row.get("stage") == 1
+        ]
+        yes = sum(1 for row in stage1 if row["answer_idx"] == 1)
+        ratio = (len(stage1) - yes) / max(1, yes)
+        assert ratio > MAX_STAGE1_NO_YES_RATIO * 2, (
+            f"{split} stage-1 is only {ratio:.1f}:1 — that looks subsampled, and evaluation "
+            "must see the full fan-out"
+        )
 
 
 def test_genuine_noul_comes_from_more_than_one_source(manifest: dict) -> None:

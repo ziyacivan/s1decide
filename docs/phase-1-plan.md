@@ -183,6 +183,52 @@ Genuine `Noul` now comes from go_emotions (6,340) and mmlu_noul (3,570), at 2.31
 When Step 2d lands, the floor moves from the raw manifest to the **effective** training mix,
 since that is what the model actually sees.
 
+## Step 2d — Stage-1 class balance — **DONE** (2026-09-17)
+
+Implemented in `data/build/balance.py`, reported in `docs/dataset-build.md`.
+
+**The split now happens before the expansion.** `split_by_state` depends only on role and state
+hash, both of which a stage-1 row inherits from its parent, so the answer is identical either
+way — but doing it first lets the expansion give each split its own fan-out, instead of
+materialising 1.2M rows and discarding 94% of them.
+
+1. **Train keeps the positive plus 6 negatives** (`STAGE1_TRAIN_NEGATIVES`), giving **6.00:1**
+   no:yes against the 8:1 ceiling. Negatives are currently chosen **at random** and the manifest
+   says so: the hard-negative hook takes `{parent_id: {option: P(yes)}}`, and the committed
+   zero-shot baseline does not cover these rows, so there is nothing to rank by yet.
+2. **`val`, `test` and `eval` keep the full fan-out** — 94.8:1, 96.0:1 and 59.0:1. That is the
+   ratio the deployed two-stage path faces, and a temperature fitted on a 6:1 sample would be
+   fitted to a distribution we never serve.
+3. **Family-balanced sampling weights**, written to `data/processed/sampling_weights.json` and
+   copied into the manifest so a run and its corpus cannot disagree. Families are equalised
+   within a group; groups are steered toward a target mix and **clipped at 3x oversampling**,
+   with any shortfall reported rather than restated as a result.
+4. **Raw and effective mixes are reported separately**, per primitive, stage and family.
+
+**Measured:**
+
+| group | rows | raw share | effective share | target | oversample |
+|---|---|---|---|---|---|
+| `stage1` | 64,729 | 75.5% | **37.8%** | 35% | 0.46x |
+| `choice` | 10,413 | 12.1% | **32.4%** | 30% | 2.47x |
+| `noul` (genuine) | 9,922 | 11.6% | **27.0%** | 25% | 2.16x |
+| `score` | 726 | 0.8% | **2.7%** | 10% | 3.00x (clipped) |
+
+`score` cannot reach 10% inside the cap — it would need 11.8x — and that is the honest reading
+of having 726 rows. Step 2e's teacher run is the fix, not a bigger weight.
+
+**The floors now apply to the effective mix**, as approved: genuine `Noul` is 11.6% of rows and
+**27.0%** of what the model draws, against the 15% floor from two families.
+
+### Consequence that needs a decision
+
+Full fan-out in `val` and `test` takes the evaluation from ~13 minutes to **~3.3 hours**
+(117,767 + 114,563 questions, bundled ~96 to a state). That is the price of evaluating the
+distribution we actually deploy. The cheaper alternative is **case-control sampling**: keep all
+positives, sample k negatives, and importance-weight them back to the true base rate when
+fitting temperature and computing ECE. It is unbiased and would cost ~30 minutes, but it needs
+weighted metrics in `eval/metrics.py`. Flagged rather than chosen.
+
 ## Step 2e — Teacher-labelled `Score` (data-engineer) — approved, needs a final go
 
 Approved 2026-09-17 including the ~30 GB download and overnight GPU time, on these terms:

@@ -3,16 +3,16 @@
 <!-- GENERATED from data/processed/manifest.json by data/build/report.py.
      Rebuild with: uv run task data -->
 
-**87,338 rows**, seed `20260917`. Licence reasoning and the eval-only rules are in [dataset-card.md](dataset-card.md); this file is the counts.
+**444,477 rows**, seed `20260917`. Licence reasoning and the eval-only rules are in [dataset-card.md](dataset-card.md); this file is the counts.
 
 ## Splits
 
 | split | rows | purpose |
 |---|---|---|
-| `train` | 58,019 | S1 training |
-| `val` | 7,556 | calibration fitting and model selection |
-| `test` | 7,406 | Tier-1 in-distribution report |
-| `eval` | 14,357 | Tier-1 held-out families and OOD sets |
+| `train` | 85,790 | S1 training |
+| `val` | 117,767 | calibration fitting and model selection |
+| `test` | 114,563 | Tier-1 in-distribution report |
+| `eval` | 126,357 | Tier-1 held-out families and OOD sets |
 
 ## Families
 
@@ -21,18 +21,18 @@ A family in `eval` only is either a **held-out family** (in-distribution, never 
 | family | licence | role | primitive | `train` | `val` | `test` | `eval` |
 |---|---|---|---|---|---|---|---|
 | anli | `cc-by-nc-4.0` | ood | choice | — | — | — | 1,000 |
-| banking77 | `cc-by-4.0` | train | choice | 15,810 | 2,085 | 2,105 | — |
-| clinc_oos | `cc-by-3.0` | train | choice | 16,075 | 1,970 | 1,955 | — |
+| banking77 | `cc-by-4.0` | train | choice | 25,320 | 32,682 | 32,448 | — |
+| clinc_oos | `cc-by-3.0` | train | choice | 25,720 | 59,736 | 59,584 | — |
 | commonsense_qa | `mit` | heldout | choice | — | — | — | 1,476 |
 | go_emotions | `apache-2.0` | train | noul | 6,340 | 749 | 911 | — |
-| massive_de | `cc-by-4.0` | train | choice | 4,815 | 665 | 520 | — |
-| massive_en | `cc-by-4.0` | train | choice | 4,750 | 660 | 590 | — |
-| massive_fr | `cc-by-4.0` | ood | choice | — | — | — | 5,000 |
-| massive_ja | `cc-by-4.0` | ood | choice | — | — | — | 5,000 |
-| massive_tr | `cc-by-4.0` | train | choice | 4,770 | 625 | 605 | — |
-| mmlu | `mit` | train | choice | 1,162 | 178 | 157 | — |
-| mmlu_noul | `mit` | train | noul | 3,570 | 540 | 474 | — |
-| ordinal_control | `apache-2.0` | train | score | 727 | 84 | 89 | — |
+| massive_de | `cc-by-4.0` | train | choice | 7,704 | 8,113 | 6,344 | — |
+| massive_en | `cc-by-4.0` | train | choice | 7,600 | 8,052 | 7,198 | — |
+| massive_fr | `cc-by-4.0` | ood | choice | — | — | — | 61,000 |
+| massive_ja | `cc-by-4.0` | ood | choice | — | — | — | 61,000 |
+| massive_tr | `cc-by-4.0` | train | choice | 7,632 | 7,625 | 7,381 | — |
+| mmlu | `mit` | train | choice | 1,166 | 178 | 153 | — |
+| mmlu_noul | `mit` | train | noul | 3,582 | 540 | 462 | — |
+| ordinal_control | `apache-2.0` | train | score | 726 | 92 | 82 | — |
 | pubmedqa | `mit` | heldout | noul | — | — | — | 890 |
 | sciq | `cc-by-nc-3.0` | ood | choice | — | — | — | 991 |
 
@@ -62,19 +62,54 @@ A family in `eval` only is either a **held-out family** (in-distribution, never 
 
 ## Tier-2 leakage guard
 
-`pngwn/system-one-decisions` is eval-only (ADR 0004) but is *derived from* sources we now train on, so overlap is possible even though the datasets differ. Comparing **state hashes** against our 14,250 training states finds **226 of 1,750** external rows (12.9%) that must be dropped before any Tier-2 number is reported.
+`pngwn/system-one-decisions` is eval-only (ADR 0004) but is *derived from* sources we now train on, so overlap is possible even though the datasets differ. Comparing **state hashes** against our 14,265 training states finds **207 of 1,750** external rows (11.8%) that must be dropped before any Tier-2 number is reported.
 
 Affected families: `go_emotions`, `mmlu`.
+
+## Effective training mix
+
+Stage-1 questions keep the positive plus **6 negatives** in `train` only, chosen **at random**. `val` and `test` keep the **full fan-out**, because the ratio they carry (~96:1 no:yes) is the one the deployed two-stage path faces, and a temperature fitted on a subsample would be fitted to a distribution we never serve.
+
+| group | rows | raw share | effective share | target | oversample |
+|---|---|---|---|---|---|
+| `choice` | 10,413 | 12.1% | **32.4%** | 30% | 2.47x |
+| `noul` | 9,922 | 11.6% | **27.0%** | 25% | 2.16x |
+| `score` | 726 | 0.8% | **2.7%** | 10% | 3.00x |
+| `stage1` | 64,729 | 75.5% | **37.8%** | 35% | 0.46x |
+
+> **`score` could not reach its 10% target.** It would need 11.8x oversampling against a natural share of 0.8%, and the cap is 3x. Past that a small set is being memorised rather than learned. The fix is more data, not a bigger weight.
+
+### Per primitive, stage and family
+
+`rows before` is the full fan-out the expansion would have produced; `rows after` is what training keeps. `effective` is the share of the weighted draw.
+
+| primitive | stage | family | rows before | rows after | raw | effective |
+|---|---|---|---|---|---|---|
+| `noul` | genuine | `go_emotions` | 6,340 | 6,340 | 7.4% | **13.5%** |
+| `noul` | genuine | `mmlu_noul` | 3,582 | 3,582 | 4.2% | **13.5%** |
+| `noul` | stage-1 | `banking77` | 243,705 | 22,155 | 25.8% | **7.6%** |
+| `noul` | stage-1 | `massive_tr` | 57,240 | 6,678 | 7.8% | **7.6%** |
+| `noul` | stage-1 | `massive_de` | 57,780 | 6,741 | 7.9% | **7.6%** |
+| `noul` | stage-1 | `clinc_oos` | 485,465 | 22,505 | 26.2% | **7.6%** |
+| `noul` | stage-1 | `massive_en` | 57,000 | 6,650 | 7.8% | **7.6%** |
+| `choice` | genuine | `banking77` | 3,165 | 3,165 | 3.7% | **5.4%** |
+| `choice` | genuine | `clinc_oos` | 3,215 | 3,215 | 3.7% | **5.4%** |
+| `choice` | genuine | `massive_en` | 950 | 950 | 1.1% | **5.4%** |
+| `choice` | genuine | `massive_tr` | 954 | 954 | 1.1% | **5.4%** |
+| `choice` | genuine | `massive_de` | 963 | 963 | 1.1% | **5.4%** |
+| `choice` | genuine | `mmlu` | 1,166 | 1,166 | 1.4% | **5.4%** |
+| `score` | genuine | `ordinal_control` | 726 | 726 | 0.8% | **2.7%** |
+
 
 ## Licences present
 
 | source | licence | verdict | rows |
 |---|---|---|---|
-| `AmazonScience/massive` | `CC-BY-4.0` | train | 28,000 |
-| `PolyAI/banking77` | `CC-BY-4.0` | train | 20,000 |
+| `AmazonScience/massive` | `CC-BY-4.0` | train | 189,649 |
+| `PolyAI/banking77` | `CC-BY-4.0` | train | 90,450 |
 | `allenai/sciq` | `cc-by-nc-3.0` | eval-only | 991 |
 | `cais/mmlu` | `MIT` | train | 6,081 |
-| `clinc/clinc_oos` | `CC-BY-3.0` | train | 20,000 |
+| `clinc/clinc_oos` | `CC-BY-3.0` | train | 145,040 |
 | `facebook/anli` | `CC-BY-NC-4.0` | eval-only | 1,000 |
 | `google-research-datasets/go_emotions` | `Apache-2.0` | train | 8,000 |
 | `qiaojin/PubMedQA` | `MIT` | train | 890 |

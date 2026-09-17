@@ -107,6 +107,8 @@ def render_build_report(manifest: Mapping[str, Any]) -> str:
     else:
         out.append(f"Not checked this build: {leakage.get('reason', 'unknown')}")
 
+    out += _effective_mix_section(manifest)
+
     out += [
         "",
         "## Licences present",
@@ -123,6 +125,77 @@ def render_build_report(manifest: Mapping[str, Any]) -> str:
         "",
     ]
     return "\n".join(out)
+
+
+def _effective_mix_section(manifest: Mapping[str, Any]) -> list[str]:
+    """The training mix as rows and as the model actually sees it.
+
+    These are different numbers and the difference is the point. Expansion makes the corpus
+    three-quarters stage-1 rows; the sampler is weighted so the model does not spend three
+    quarters of its time on one task. Reporting only the first would misdescribe the training
+    run, and reporting only the second would hide what the corpus contains.
+    """
+    table = manifest.get("mix_table")
+    mix = manifest.get("effective_mix")
+    if not table or not mix:
+        return []
+
+    subsample = manifest.get("stage1_subsampling", {})
+    weighting = manifest.get("weighting", {})
+
+    out = [
+        "",
+        "## Effective training mix",
+        "",
+        f"Stage-1 questions keep the positive plus **{subsample.get('negatives_per_question', '?')} "
+        f"negatives** in `train` only, chosen "
+        f"**{'by zero-shot P(yes)' if subsample.get('hard_negative_source') == 'zero_shot_scores' else 'at random'}**. "
+        f"`val` and `test` keep the **full fan-out**, because the ratio they carry "
+        "(~96:1 no:yes) is the one the deployed two-stage path faces, and a temperature fitted "
+        "on a subsample would be fitted to a distribution we never serve.",
+        "",
+        "| group | rows | raw share | effective share | target | oversample |",
+        "|---|---|---|---|---|---|",
+    ]
+    groups = weighting.get("groups", {})
+    for group in sorted(mix):
+        info = mix[group]
+        g = groups.get(group, {})
+        target = f"{g['target_share']:.0%}" if "target_share" in g else "—"
+        factor = f"{g['oversample']:.2f}x" if "oversample" in g else "—"
+        out.append(
+            f"| `{group}` | {info['rows']:,} | {info['raw_share']:.1%} | "
+            f"**{info['effective_share']:.1%}** | {target} | {factor} |"
+        )
+
+    for clip in weighting.get("clipped", []):
+        out += [
+            "",
+            f"> **`{clip['group']}` could not reach its {clip['target_share']:.0%} target.** It "
+            f"would need {clip['needed_oversample']:.1f}x oversampling against a natural share of "
+            f"{clip['natural_share']:.1%}, and the cap is {clip['capped_at']:.0f}x. Past that a "
+            "small set is being memorised rather than learned. The fix is more data, not a "
+            "bigger weight.",
+        ]
+
+    out += [
+        "",
+        "### Per primitive, stage and family",
+        "",
+        "`rows before` is the full fan-out the expansion would have produced; `rows after` is "
+        "what training keeps. `effective` is the share of the weighted draw.",
+        "",
+        "| primitive | stage | family | rows before | rows after | raw | effective |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for entry in table:
+        out.append(
+            f"| `{entry['primitive']}` | {entry['stage']} | `{entry['family']}` | "
+            f"{entry['rows_before']:,} | {entry['rows_after']:,} | "
+            f"{entry['raw_share']:.1%} | **{entry['effective_share']:.1%}** |"
+        )
+    out.append("")
+    return out
 
 
 def write_build_report(manifest_path: str | Path, out_path: str | Path) -> Path:

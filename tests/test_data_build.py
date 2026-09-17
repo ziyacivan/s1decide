@@ -78,14 +78,33 @@ def test_shuffling_is_deterministic_for_a_given_seed() -> None:
 # --- two-stage expansion ------------------------------------------------------
 
 
-def test_expansion_emits_stage1_candidates_and_one_stage2_row() -> None:
+def test_expansion_emits_the_full_fan_out_by_default() -> None:
+    """The default is every candidate, because that is the task the deployment performs.
+
+    Training subsamples afterwards, per split, rather than the expansion deciding for it — see
+    `data/build/balance.py`. `STAGE1_NEGATIVES` is None for exactly this reason.
+    """
+    assert STAGE1_NEGATIVES is None
     rows = expand_high_cardinality(choice_row(77, answer=40), random.Random(0))
     stage1 = [r for r in rows if r["stage"] == 1]
     stage2 = [r for r in rows if r["stage"] == 2]
-    assert len(stage1) == STAGE1_NEGATIVES + 1  # the positive plus sampled negatives
+    assert len(stage1) == 77, "one row per candidate: the positive plus all 76 negatives"
     assert len(stage2) == 1
     assert all(r["qtype"] == "noul" and r["options"] == ("no", "yes") for r in stage1)
     assert stage2[0]["qtype"] == "choice"
+
+
+def test_expansion_can_be_asked_for_a_subsample() -> None:
+    """What the train split gets: the positive plus k negatives."""
+    rows = expand_high_cardinality(choice_row(77, answer=40), random.Random(0), negatives=6)
+    stage1 = [r for r in rows if r["stage"] == 1]
+    assert len(stage1) == 7
+    assert sum(r["answer_idx"] == 1 for r in stage1) == 1
+
+
+def test_asking_for_more_negatives_than_exist_is_not_an_error() -> None:
+    rows = expand_high_cardinality(choice_row(30, answer=2), random.Random(0), negatives=500)
+    assert len([r for r in rows if r["stage"] == 1]) == 30
 
 
 def test_stage1_has_exactly_one_positive() -> None:
