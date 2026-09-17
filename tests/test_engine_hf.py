@@ -516,8 +516,10 @@ def test_the_caller_prefix_cache_is_not_mutated_by_scoring(
 
 def test_reuse_buffer_flag_reaches_the_engine(tiny_model, tokenizer) -> None:
     """A/B flags that silently default are worse than no flag: this one is load-bearing."""
-    assert HFEngine(tiny_model, tokenizer).reuse_buffer is True
-    assert HFEngine(tiny_model, tokenizer, reuse_buffer=False).reuse_buffer is False
+    assert HFEngine(tiny_model, tokenizer).reuse_buffer is False, (
+        "reuse is off by default: it costs more rows per pass than it saves time (ADR 0003)"
+    )
+    assert HFEngine(tiny_model, tokenizer, reuse_buffer=True).reuse_buffer is True
 
 
 def test_both_cache_paths_give_the_same_logits(

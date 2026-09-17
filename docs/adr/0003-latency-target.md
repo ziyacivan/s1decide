@@ -204,6 +204,80 @@ targeting the measurement.
   the numerics rather than the allocator. Buffer reuse costs 0.57 GiB of the headroom that work
   will want; if it becomes the binding constraint, turn reuse off.
 
+  **C, corrected the same day: it *is* the binding constraint, so reuse is off by default.**
+  The paragraph above ends with the right conditional and the wrong default. Rows per pass was
+  swept directly (`--rows-per-pass` pins it, bypassing the budget) at 64 questions, 8 repeats,
+  1,617-token prefix, on an otherwise idle card:
+
+  | rows | reuse | passes | 64-question median | peak VRAM |
+  |---|---|---|---|---|
+  | 4 | on | 16 | 6,818 ms | 21.63 GiB |
+  | 4 | off | 16 | 6,885 ms | 21.06 GiB |
+  | 5 | on | 13 | 6,025 ms | 21.92 GiB |
+  | 5 | off | 13 | 6,066 ms | 21.25 GiB |
+  | 6 | on | 11 | 6,216 ms | 22.23 GiB |
+  | 6 | off | 11 | 6,288 ms | 21.47 GiB |
+  | 7 | off | 10 | **5,855 ms** | 21.69 GiB |
+  | 8 | off | 8 | **5,806 ms** | 21.90 GiB |
+  | 8 | on | 8 | 21,703 ms | 22.87 GiB |
+  | 10 | off | 7 | 15,990 ms | 22.34 GiB |
+  | 12 | off | 6 | 37,289 ms | 22.78 GiB |
+
+  Three things fall out of it.
+
+  **1. Rows are worth ~15%; buffer reuse is worth ~1%.** At a fixed row count reuse is
+  consistently 40–70 ms faster, confirming the A/B above. But it costs roughly 0.7 GiB at 8
+  rows, and on this card that is three rows. Three rows are worth about 1,000 ms.
+
+  **2. There is a hard cliff at ~22.2 GiB, and it is not an OOM.** Every configuration at or
+  below 21.92 GiB behaves normally; at 22.34 GiB the same call takes 2.8x longer and at 22.87
+  GiB 3.7x longer, with no error and no warning. Prefill inflates along with everything else
+  (1.42 s → 5.34 s → 11.88 s), which is the signature of the driver paging device memory to
+  host rather than failing. This is the same failure that produced the earlier 24.65 GiB peak;
+  it is now bounded by design rather than by having been noticed.
+
+  **3. The curve is not monotonic.** 6 rows is slower than 5 despite needing fewer passes,
+  because a pass pads every row to the longest suffix in its chunk and chunk composition
+  changes with the chunk size. 7 and 8 rows recover it. The engine therefore takes the largest
+  row count its VRAM model allows rather than trying to find the optimum; the difference
+  between 7 and 8 rows is 49 ms, inside the noise of the effect being chased.
+
+  **The budget was rewritten to match.** It used to spend a fraction of free VRAM, which says
+  nothing about where the peak lands. It now predicts the peak and holds it under
+  `PEAK_CEILING_FRACTION` (0.92 of total, 22.08 GiB here — just under the measured cliff),
+  using a per-row cost of `PEAK_BYTES_PER_CACHE_BYTE` times the cache bytes a row actually
+  holds: **1.4x without reuse, 2.1x with it**, both derived from the peaks in the table rather
+  than estimated. Budgeting against a predicted peak is the point: the failure mode here is
+  silent slowness, not an exception, so a budget that only avoids OOM avoids nothing.
+
+  With that budget the engine picks **7 rows** with reuse off and 4 with it on, and the default
+  is **off**:
+
+  | | reuse on | reuse off (default) |
+  |---|---|---|
+  | rows per pass | 4 | **7** |
+  | 64-question median | 6,836 ms | **5,857 ms** |
+  | peak VRAM | 21.63 GiB | 21.69 GiB |
+
+  **14.3% faster at the same peak.** `BroadcastCache` stays in the tree and `--buffer-reuse`
+  turns it on, because it does win on a card with headroom to spare — but it loses on this one,
+  and the honest summary of option C's first move is that it was a small win that bought a
+  larger loss, and the measurement is what found that out.
+
+  **Committed run at the new default** (`results/20260917-154732-…-latency`): 64-question call
+  5,918 ms, bundling speedup **16.97x** at 64 (was 14.76x) and 9.56x at 16, marginal cost
+  **69.9 ms/question** (was 84.1), peak 21.69 GiB. All four targets met.
+
+  **C, remaining work — bf16 gated-deltanet recurrent state — deferred (2026-09-17).** It is
+  deferred until after the S1 smoke run, deliberately: it changes numerics, and the calibration
+  that has to be protected is the S1 model's, which does not exist yet. Measuring an ECE
+  regression against a zero-shot baseline would be protecting the wrong thing. When it runs, the
+  conditions are stricter than for the allocator change:
+
+  1. accuracy **and** ECE regression-checked for **both** zero-shot and S1, not just one;
+  2. the `N-row broadcast == N independent runs` test with an **explicit stated tolerance**
+     rather than bitwise identity, since fp32 → bf16 recurrent state cannot be bit-exact.
+
 - **B** — **done** (2026-09-17, Phase 1 Step 2a). `FORMAT_VERSION` 0.2 dropped the
   `### Question` / `### Options` headers and the verbose `### Answer` block for a one-line
   answer cue. Mean suffix tokens 57.3 → 41.0; controllable overhead ~41% → **21.95%**

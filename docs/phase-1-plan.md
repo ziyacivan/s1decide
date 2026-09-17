@@ -142,6 +142,14 @@ hash with our training data. Before any Tier-2 figure is reported:
 - state in the model card that `pngwn/system-one-decisions` is derived from sources we train on,
   so Tier 2 is **"external" in labelling, not in distribution**.
 
+## Deferred to after the S1 smoke run — bf16 GDN recurrent state (inference-engineer)
+
+The remaining half of ADR 0003 option C. Deferred 2026-09-17 on purpose: it changes numerics,
+and the calibration it must not break is **S1's**, which does not exist yet. Checking it against
+the zero-shot baseline would be protecting the wrong model. Conditions when it runs are in
+ADR 0003 — accuracy and ECE for zero-shot *and* S1, and the broadcast-equivalence test with an
+explicit tolerance rather than bitwise identity.
+
 ## Step 3 — S1 QLoRA (training-engineer)
 
 `train/sft_lora.py`, `train/configs/sft_3090.yaml`, `uv run task smoke`.

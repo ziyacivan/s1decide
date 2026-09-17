@@ -109,7 +109,7 @@ class BenchConfig:
     warmup: int = 2
     separate_repeats: int = 2
     run_id: str = ""
-    reuse_buffer: bool = True
+    reuse_buffer: bool = False
     rows_per_pass: int | None = None
 
     def to_json(self) -> dict[str, Any]:
@@ -178,6 +178,28 @@ class Measurement:
             "samples": len(self.wall_ms),
             "wall_ms": self.wall_ms,
         }
+
+
+def measurement_line(measurement: Measurement) -> str:
+    """One console line per question count.
+
+    ``--separate-repeats 0`` skips the one-call-each baseline, which is the right thing to do
+    when comparing two engine configurations against each other rather than against separate
+    calls. The separate columns are then omitted rather than formatted from ``None``.
+    """
+    separate = measurement.median_separate_ms
+    line = (
+        f"  n={measurement.n_questions:3d}  median {measurement.median_ms:8.1f} ms  "
+        f"(prefill {statistics.median(measurement.prefill_ms):7.1f} + suffix "
+        f"{statistics.median(measurement.suffix_ms):7.1f})  "
+        f"{measurement.passes} pass(es) x {measurement.rows_per_pass} rows  "
+        f"{measurement.suffix_tokens:5d} suffix tok  peak {measurement.peak_gib:.2f} GiB"
+    )
+    if separate is None:
+        return line + "  separate not measured"
+    return line + (
+        f"  separate {separate:8.1f} ms  speedup {separate / measurement.median_ms:5.2f}x"
+    )
 
 
 def make_state(encode, target_tokens: int) -> str:
@@ -449,16 +471,7 @@ def run(config: BenchConfig, out_root: Path | None = None) -> Path:
         for _ in range(config.separate_repeats):
             measurement.separate_ms.append(_time_separate(engine, state, questions))
 
-        separate = measurement.median_separate_ms
-        print(
-            f"  n={n:3d}  median {measurement.median_ms:8.1f} ms  "
-            f"(prefill {statistics.median(measurement.prefill_ms):7.1f} + suffix "
-            f"{statistics.median(measurement.suffix_ms):7.1f})  "
-            f"{measurement.passes} pass(es) x {measurement.rows_per_pass} rows  "
-            f"{measurement.suffix_tokens:5d} suffix tok  peak {measurement.peak_gib:.2f} GiB  "
-            f"separate {separate:8.1f} ms  speedup {separate / measurement.median_ms:5.2f}x",
-            flush=True,
-        )
+        print(measurement_line(measurement), flush=True)
         measurements.append(measurement)
 
     baseline = measurements[0].median_ms
@@ -498,15 +511,21 @@ def run(config: BenchConfig, out_root: Path | None = None) -> Path:
     for key, spec in TARGETS.items():
         result = payload["targets"][key]
         value = result["measured"]
+        # A target whose inputs were not measured (`--counts` without 16, `--separate-repeats 0`)
+        # is reported as skipped. It is not a miss, and it must not be formatted as a number.
+        if value is None:
+            print(f"    [ -- ] {spec[0]:52} not measured ({spec[2]} {spec[1]})")
+            continue
         print(
             f"    [{'MET ' if result['met'] else 'MISS'}] {spec[0]:52} "
             f"{value:7.3f} ({spec[2]} {spec[1]})"
         )
-    print(
-        f"    informational: amortised {payload['targets']['amortised_ms_64']['measured']:.0f} "
-        f"ms/question at 64; retired 2x rule would read "
-        f"{payload['retired_target']['ratio_64_over_1']:.2f}x"
-    )
+    amortised = payload["targets"].get("amortised_ms_64", {}).get("measured")
+    if amortised is not None:
+        print(
+            f"    informational: amortised {amortised:.0f} ms/question at 64; retired 2x rule "
+            f"would read {payload['retired_target']['ratio_64_over_1']:.2f}x"
+        )
     fit = payload["decomposition"]
     print(
         f"  decomposition: {fit['per_pass_ms']:.1f} ms per forward pass + "
@@ -544,13 +563,17 @@ def plot(run_dir: str | Path) -> Path:
     median = [p["median_ms"] for p in points]
     prefill = [p["median_prefill_ms"] for p in points]
     separate = [p["median_separate_ms"] for p in points]
+    # None throughout when `--separate-repeats 0` skipped the one-call-each baseline; the two
+    # series that need it are then omitted rather than drawn from missing data.
+    has_separate = all(s is not None for s in separate)
     baseline = median[0]
 
     fig, (ax, ax_ratio) = plt.subplots(
         2, 1, figsize=(6.6, 6.8), height_ratios=[3, 2], constrained_layout=True
     )
 
-    ax.plot(n, separate, "s--", color="#c1666b", lw=1.5, ms=6, label="one call per question")
+    if has_separate:
+        ax.plot(n, separate, "s--", color="#c1666b", lw=1.5, ms=6, label="one call per question")
     ax.plot(n, median, "o-", color="#2a6f97", lw=1.8, ms=6, label="one bundled call")
     ax.plot(n, prefill, ":", color="#8d99ae", lw=1.5, label="prefill only (shared)")
     ax.fill_between(
@@ -582,16 +605,17 @@ def plot(run_dir: str | Path) -> Path:
         ms=6,
         label="bundled / 1-question",
     )
-    ax_ratio.plot(
-        n,
-        [s / baseline for s in separate],
-        "s--",
-        color="#c1666b",
-        lw=1.2,
-        ms=5,
-        alpha=0.6,
-        label="separate / 1-question",
-    )
+    if has_separate:
+        ax_ratio.plot(
+            n,
+            [s / baseline for s in separate],
+            "s--",
+            color="#c1666b",
+            lw=1.2,
+            ms=5,
+            alpha=0.6,
+            label="separate / 1-question",
+        )
     ax_ratio.set_xscale("log", base=2)
     ax_ratio.set_yscale("log")
     ax_ratio.set_xticks(n)
@@ -602,12 +626,15 @@ def plot(run_dir: str | Path) -> Path:
     ax_ratio.legend(frameon=False, fontsize=9, loc="upper left")
 
     targets = payload["targets"]
-    ax_ratio.set_title(
-        f"bundling speedup {targets['speedup_64']['measured']:.1f}x at 64 · marginal "
-        f"{targets['marginal_ms_64']['measured']:.0f} ms/question · "
-        f"targets {'all met' if targets.get('all_met') else 'not all met'}",
-        fontsize=10,
-    )
+    parts = []
+    speedup = targets.get("speedup_64", {}).get("measured")
+    if speedup is not None:
+        parts.append(f"bundling speedup {speedup:.1f}x at 64")
+    marginal = targets.get("marginal_ms_64", {}).get("measured")
+    if marginal is not None:
+        parts.append(f"marginal {marginal:.0f} ms/question")
+    parts.append(f"targets {'all met' if targets.get('all_met') else 'not all met'}")
+    ax_ratio.set_title(" · ".join(parts), fontsize=10)
 
     path = directory / "latency.png"
     fig.savefig(path, dpi=150)
@@ -633,9 +660,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="pin rows per pass instead of budgeting from free VRAM (measurement only)",
     )
     parser.add_argument(
-        "--no-buffer-reuse",
+        "--buffer-reuse",
         action="store_true",
-        help="restore the per-pass deep-copy path, to A/B ADR 0003 option C",
+        help="keep one pre-expanded broadcast buffer across passes (ADR 0003 option C); off by "
+        "default because the VRAM it holds costs more rows per pass than the time it saves",
     )
     parser.add_argument("--plot", default=None, help="redraw the plot for an existing run dir")
     args = parser.parse_args(list(argv) if argv is not None else None)
@@ -657,7 +685,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             warmup=args.warmup,
             separate_repeats=args.separate_repeats,
             run_id=args.run_id,
-            reuse_buffer=not args.no_buffer_reuse,
+            reuse_buffer=args.buffer_reuse,
             rows_per_pass=args.rows_per_pass,
         )
     )

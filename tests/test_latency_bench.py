@@ -364,3 +364,68 @@ def test_latency_summary_renders_the_overhead_payload_the_bench_actually_produce
     text = write_latency_summary(tmp_path).read_text(encoding="utf-8")
     for qtype in overhead["by_qtype"]:
         assert f"| {qtype} |" in text
+
+
+def test_measurement_line_survives_a_skipped_separate_baseline() -> None:
+    """``--separate-repeats 0`` used to crash the print with None formatting, after the run."""
+    from eval.latency_bench import measurement_line
+
+    m = measurement(64, [6800.0, 6810.0], suffix_tokens=2665)
+    m.separate_ms = []
+    assert m.median_separate_ms is None
+    line = measurement_line(m)
+    assert "separate not measured" in line
+    assert "speedup" not in line
+
+    m.separate_ms = [100000.0]
+    assert "speedup 14.70x" in measurement_line(m)
+
+
+def test_a_partial_bench_reports_skipped_targets_instead_of_crashing(tmp_path, capsys) -> None:
+    """Third crash of this shape: a None measurement formatted as a number, after the GPU work.
+
+    ``--counts 1,64 --separate-repeats 0`` is the right way to compare two engine settings, and
+    it leaves three of the five targets unmeasurable. They must print as skipped.
+    """
+    from eval.latency_bench import TARGETS, evaluate_targets
+
+    points = [measurement(n, [1500.0, 1510.0]).to_json() for n in (1, 64)]
+    for p in points:
+        p["median_separate_ms"] = None
+    targets = evaluate_targets(
+        points, {"boilerplate_fraction": 0.44, "controllable_fraction": 0.22}
+    )
+    assert targets["speedup_16"]["measured"] is None
+    assert targets["speedup_64"]["measured"] is None
+    assert targets["marginal_ms_64"]["measured"] is not None
+    for key in TARGETS:
+        assert key in targets
+
+
+def test_plot_omits_the_separate_series_when_it_was_not_measured(tmp_path) -> None:
+    """Same root cause as the skipped targets: a series of None must not reach matplotlib."""
+    pytest.importorskip("matplotlib")
+    import json
+
+    from eval.latency_bench import plot
+
+    points = [measurement(n, [1500.0, 1510.0]).to_json() for n in (1, 16, 64)]
+    for p in points:
+        p["median_separate_ms"] = None
+    payload = {
+        "meta": {
+            "run_id": "unit",
+            "model": "x/y",
+            "quantization": "nf4-bf16",
+            "gpu": "RTX 3090",
+            "repeats": 2,
+            "state_tokens_actual": 1500,
+        },
+        "targets": {"all_met": True},
+        "format_overhead": {"by_qtype": {}, "boilerplate_fraction": 0.44},
+        "retired_target": {"rule": "retired", "ratio_64_over_1": 4.5, "met": False},
+        "decomposition": {"per_pass_ms": 1.0, "per_token_ms": 1.0, "r_squared": 1.0},
+        "points": points,
+    }
+    (tmp_path / "latency.json").write_text(json.dumps(payload), encoding="utf-8")
+    assert plot(tmp_path).is_file()

@@ -63,7 +63,7 @@ class RunConfig:
     max_options: int = 26
     limit: int | None = None
     n_bins: int = DEFAULT_BINS
-    reuse_buffer: bool = True
+    reuse_buffer: bool = False
     run_id: str = ""
 
     def to_json(self) -> dict[str, Any]:
@@ -395,7 +395,7 @@ def rescore(run_dir: Path, n_bins: int = DEFAULT_BINS) -> Path:
         max_options=meta["max_options"],
         limit=meta.get("limit"),
         n_bins=n_bins,
-        reuse_buffer=meta.get("reuse_buffer", True),
+        reuse_buffer=meta.get("reuse_buffer", False),
         run_id=meta["run_id"],
     )
     test_predictions = [
@@ -450,9 +450,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--bins", type=int, default=DEFAULT_BINS)
     parser.add_argument("--run-id", default="")
     parser.add_argument(
-        "--no-buffer-reuse",
+        "--buffer-reuse",
         action="store_true",
-        help="deep-copy the prefix cache each pass instead of reusing one expanded buffer",
+        help="keep one pre-expanded broadcast buffer across passes (ADR 0003 option C)",
     )
     parser.add_argument("--rescore", default=None, help="recompute metrics for an existing run dir")
     parser.add_argument("--summary", default=None, help="regenerate SUMMARY.md for a run dir")
@@ -477,7 +477,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             max_options=args.max_options,
             limit=args.limit,
             n_bins=args.bins,
-            reuse_buffer=not args.no_buffer_reuse,
+            reuse_buffer=args.buffer_reuse,
             run_id=args.run_id,
         )
     )
