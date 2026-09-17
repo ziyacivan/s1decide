@@ -318,3 +318,51 @@ the patch for removal rather than leaving it in silently.
 Consequence for the earlier §8 numbers: the 3.9e-3 "MATCH" measured on the GPU in Step 3 was in
 bf16 on a random model, where the ignored state contributed less than the bf16 noise floor. That
 number was true but not evidence of correctness; the fp32 contract test is.
+
+## 12. Addendum (Step 4 GPU run, 2026-09-17): real weights, Qwen3.5-0.8B on the RTX 3090
+
+`Qwen/Qwen3.5-0.8B` was downloaded (1.65 GiB: one safetensors shard + tokenizer + configs) and
+`tests/test_engine_gpu.py` run with `uv run task test-gpu`. Numbers below are from those runs
+and from `scratchpad` probes with the same engine code; they are engineering measurements, not
+eval results (nothing here goes to `results/`).
+
+**Text-only load works as designed.** `AutoModelForCausalLM.from_pretrained("Qwen/Qwen3.5-0.8B")`
+returns `Qwen3_5ForCausalLM`, no `visual` modules, `_attn_implementation == "sdpa"`,
+`layer_types` = 18 GDN + 6 attention, and `HFEngine` patches 18 GDN modules.
+
+**dtype quirk.** `from_pretrained(..., dtype=torch.float32)` returned **bf16 parameters and bf16
+logits**, with or without Unsloth imported. transformers 5.5 builds the text tower from the VLM's
+`text_config`, whose own `dtype: bfloat16` wins. `HFEngine.from_pretrained` now casts unquantized
+models to the requested dtype and asserts it. The same mechanism means a "bf16" request is
+honoured only by coincidence; the assertion makes it explicit.
+
+**The contract on real weights** (5 mixed questions, 78-token prefix, one pass):
+
+| Precision / GDN kernel | worst \|broadcast - independent\| | note |
+|---|---|---|
+| fp32, torch GDN path | **2.3e-5** | exactness reference: the broadcast is the same computation |
+| fp32, fla Triton kernels | 5.5e-3 | fla is itself ~5e-3 less exact than torch in fp32; the fla-vs-torch gap on a single joint forward is the same size |
+| bf16, fla | 0.125-0.25 | one to two bf16 ulps at \|logit\| ~ 16-32 |
+| fp32, **unpatched** transformers | **2.12** | the bug in §11 on real weights: state dropped; logits still look plausible, so nothing but an equality test would notice |
+| fp32, chunked (`max_rows_per_pass=2`, 3 passes) vs single pass | within the same kernel tolerance | |
+
+So the patched broadcast is exact on the torch path and at kernel-noise level on the fla path,
+and the unpatched path is wrong by an amount that would not look wrong — which is the whole
+reason the equality test exists.
+
+**nf4 (bnb, bf16 compute) loads and runs** on the 3090 for this model class (1.7 s load, 4.96 GiB
+peak with two other copies resident); it agrees with bf16 on the easy relative judgement used
+as a sanity check (`billing` > `weather`) while shifting confidences noticeably (e.g. `billing`
+0.91 vs 0.75, `tone` 0.77 vs 0.58) — the concrete reason calibration must be fitted at the
+deployment quantization (locked decision 6). Quantitative agreement is Step 5's job.
+
+**Timing, bf16 + fla, 0.8B, 78-token prefix, 5 suffixes:** prefill 33.6 ms, all 5 suffixes in
+one pass 38.4 ms, peak 3.77 GiB allocated (fp32 model resident too in that process). Not a
+benchmark — Step 6 does that on the 27B with a ~1,500-token state — but it shows the suffix pass
+is of the same order as the prefill at this size, so the 2x target will hinge on the 27B's
+prefill dominating.
+
+**Zero-shot behaviour of the 0.8B (informational only):** it reads the state — `lang` answers
+"English" for an English ticket and shifts probability to "Turkish" for a Turkish one — but its
+Nouls are poorly calibrated zero-shot (`weather` 0.59 "yes" on a billing ticket). Expected for
+0.8B without training; the point of the smoke model is mechanics, not judgement.

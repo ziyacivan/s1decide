@@ -35,6 +35,11 @@ this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   cached GDN state on multi-token continuation), and `decide.py` (`decide()`, `Response`,
   `softmax`). Tests: 10k-schema fuzz, N-row broadcast == N independent runs on a tiny
   random Qwen3.5-class model on CPU, chunked == single pass, padding isolation.
+- `tests/test_engine_gpu.py`: the same contract on real `Qwen/Qwen3.5-0.8B` weights on the
+  RTX 3090 (fp32 exact to 2.3e-5, bf16 within two ulps, unpatched transformers off by 2.1),
+  plus nf4 load, zero-shot state-sensitivity sanity checks and a timing report.
+  `HFEngine.from_pretrained` now enforces the requested dtype (transformers 5.5 let the VLM
+  `text_config.dtype` override it).
 
 ### Notes
 

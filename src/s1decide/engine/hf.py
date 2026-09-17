@@ -185,7 +185,18 @@ class HFEngine:
             quantization_config=quantization_config,
             **kwargs,
         )
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        if quantization_config is None:
+            # transformers 5.5 builds the text tower from the VLM's `text_config`, whose own
+            # `dtype` (bf16 for Qwen3.5/3.8) silently overrides the `dtype` we asked for.
+            # Measured: dtype=float32 came back as bf16 parameters and bf16 logits.
+            model = model.to(dtype)
+            got = {p.dtype for p in model.parameters()}
+            if got != {dtype}:
+                raise RuntimeError(f"requested dtype {dtype} but model parameters are {got}")
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_name,
+            **{k: v for k, v in kwargs.items() if k in {"local_files_only", "revision", "token"}},
+        )
         return cls(model, tokenizer, max_rows_per_pass=max_rows_per_pass)
 
     def encode(self, text: str) -> list[int]:
