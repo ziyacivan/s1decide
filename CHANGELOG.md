@@ -28,6 +28,13 @@ this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   **accepted** (proceed with Qwen3.8-27B; smoke model `Qwen/Qwen3.5-0.8B`);
   `scripts/derisk_base_model.py` reproduces the GPU measurements without downloads.
 - `pyproject.toml`: pin `torchao==0.17.0` (Studio's version; 0.18.0 wants torch >= 2.11).
+- Phase 0 Step 4: inference engine. `engine/base.py` (protocol, `EngineOutput`,
+  `validate_output`), `engine/mock.py` (deterministic, dependency-free), `engine/hf.py`
+  (prefill once, `expand_cache` over both attention KV and gated-deltanet states, chunked
+  suffix passes, SDPA only), `engine/qwen3_5_patch.py` (fixes transformers 5.5.0 ignoring
+  cached GDN state on multi-token continuation), and `decide.py` (`decide()`, `Response`,
+  `softmax`). Tests: 10k-schema fuzz, N-row broadcast == N independent runs on a tiny
+  random Qwen3.5-class model on CPU, chunked == single pass, padding isolation.
 
 ### Notes
 

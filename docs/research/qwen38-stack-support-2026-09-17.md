@@ -270,3 +270,51 @@ same GDN kernels, and it is the exact model `qwen-rlcd` validated its fork again
 
 Sources: see inline links; local paths are under `.venv/Lib/site-packages/` and
 `%USERPROFILE%/.unsloth/llama.cpp/`.
+
+## 11. Addendum (Step 4, 2026-09-17): transformers 5.5.0 ignores cached GDN state on multi-token continuation
+
+Found by the engine contract test, not by reading: with the per-layer broadcast in place, a
+4-layer random model's broadcast logits still differed from independent runs by ~1e-3 relative
+in fp32 — too large for arithmetic noise. Cause, in `Qwen3_5GatedDeltaNet.forward`
+(`modeling_qwen3_5.py` lines 422-520):
+
+```python
+use_precomputed_states = (cache_params is not None
+                          and cache_params.has_previous_state(self.layer_idx) and seq_len == 1)
+...
+else:                                   # any continuation longer than one token
+    if cache_params is not None:
+        conv_state = F.pad(mixed_qkv, (self.conv_kernel_size - mixed_qkv.shape[-1], 0))
+        conv_state = cache_params.update_conv_state(conv_state, self.layer_idx)
+    mixed_qkv = F.silu(self.conv1d(mixed_qkv)[:, :, :seq_len])      # conv over new tokens only
+...
+core_attn_out, last_recurrent_state = self.chunk_gated_delta_rule(..., initial_state=None, ...)
+```
+
+Only the one-token decode step reads `conv_states` / `recurrent_states`. A multi-token
+continuation — which is every question suffix we score — **drops both**, silently, and also
+overwrites the conv window with zero-padded new tokens when the continuation is shorter than
+the kernel. `generate()` never hits this (prefill has no state; decode is one token), which is
+why it persists. Upstream `main` (fetched 2026-09-17) fixes it: the conv is fed
+`cache_params.update_conv_state(mixed_qkv, ...)` (previous window included) and the chunk
+kernel receives `initial_state=recurrent_state`.
+
+**Fix in this repo:** `src/s1decide/engine/qwen3_5_patch.py` replaces `forward` on each
+`Qwen3_5GatedDeltaNet` instance with a version whose continuation branch (a) prepends the cached
+`kernel-1` inputs to the conv window and stores the true last `kernel` inputs back, and (b) passes
+`initial_state=layer.recurrent_states` to the module's own bound chunk kernel (fla or torch).
+The no-cache and one-token paths call the library code unchanged. `HFEngine` applies it by
+default and reports `meta["gdn_patched"]`.
+
+Measured (tiny model, fp32, CPU): unpatched cached-vs-joint max |diff| > 1e-5 for a 5-token
+continuation after a 100-token prefix; patched < 1e-5 for suffix lengths 2, 3, 5, 20, 64, 65
+and prefix lengths 1, 3, 4, 63, 64, 65, 130, and unchanged for the 1-token path. The
+broadcast-equals-independent contract test passes at `atol=1e-4` for a 5-question mixed call.
+
+A test (`test_unpatched_transformers_ignores_the_gdn_state_on_multi_token_continuation`) asserts
+the bug is *present* in the installed transformers, so an upgrade that fixes it upstream will flag
+the patch for removal rather than leaving it in silently.
+
+Consequence for the earlier §8 numbers: the 3.9e-3 "MATCH" measured on the GPU in Step 3 was in
+bf16 on a random model, where the ignored state contributed less than the bf16 noise floor. That
+number was true but not evidence of correctness; the fp32 contract test is.

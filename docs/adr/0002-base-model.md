@@ -47,6 +47,12 @@ These are not optional; each one has a named owner and a test.
    `recurrent_states` on every layer that has them. The contract test asserts equality against
    N independent full-sequence runs — not merely "no exception", because newer transformers
    versions carry a layer class that silently repeats only KV.
+   **Amended in Step 4:** the same contract test found that transformers 5.5.0's
+   `Qwen3_5GatedDeltaNet.forward` ignores the cached conv and recurrent state on any
+   multi-token continuation (research note §11). `engine/qwen3_5_patch.py` fixes the
+   continuation branch per module, mirroring upstream `main`; `HFEngine` applies it by
+   default, and a test asserts the bug is still present in the installed version so the patch
+   is flagged for removal when transformers is upgraded.
 2. **No sequence packing in Stage-1 training** on transformers < 5.9 (`training-engineer`).
    In 5.2.0-5.8.1 the GDN conv/recurrent state leaks across packed samples silently. We are on
    5.5.0 to mirror Studio. `train/sft_lora.py` asserts `packing=False, padding_free=False` and

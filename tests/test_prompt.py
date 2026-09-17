@@ -214,3 +214,28 @@ def test_rendered_prompt_records_its_provenance(ticket_state, tone) -> None:
     assert rendered.format_version == FORMAT_VERSION
     assert rendered.template_name == DEFAULT_TEMPLATE.name
     assert rendered.names == ("tone",)
+
+
+# --- tokenization boundary -------------------------------------------------
+
+
+def test_prefix_and_suffix_tokenize_independently(tokenizer, tone, urgency, billing) -> None:
+    """The engine encodes prefix and suffix separately and concatenates the ids.
+
+    That is only equivalent to encoding the full prompt if no BPE merge crosses the
+    boundary. The prefix ends on a "\n\n" token and every suffix starts on "###", so it
+    holds; this test keeps it that way when the format changes.
+    """
+    for state in [
+        "I was charged twice.",
+        {"subject": "refund", "body": "please refund"},
+        "ends with newline\n",
+    ]:
+        rendered = render(state, [tone, urgency, billing])
+        prefix_ids = tokenizer.encode(rendered.prefix, add_special_tokens=False)
+        for i, suffix in enumerate(rendered.suffixes):
+            separate = prefix_ids + tokenizer.encode(suffix, add_special_tokens=False)
+            joint = tokenizer.encode(rendered.full(i), add_special_tokens=False)
+            assert separate == joint, (
+                f"BPE merge across the prefix/suffix boundary for {rendered.names[i]}"
+            )
