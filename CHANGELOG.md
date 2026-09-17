@@ -15,6 +15,12 @@ this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `.python-version`, and `src/s1decide/tasks.py`, the cross-platform task runner behind
   `uv run task <name>` with a working `doctor`.
 - `docs/adr/0001-token-logit-approach.md` and `docs/adr/0002-base-model.md` (both proposed).
+- Phase 0 Step 2: `src/s1decide/primitives.py` (`Choice`, `Score`, `Noul`, `Question`,
+  `Result`, validated at construction), `src/s1decide/prompt.py` (`FORMAT_VERSION = "0.1"`,
+  the prefix/suffix renderer, `ChatTemplate.from_tokenizer`), `src/s1decide/tokens.py`
+  (option to single-token labelling and verification), and `docs/format-spec.md`,
+  generated from the renderer by `scripts/render_format_spec.py` and checked for staleness
+  by a test.
 
 ### Notes
 
