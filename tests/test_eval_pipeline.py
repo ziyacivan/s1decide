@@ -23,6 +23,7 @@ from eval.run_eval import (
 
 from s1decide.calibrate import Calibration, fit_calibration
 from s1decide.engine.mock import MockEngine
+from s1decide.prompt import FORMAT_VERSION
 
 
 def item(i: int, qtype: str = "choice", n_options: int = 4, state: str | None = None) -> EvalItem:
@@ -201,7 +202,7 @@ def test_report_always_carries_brier_and_both_controls(tmp_path) -> None:
 def test_report_records_provenance(tmp_path) -> None:
     meta = make_run(tmp_path)["meta"]
     assert meta["run_id"] == "unit-test"
-    assert meta["format_version"] == "0.1"
+    assert meta["format_version"] == FORMAT_VERSION
     assert meta["dataset_license"] == "CC-BY-NC-4.0"
     assert "commit" in meta["git"]
     assert meta["quantization"] == "mock"

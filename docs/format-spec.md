@@ -1,4 +1,4 @@
-# Prompt format specification — version 0.1
+# Prompt format specification — version 0.2
 
 <!-- GENERATED FILE — do not edit by hand.
      Produced by scripts/render_format_spec.py from s1decide.prompt.
@@ -113,16 +113,11 @@ From: dana@example.com
 
 I was charged twice for my subscription this month. I have been a customer for three years and this has never happened before. Please fix this today.
 
-### Question
 What is the customer's tone?
-
-### Options
 A. calm
 B. frustrated
 C. angry
-
-### Answer
-Reply with exactly one of: A, B, C
+Answer (A-C):
 <|im_end|>
 <|im_start|>assistant
 <think>
@@ -139,16 +134,12 @@ Answer position masked to: `A, B, C`.
 Only the suffix is shown; the prefix is identical to 5.1.
 
 ```text
-### Question
 How urgent is this ticket?
-
-### Levels (lowest to highest)
+Levels low to high:
 A. can wait
 B. this week
 C. today
-
-### Answer
-Reply with exactly one of: A, B, C
+Answer (A-C):
 <|im_end|>
 <|im_start|>assistant
 <think>
@@ -167,11 +158,8 @@ bimodal distribution over an ordinal rubric has an argmax that hides the disagre
 Only the suffix is shown.
 
 ```text
-### Question
 This ticket is about billing.
-
-### Answer
-Is the statement above true? Reply with exactly one of: yes, no
+Answer (yes/no):
 <|im_end|>
 <|im_start|>assistant
 <think>
@@ -203,19 +191,14 @@ I was charged twice for my subscription this month. I have been a customer for t
 
 ```
 
-**Suffix 0 — `tone`** (185 chars, masked to `A, B, C`):
+**Suffix 0 — `tone`** (126 chars, masked to `A, B, C`):
 
 ```text
-### Question
 What is the customer's tone?
-
-### Options
 A. calm
 B. frustrated
 C. angry
-
-### Answer
-Reply with exactly one of: A, B, C
+Answer (A-C):
 <|im_end|>
 <|im_start|>assistant
 <think>
@@ -225,19 +208,15 @@ Reply with exactly one of: A, B, C
 
 ```
 
-**Suffix 1 — `urgency`** (205 chars, masked to `A, B, C`):
+**Suffix 1 — `urgency`** (147 chars, masked to `A, B, C`):
 
 ```text
-### Question
 How urgent is this ticket?
-
-### Levels (lowest to highest)
+Levels low to high:
 A. can wait
 B. this week
 C. today
-
-### Answer
-Reply with exactly one of: A, B, C
+Answer (A-C):
 <|im_end|>
 <|im_start|>assistant
 <think>
@@ -247,14 +226,11 @@ Reply with exactly one of: A, B, C
 
 ```
 
-**Suffix 2 — `billing`** (171 chars, masked to `no, yes`):
+**Suffix 2 — `billing`** (99 chars, masked to `no, yes`):
 
 ```text
-### Question
 This ticket is about billing.
-
-### Answer
-Is the statement above true? Reply with exactly one of: yes, no
+Answer (yes/no):
 <|im_end|>
 <|im_start|>assistant
 <think>
@@ -264,14 +240,11 @@ Is the statement above true? Reply with exactly one of: yes, no
 
 ```
 
-**Suffix 3 — `refund_requested`** (178 chars, masked to `no, yes`):
+**Suffix 3 — `refund_requested`** (106 chars, masked to `no, yes`):
 
 ```text
-### Question
 The customer is asking for a refund.
-
-### Answer
-Is the statement above true? Reply with exactly one of: yes, no
+Answer (yes/no):
 <|im_end|>
 <|im_start|>assistant
 <think>
@@ -281,12 +254,63 @@ Is the statement above true? Reply with exactly one of: yes, no
 
 ```
 
-The prefix is 40% of the total rendered characters for this call, and it is
+The prefix is 51% of the total rendered characters for this call, and it is
 prefilled once no matter how many questions are asked. That ratio is the whole latency
 argument, and `uv run task bench` measures whether it holds in practice.
 
-## 6. Versioning
+## 6. Two-stage rendering for high-cardinality questions
+
+A question with more options than there are single-token labels (26)
+cannot be asked in one pass: there is no letter left to stand for option 27.
+`needs_two_stage(question)` decides, and ADR 0001's scheme handles it.
+
+**Stage 1 — score every option independently.** One suffix per option, all sharing the same
+state prefix, so the whole stage is a single broadcast call. Each asks a yes/no question, which
+needs only the two fixed labels and so has no ceiling.
+
+```text
+Which banking intent does this message have?
+Candidate: intent 00
+Answer (yes/no):
+<|im_end|>
+<|im_start|>assistant
+<think>
+
+</think>
+
+
+```
+
+There are 40 suffixes like this one, named `intent::0` through
+`intent::39`, each masked to `no, yes`.
+
+**These are not a distribution.** The options are scored independently, so their P(yes) values do
+not sum to one. Stage 1 produces a *shortlist*, not an answer.
+
+**Stage 2 — one Choice over the survivors**, which is an ordinary Choice and is calibrated the
+same way every other Choice is:
+
+```text
+Which banking intent does this message have?
+A. intent 07
+B. intent 02
+C. intent 31
+Answer (A-C):
+<|im_end|>
+<|im_start|>assistant
+<think>
+
+</think>
+
+
+```
+
+Masked to `A, B, C`. Results map back through the candidate indices that
+were passed in: stage 2's label `A` means `question.labels[candidates[0]]`, never the raw letter.
+
+## 7. Versioning
 
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-09-17 | Initial format. |
+| 0.2 | 2026-09-17 | ADR 0003 option B: dropped the `### Question` / `### Options` headers and the verbose `### Answer` block in favour of a one-line answer cue. ADR 0001: added two-stage rendering for questions above 26 options. |

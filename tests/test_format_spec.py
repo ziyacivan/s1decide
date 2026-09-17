@@ -43,5 +43,5 @@ def test_format_spec_states_the_current_version(spec_path: Path) -> None:
 
 def test_format_spec_covers_every_primitive(spec_path: Path) -> None:
     text = spec_path.read_text(encoding="utf-8")
-    for heading in ("`Choice`", "`Score`", "`Noul`", "four-question mixed call"):
+    for heading in ("`Choice`", "`Score`", "`Noul`", "four-question mixed call", "Two-stage"):
         assert heading in text

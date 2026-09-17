@@ -88,6 +88,16 @@ this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   not. `docs/research/latency-amortisation-2026-09-17.md` corrected: the predicted
   model-independence of `a/b` was **measured and refuted** on `Qwen/Qwen3.5-0.8B`.
 
+- **Phase 1 Step 2a** — `FORMAT_VERSION` 0.1 → **0.2**. ADR 0003 option B: the `### Question` /
+  `### Options` headers and the verbose `### Answer` block are replaced by a one-line answer cue,
+  cutting mean suffix tokens 57.3 → 41.0 and the overhead we control from ~41% to **21.95%**
+  (target ≤ 25%). ADR 0001 two-stage rendering added — `needs_two_stage`, `render_stage1`
+  (one yes/no suffix per option, one shared prefill) and `render_stage2` (a Choice over the
+  shortlist) — which unblocks the 17–77 option bucket. `docs/format-spec.md` regenerated.
+- ADR 0005: Q3 **decided** (Score data is synthetic, under four binding rules) and share-alike
+  sources **decided** eval-only as a risk-tolerance choice; Q1, Q2 and Q4 remain proposed.
+- `master` and the `phase-0` tag pushed to the private backup remote. Nothing else.
+
 ### Notes
 
 - vLLM is deliberately **not** a project extra: uv's universal lock cannot satisfy

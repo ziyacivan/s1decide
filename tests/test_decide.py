@@ -11,6 +11,7 @@ from s1decide.decide import Response, decide, softmax
 from s1decide.engine.base import EngineError, EngineOutput
 from s1decide.engine.mock import MockEngine
 from s1decide.primitives import Choice, Noul, Question, Result, Score
+from s1decide.prompt import FORMAT_VERSION
 from s1decide.tokens import MAX_SINGLE_TOKEN_OPTIONS
 
 # --- softmax -----------------------------------------------------------------
@@ -55,7 +56,7 @@ def test_decide_returns_one_validated_result_per_question(
     assert len(response) == 3
     assert [r.name for r in response] == ["tone", "urgency", "billing"]
     assert response.engine == "mock"
-    assert response.format_version == "0.1"
+    assert response.format_version == FORMAT_VERSION
     assert response.temperature == 1.0
     for result in response:
         assert isinstance(result, Result)

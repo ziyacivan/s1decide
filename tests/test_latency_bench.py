@@ -237,14 +237,26 @@ def test_measure_format_overhead_separates_boilerplate_from_content(tokenizer) -
 
 
 def test_format_overhead_is_the_current_known_baseline(tokenizer) -> None:
-    """Pinned so ADR 0003 option B can be shown to have moved it, not assumed to."""
+    """Pinned so a format change has to move these deliberately, not by accident.
+
+    Format 0.1 measured 51.7% all-in (70% for Noul). Format 0.2 (ADR 0003 option B) dropped the
+    section headers and the verbose answer block.
+    """
     from eval.latency_bench import measure_format_overhead
 
     overhead = measure_format_overhead(
         lambda s: tokenizer.encode(s, add_special_tokens=False), make_questions(3)
     )
-    assert overhead["boilerplate_fraction"] == pytest.approx(0.52, abs=0.03)
-    assert overhead["by_qtype"]["noul"]["boilerplate_fraction"] == pytest.approx(0.70, abs=0.03)
+    # What we control: meets the 25% target.
+    assert overhead["controllable_fraction"] == pytest.approx(0.22, abs=0.03)
+    # All-in, including the model's 9-token chat tail: better than 0.1 but still above 25%.
+    assert overhead["boilerplate_fraction"] == pytest.approx(0.44, abs=0.03)
+    assert overhead["boilerplate_fraction"] < 0.517
+    # Half of what remains is the chat tail, which no format change of ours can remove.
+    assert overhead["chat_tail_fraction"] == pytest.approx(
+        overhead["controllable_fraction"], abs=0.05
+    )
+    assert overhead["mean_suffix_tokens"] < 57.3  # the 0.1 figure
 
 
 def targets_payload(speedup16=9.0, speedup64=15.4, median1=1548.0, median64=6674.0, overhead=0.52):

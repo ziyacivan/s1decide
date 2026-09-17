@@ -133,6 +133,11 @@ Nothing in this note changes a locked decision. Three things it does change:
    but we should say plainly that it costs flatness, and quote the 0.8B numbers beside it rather
    than implying the architecture alone delivers flat latency.
 
+**Phase 2 idea, not to be acted on now:** a small same-family front model (e.g. Qwen3.5-0.8B,
+3.1 ms marginal per question) answers every question, and the 27B is invoked only on the ones
+whose calibrated confidence falls below a threshold — a cascade whose escalation rate is itself
+a calibrated quantity. Recorded here so it is not lost; no work scheduled.
+
 It also sharpens what we should claim. "Adding questions barely changes latency" is not
 something we can say at a 1.5k state. What we can say, and have measured, is that bundling 64
 questions is **15.4x faster than asking them separately**, at **104 ms per question amortised**

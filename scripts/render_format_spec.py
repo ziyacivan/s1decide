@@ -14,7 +14,14 @@ import sys
 from pathlib import Path
 
 from s1decide.primitives import Choice, Noul, Question, Score
-from s1decide.prompt import DEFAULT_TEMPLATE, FORMAT_VERSION, render
+from s1decide.prompt import (
+    DEFAULT_TEMPLATE,
+    FORMAT_VERSION,
+    needs_two_stage,
+    render,
+    render_stage1,
+    render_stage2,
+)
 from s1decide.tokens import LETTER_LABELS, MAX_SINGLE_TOKEN_OPTIONS, NOUL_LABELS
 
 OUTPUT = Path("docs/format-spec.md")
@@ -68,6 +75,17 @@ def build() -> str:
     Returns:
         The full Markdown source of the format spec.
     """
+    wide = Question(
+        name="intent",
+        spec=Choice(
+            instructions="Which banking intent does this message have?",
+            options=tuple(f"intent {i:02d}" for i in range(40)),
+        ),
+    )
+    assert needs_two_stage(wide)
+    stage1 = render_stage1(STATE, wide)
+    stage2 = render_stage2(STATE, wide, [7, 2, 31])
+
     single = render(STATE, [TONE])
     score = render(STATE, [URGENCY])
     noul = render(STATE, [BILLING])
@@ -224,11 +242,38 @@ The prefix is {prefix_share:.0%} of the total rendered characters for this call,
 prefilled once no matter how many questions are asked. That ratio is the whole latency
 argument, and `uv run task bench` measures whether it holds in practice.
 
-## 6. Versioning
+## 6. Two-stage rendering for high-cardinality questions
+
+A question with more options than there are single-token labels ({MAX_SINGLE_TOKEN_OPTIONS})
+cannot be asked in one pass: there is no letter left to stand for option 27.
+`needs_two_stage(question)` decides, and ADR 0001's scheme handles it.
+
+**Stage 1 — score every option independently.** One suffix per option, all sharing the same
+state prefix, so the whole stage is a single broadcast call. Each asks a yes/no question, which
+needs only the two fixed labels and so has no ceiling.
+
+{fence(stage1.suffixes[0])}
+
+There are {len(stage1)} suffixes like this one, named `{stage1.names[0]}` through
+`{stage1.names[-1]}`, each masked to `no, yes`.
+
+**These are not a distribution.** The options are scored independently, so their P(yes) values do
+not sum to one. Stage 1 produces a *shortlist*, not an answer.
+
+**Stage 2 — one Choice over the survivors**, which is an ordinary Choice and is calibrated the
+same way every other Choice is:
+
+{fence(stage2.suffixes[0])}
+
+Masked to `{", ".join(stage2.labels[0])}`. Results map back through the candidate indices that
+were passed in: stage 2's label `A` means `question.labels[candidates[0]]`, never the raw letter.
+
+## 7. Versioning
 
 | Version | Date | Change |
 |---|---|---|
-| {FORMAT_VERSION} | 2026-09-17 | Initial format. |
+| 0.1 | 2026-09-17 | Initial format. |
+| {FORMAT_VERSION} | 2026-09-17 | ADR 0003 option B: dropped the `### Question` / `### Options` headers and the verbose `### Answer` block in favour of a one-line answer cue. ADR 0001: added two-stage rendering for questions above {MAX_SINGLE_TOKEN_OPTIONS} options. |
 """)
 
     return "\n".join(parts).rstrip() + "\n"

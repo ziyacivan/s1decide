@@ -18,23 +18,44 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from s1decide.primitives import Question
-from s1decide.tokens import labels_for_question
+from s1decide.primitives import NOUL_OPTIONS, Choice, Question
+from s1decide.tokens import MAX_SINGLE_TOKEN_OPTIONS, labels_for_count, labels_for_question
 
 __all__ = [
     "DEFAULT_TEMPLATE",
     "FORMAT_VERSION",
+    "NOUL_ANSWER_CUE",
+    "SCORE_LEVEL_CUE",
+    "STAGE1_CANDIDATE_PREFIX",
     "SYSTEM_PROMPT",
     "ChatTemplate",
     "RenderedPrompt",
+    "answer_cue",
     "assert_no_open_thinking",
+    "needs_two_stage",
     "render",
     "render_question_block",
+    "render_stage1",
+    "render_stage2",
     "render_state_block",
 ]
 
 #: Version of the rendered format. Bump on any change to the rendered bytes.
-FORMAT_VERSION = "0.1"
+#:
+#: 0.2 (2026-09-17, ADR 0003 option B + ADR 0001 two-stage): dropped the ``### Question`` and
+#: ``### Options`` headers and the verbose ``### Answer`` block in favour of a one-line answer
+#: cue, and added the two-stage rendering for questions above the single-token label ceiling.
+FORMAT_VERSION = "0.2"
+
+#: Answer cue for a Noul. Naming the allowed labels matters zero-shot, before the model has
+#: learned the format, and costs three tokens.
+NOUL_ANSWER_CUE = "Answer (yes/no):"
+
+#: Prefix for a Score's level list, carrying the ordinality the position encodes.
+SCORE_LEVEL_CUE = "Levels low to high:"
+
+#: How a stage-1 candidate is introduced when a question has too many options to label.
+STAGE1_CANDIDATE_PREFIX = "Candidate:"
 
 #: Instruction given once, in the system turn, and shared by every question in a call.
 SYSTEM_PROMPT = (
@@ -203,8 +224,31 @@ def render_state_block(state: str | Mapping[str, Any]) -> str:
     return f"### State\n{body}\n\n"
 
 
+def answer_cue(labels: Sequence[str]) -> str:
+    """The one-line cue that marks the answer position and names the allowed labels.
+
+    A range (``A-D``) rather than a list, because at 26 options the list alone would cost more
+    than the question. Noul keeps its two labels spelled out; they are the labels, not a range.
+
+    Args:
+        labels: The answer labels, in index order.
+
+    Returns:
+        The cue line, without a trailing newline.
+    """
+    if tuple(labels) == NOUL_OPTIONS:
+        return NOUL_ANSWER_CUE
+    if len(labels) == 1:
+        return f"Answer ({labels[0]}):"
+    return f"Answer ({labels[0]}-{labels[-1]}):"
+
+
 def render_question_block(question: Question, labels: Sequence[str]) -> str:
     """Render one question, including its allowed answers.
+
+    Format 0.2 carries no section headers: the state block above already ended, and every token
+    here is paid once per question rather than once per call (ADR 0003). What remains is the
+    caller's own text plus a single answer cue.
 
     Args:
         question: The question to render.
@@ -222,19 +266,13 @@ def render_question_block(question: Question, labels: Sequence[str]) -> str:
             f"but {len(labels)} labels"
         )
 
-    lines = [f"### Question\n{question.instructions.strip()}\n"]
-
-    if question.qtype == "noul":
-        lines.append(
-            "\n### Answer\nIs the statement above true? Reply with exactly one of: yes, no\n"
-        )
-        return "".join(lines)
-
-    heading = "Levels (lowest to highest)" if question.qtype == "score" else "Options"
-    lines.append(f"\n### {heading}\n")
-    lines.extend(f"{label}. {option}\n" for label, option in zip(labels, question.labels))
-    lines.append(f"\n### Answer\nReply with exactly one of: {', '.join(labels)}\n")
-    return "".join(lines)
+    lines = [question.instructions.strip()]
+    if question.qtype != "noul":
+        if question.qtype == "score":
+            lines.append(SCORE_LEVEL_CUE)
+        lines.extend(f"{label}. {option}" for label, option in zip(labels, question.labels))
+    lines.append(answer_cue(labels))
+    return "\n".join(lines) + "\n"
 
 
 def render(
@@ -311,3 +349,123 @@ def assert_no_open_thinking(text: str) -> None:
         raise AssertionError(f"unbalanced thinking block: {opens} <think> vs {closes} </think>")
     if closes and "<think>" in text.rsplit("</think>", 1)[1]:
         raise AssertionError("prompt ends inside a thinking block")
+
+
+# --- two-stage rendering for high-cardinality questions (ADR 0001) -----------
+
+
+def needs_two_stage(question: Question) -> bool:
+    """Whether a question has more options than there are single-token labels.
+
+    Args:
+        question: The question to check.
+
+    Returns:
+        ``True`` when the single-stage path cannot label it and the two-stage path is required.
+    """
+    return question.qtype != "noul" and len(question.labels) > MAX_SINGLE_TOKEN_OPTIONS
+
+
+def render_stage1(
+    state: str | Mapping[str, Any],
+    question: Question,
+    *,
+    template: ChatTemplate = DEFAULT_TEMPLATE,
+    system_prompt: str = SYSTEM_PROMPT,
+) -> RenderedPrompt:
+    """Render stage 1: score every option independently as a yes/no question.
+
+    One suffix per option, all sharing the state prefix, so the whole stage is a single
+    broadcast call. Each suffix asks whether *this* option is the answer, which is a Noul and
+    therefore needs only the two fixed labels — no per-option letter, and so no ceiling.
+
+    The distribution this produces is **not** a Choice distribution: the options are scored
+    independently and their P(yes) values do not sum to one. It is a *shortlist*, and stage 2
+    turns the survivors into a calibrated Choice.
+
+    Args:
+        state: The shared state.
+        question: A question with any number of options.
+        template: Chat template.
+        system_prompt: Shared instruction, part of the prefix.
+
+    Returns:
+        A :class:`RenderedPrompt` with one suffix per option, named ``<question>::<index>``,
+        every label set being ``("no", "yes")``.
+    """
+    prefix = template.head + system_prompt + template.mid + render_state_block(state)
+    instructions = question.instructions.strip()
+    suffixes = tuple(
+        f"{instructions}\n{STAGE1_CANDIDATE_PREFIX} {option}\n{NOUL_ANSWER_CUE}\n" + template.tail
+        for option in question.labels
+    )
+    return RenderedPrompt(
+        format_version=FORMAT_VERSION,
+        template_name=template.name,
+        prefix=prefix,
+        suffixes=suffixes,
+        names=tuple(f"{question.name}::{i}" for i in range(len(question.labels))),
+        labels=tuple(NOUL_OPTIONS for _ in question.labels),
+    )
+
+
+def render_stage2(
+    state: str | Mapping[str, Any],
+    question: Question,
+    candidates: Sequence[int],
+    *,
+    template: ChatTemplate = DEFAULT_TEMPLATE,
+    system_prompt: str = SYSTEM_PROMPT,
+) -> RenderedPrompt:
+    """Render stage 2: one Choice over the shortlist stage 1 produced.
+
+    Args:
+        state: The shared state.
+        question: The original question.
+        candidates: Indices into ``question.labels``, the shortlist from stage 1, in the order
+            they should be presented. Must be non-empty, unique, in range, and no longer than
+            the single-token label ceiling.
+        template: Chat template.
+        system_prompt: Shared instruction.
+
+    Returns:
+        A :class:`RenderedPrompt` with one suffix. Its labels are letters for the shortlist, so
+        mapping a result back to the original option set is ``candidates[label_index]``.
+
+    Raises:
+        ValueError: If the shortlist is empty, has duplicates, indexes out of range, or is
+            longer than :data:`~s1decide.tokens.MAX_SINGLE_TOKEN_OPTIONS`.
+    """
+    picked = list(candidates)
+    if not picked:
+        raise ValueError(f"question {question.name!r}: stage 2 needs at least one candidate")
+    if len(set(picked)) != len(picked):
+        raise ValueError(f"question {question.name!r}: duplicate candidates {picked}")
+    if any(not 0 <= i < len(question.labels) for i in picked):
+        raise ValueError(
+            f"question {question.name!r}: candidate index out of range for "
+            f"{len(question.labels)} options: {picked}"
+        )
+    if len(picked) > MAX_SINGLE_TOKEN_OPTIONS:
+        raise NotImplementedError(
+            f"question {question.name!r}: stage 2 shortlist of {len(picked)} exceeds the "
+            f"{MAX_SINGLE_TOKEN_OPTIONS} single-token labels; take a smaller top-k"
+        )
+
+    shortlist = Question(
+        name=f"{question.name}::stage2",
+        spec=Choice(
+            instructions=question.instructions,
+            options=tuple(question.labels[i] for i in picked),
+        ),
+    )
+    labels = labels_for_count(len(picked))
+    prefix = template.head + system_prompt + template.mid + render_state_block(state)
+    return RenderedPrompt(
+        format_version=FORMAT_VERSION,
+        template_name=template.name,
+        prefix=prefix,
+        suffixes=(render_question_block(shortlist, labels) + template.tail,),
+        names=(shortlist.name,),
+        labels=(labels,),
+    )

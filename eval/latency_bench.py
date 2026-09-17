@@ -33,6 +33,7 @@ from typing import Any
 
 from s1decide.primitives import Choice, Noul, Question, Score
 from s1decide.prompt import FORMAT_VERSION, render
+from s1decide.tokens import labels_for_question
 
 __all__ = [
     "TARGETS",
@@ -57,6 +58,11 @@ TARGETS = {
     "speedup_64": ("bundled vs 64 separate calls", 12.0, "at least"),
     "marginal_ms_64": ("marginal ms per question at 64", 150.0, "at most"),
     "format_overhead": ("format boilerplate as a fraction of suffix tokens", 0.25, "at most"),
+    "format_overhead_controllable": (
+        "format overhead excluding the model's chat tail",
+        0.25,
+        "at most",
+    ),
 }
 
 GIB = 2**30
@@ -232,36 +238,48 @@ def measure_format_overhead(encode: Any, questions: Sequence[Question]) -> dict[
     from s1decide.prompt import DEFAULT_TEMPLATE
 
     tail_tokens = len(encode(DEFAULT_TEMPLATE.tail))
-    header_tokens = len(encode("### Question\n"))
     by_qtype: dict[str, dict[str, Any]] = {}
-    total_suffix = 0
-    total_boilerplate = 0
+    total_suffix = total_boilerplate = total_ours = 0
 
     for question in questions:
-        rendered = render("placeholder state", [question])
-        suffix = rendered.suffixes[0]
-        body = suffix[: -len(DEFAULT_TEMPLATE.tail)]
-        answer_tokens = len(encode(body[body.index("### Answer") :]))
+        suffix = render("placeholder state", [question]).suffixes[0]
         suffix_tokens = len(encode(suffix))
-        boilerplate = tail_tokens + header_tokens + answer_tokens
+        # Content is the caller's own text: the instruction, plus the rendered option lines for
+        # anything that lists options. Measured by rendering rather than by searching for
+        # section markers, so the metric survives a format change (it did not, at 0.1 -> 0.2).
+        labels = labels_for_question(question)
+        content_tokens = len(encode(question.instructions.strip()))
+        if question.qtype != "noul":
+            content_tokens += len(
+                encode("".join(f"{a}. {b}\n" for a, b in zip(labels, question.labels)))
+            )
+        ours = suffix_tokens - tail_tokens - content_tokens
+        boilerplate = ours + tail_tokens
         total_suffix += suffix_tokens
         total_boilerplate += boilerplate
+        total_ours += ours
         by_qtype.setdefault(
             question.qtype,
             {
                 "suffix_tokens": suffix_tokens,
                 "tail_tokens": tail_tokens,
-                "header_tokens": header_tokens,
-                "answer_block_tokens": answer_tokens,
-                "content_tokens": suffix_tokens - boilerplate,
+                "our_overhead_tokens": ours,
+                "content_tokens": content_tokens,
                 "boilerplate_tokens": boilerplate,
                 "boilerplate_fraction": boilerplate / suffix_tokens,
+                "controllable_fraction": ours / suffix_tokens,
             },
         )
 
     return {
         "by_qtype": by_qtype,
+        # Includes the chat tail. Comparable with the 0.1 baseline of 51.7%.
         "boilerplate_fraction": total_boilerplate / total_suffix,
+        # Excludes the chat tail, which the base model's template imposes and we cannot remove
+        # without changing the form the model was trained on. This is what a format change can
+        # actually move.
+        "controllable_fraction": total_ours / total_suffix,
+        "chat_tail_fraction": (total_boilerplate - total_ours) / total_suffix,
         "mean_suffix_tokens": total_suffix / len(questions),
         "worst_qtype": max(by_qtype, key=lambda k: by_qtype[k]["boilerplate_fraction"]),
         "worst_fraction": max(v["boilerplate_fraction"] for v in by_qtype.values()),
@@ -287,6 +305,9 @@ def evaluate_targets(
         "speedup_64": None,
         "marginal_ms_64": None,
         "format_overhead": overhead["boilerplate_fraction"],
+        "format_overhead_controllable": overhead.get(
+            "controllable_fraction", overhead["boilerplate_fraction"]
+        ),
     }
     for n, key in ((16, "speedup_16"), (64, "speedup_64")):
         point = by_n.get(n)
