@@ -1,9 +1,22 @@
 # Windows setup — s1decide (DRAFT)
 
-> **Status: draft, written in Phase 0 Step 0 (2026-09-17).** This is an *audit*
-> of the machine as found, not yet a reproduction recipe. It becomes a recipe in
-> Step 1, when `uv run task doctor` exists and every claim here is machine-checked.
-> Nothing was installed, changed or downloaded to produce this file.
+> **Status: draft. Audited in Phase 0 Step 0, verified in Step 1 (2026-09-17).**
+> Sections 1-6 are the machine as found. Section 7 has been updated with what
+> `uv run task doctor` actually proved; the risks it closed are marked RESOLVED.
+> This is still an audit, not yet a from-scratch reproduction recipe (§8).
+
+## 0. Quick start (what exists today)
+
+```powershell
+git clone <repo> ; cd s1decide
+git config core.longpaths true
+uv sync                 # fetches CPython 3.11 + the pinned stack, creates .venv
+uv run task doctor      # must end with "0 fail"
+uv run task test
+```
+
+Last verified on this machine: **15 checks, 0 fail, 1 warn** (the warn is
+`llama-cpp-python`, which is optional and warn-by-design — see R2).
 
 ## 1. Machine as found (2026-09-17)
 
@@ -191,20 +204,45 @@ verified answer**; Step 3 verifies against upstream sources and writes
 
 ## 7. Risks found by this audit
 
-**R1 — No MSVC, no Windows SDK, no CMake, no CUDA toolkit. (high)**
-The kickoff brief and `CLAUDE.md` both state the Studio installer set these up.
-On this machine it did **not**: it fetched prebuilt binaries instead.
-`triton\windows_utils.py` (`find_msvc_env`, `find_msvc_vswhere`, `check_msvc`,
-`find_msvc_winsdk`) searches `VCINSTALLDIR`, `vswhere.exe` and the registry for
-`cl.exe` + `vcruntime.h` + `vcruntime.lib` — none of which exist here. Triton JIT
-compiles kernels at runtime and needs that toolchain. Expected impact: Unsloth's
-Triton kernels (and the vendored `fla` gated-deltanet kernels) fail to compile and
-fall back to the pure-PyTorch path — slower training, possibly slower inference,
-but per §6 not necessarily fatal. Also blocks any from-source build of
-`llama-cpp-python`.
-*This must be measured, not assumed* — `doctor` gets a real `triton.jit` compile
-probe in Step 1, and the result decides whether we ask to install VS 2022 Build
-Tools (a winget install, ~2-4 GB, requires explicit approval).
+**R1 — No MSVC, no Windows SDK, no CMake, no CUDA toolkit.
+— RESOLVED for Triton (Step 1); partially open for C++ builds.**
+
+The kickoff brief and `CLAUDE.md` both state the Studio installer set these up. On
+this machine it did **not**: it fetched prebuilt binaries instead. MSVC really is
+absent, and Triton says so out loud:
+
+```
+triton/windows_utils.py:174: UserWarning: Failed to find MSVC.
+triton/windows_utils.py:273: UserWarning: Failed to find Windows SDK.
+```
+
+`find_msvc_env()`, `find_msvc_vswhere()` and `find_msvc_winsdk()` all return empty.
+
+**And Triton compiles and launches kernels anyway.** The `triton-compile` check in
+`uv run task doctor` — a real `@triton.jit` elementwise kernel, launched, output
+compared against `x + y` — passes. The reason is that `triton-windows`
+3.6.0.post26 ships its own toolchain inside the wheel:
+
+| Bundled | Path under `site-packages/triton/` | Role |
+|---|---|---|
+| `ptxas.exe` (24 MB) | `backends/nvidia/bin/ptxas.exe` | PTX to cubin — replaces the CUDA toolkit |
+| `cuda.lib` | `backends/nvidia/lib/x64/cuda.lib` | link stub |
+| **TCC** (Tiny C Compiler, 24 KB) | `runtime/tcc/tcc.exe` | compiles the small C launcher shims — replaces `cl.exe` |
+| `libtriton.pyd` (101 MB) | `_C/libtriton.pyd` | prebuilt compiler core |
+
+Evidence this was compiled here and not a stale artefact: `~/.triton/cache/` gained
+`cuda_utils.cp311-win_amd64.pyd` and `__triton_launcher.cp311-win_amd64.pyd` with
+mtimes **12:40:33 and 12:40:35 on 2026-09-17**, i.e. during the doctor run, on a box
+with no C++ compiler. (A `cp313` copy dated 2026-09-06 predates us — that is Studio's
+Python, not ours.)
+
+**Conclusion: do not install VS 2022 Build Tools.** They are not needed for Triton,
+and therefore not needed for Unsloth's vendored `fla` gated-deltanet kernels.
+
+**Still open:** TCC compiles C, not C++. Anything that builds a *C++* extension at
+runtime — `torch.compile`'s inductor C++ backend, `torch.utils.cpp_extension` custom
+ops, a from-source `llama-cpp-python` — remains blocked. Step 3 must check whether the
+Unsloth training path for a GDN hybrid hits any of those.
 
 **R2 — `llama-cpp-python` may not install. (medium)**
 No compiler means we depend on a prebuilt CUDA wheel matching Python 3.11 + cu13x,
@@ -213,7 +251,32 @@ which is not guaranteed to exist. Mitigation already on disk: Unsloth's prebuilt
 HTTP API instead of linking the library. `doctor` reports `llama-cpp-python` as a
 *warning*, not a hard failure.
 
-**R3 — Python 3.11 is not installed. (low)** `uv` will fetch it (~30 MB).
+**R3 — Python 3.11 is not installed. — RESOLVED.** `uv sync` fetched
+`cpython-3.11.16-windows-x86_64-none` (24.0 MiB) and built `.venv`. `uv.lock`
+resolved `torch==2.10.0+cu130` from the pinned index, exactly as intended.
+
+**R7 — uv's universal lock cannot hold vLLM and our pinned stack at once. (new, Step 1)**
+`uv lock` resolves every extra and platform simultaneously, so a `vllm` extra — even
+one marked `sys_platform == 'linux'` — must still co-resolve with the rest. It cannot:
+every vLLM release pins an exact `torch` and a `transformers` range that excludes
+5.5.0 (`vllm 0.11.0` wants `torch==2.8.0`; `vllm >= 0.24` wants `transformers>=5.5.3`).
+Making it fit means unpinning torch and transformers, which defeats the point of
+pinning. **Decision:** vLLM is not a project extra. It is a *baseline runner* for the
+eval, not part of this library's dependency closure, so on the Linux box it gets its
+own environment:
+
+```bash
+uv venv .venv-vllm && uv pip install --python .venv-vllm vllm
+```
+
+`src/s1decide/engine/vllm.py` stays guarded by `sys.platform != "win32"` and its tests
+skip when vLLM is absent. Recorded in `pyproject.toml` next to the other extras.
+
+**R8 — Unsloth writes into the working directory. (new, Step 1, low)**
+Importing `unsloth` (which `task doctor` does) creates `unsloth_compiled_cache/` in the
+CWD and fills it with generated modules. It is git-ignored and excluded from ruff.
+Also note `ruff format` reformats fenced Python blocks inside Markdown, which silently
+edited `docs/research/`; `*.md` is now in ruff's `extend-exclude`.
 
 **R4 — No HF-format Qwen3.8-27B, not even the tokenizer. (low/medium)**
 Step 2's tokenizer tests need the tokenizer files (small, a few MB). The 4-bit
@@ -228,8 +291,34 @@ must still check, since Studio holds VRAM when open.
 
 ## 8. What this file still owes
 
-- [ ] Every table above re-asserted by `uv run task doctor` (Step 1).
-- [ ] A real `torch.cuda.is_available()` result from **our** env, not Studio's.
-- [ ] A real Triton compile probe result (R1).
-- [ ] Verdict on `llama-cpp-python` vs. prebuilt `llama-server.exe` (R2).
-- [ ] A from-scratch reproduction recipe for a stranger.
+- [x] Every table above re-asserted by `uv run task doctor` (Step 1) — 15 checks,
+      0 fail, 1 warn.
+- [x] A real `torch.cuda.is_available()` result from **our** env, not Studio's —
+      True, `torch 2.10.0+cu130`, `torch.version.cuda == "13.0"`, RTX 3090 sm_86,
+      22.8 / 24.0 GiB free.
+- [x] A real Triton compile probe result (R1) — passes, via bundled TCC + ptxas.
+- [x] bitsandbytes 0.50.2 nf4 forward on the GPU — passes.
+- [ ] Verdict on `llama-cpp-python` vs. prebuilt `llama-server.exe` (R2) —
+      still a warn; decided when `engine/llamacpp.py` is written.
+- [ ] Whether the Unsloth training path needs a **C++** compiler (R1, still open).
+- [ ] A from-scratch reproduction recipe for a stranger, verified on a clean machine.
+
+## 9. Environment resolved by `uv sync` (2026-09-17)
+
+Our project venv, `.venv`, Python **3.11.16**. Differences from Studio's stack are
+deliberate and listed here so a later divergence is obvious:
+
+| Package | Ours | Studio | Note |
+|---|---|---|---|
+| Python | 3.11.16 | 3.13.15 | `CLAUDE.md` pins 3.11 for this project |
+| `torch` | 2.10.0+cu130 | 2.10.0+cu130 | same |
+| `triton-windows` | 3.6.0.post26 | 3.6.0.post26 | same |
+| `bitsandbytes` | 0.50.2 | 0.50.2 | same |
+| `transformers` | 5.5.0 | 5.5.0 | same |
+| `peft` / `trl` | 0.18.1 / 0.23.1 | 0.18.1 / 0.23.1 | same |
+| `unsloth` / `unsloth-zoo` | 2026.9.2 / 2026.9.1 | 2026.9.2 / 2026.9.1 | same |
+| `numpy` | 2.2.x | 2.5.2 | **forced**: the 2.5.2 wheel requires Python >= 3.12 |
+| `torchao` | 0.18.0 | 0.17.0 | pulled transitively, not pinned by us |
+| `xformers` | 0.0.35 | 0.0.34 | pulled transitively, not pinned by us |
+
+The exact resolution is committed in `uv.lock`.

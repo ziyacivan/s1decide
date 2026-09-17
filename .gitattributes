@@ -1,0 +1,9 @@
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.gguf binary
+*.safetensors binary
+*.bin binary
+*.npy binary
+*.npz binary

@@ -1,0 +1,125 @@
+[project]
+name = "s1decide"
+version = "0.0.1.dev0"
+description = "Typed, calibrated single-forward-pass decisions from an open-weight LLM."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.11,<3.12"
+keywords = ["llm", "calibration", "structured-output", "classification", "qwen"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# Core stack. Versions mirror the combination that Unsloth Studio installed on the
+# reference machine (see docs/windows-setup.md section 4.1), because that is the
+# torch/CUDA/triton/bitsandbytes tuple known to work there.
+dependencies = [
+    "torch==2.10.0",
+    "transformers==5.5.0",
+    "tokenizers==0.22.2",
+    "safetensors==0.8.0",
+    "accelerate==1.14.0",
+    "peft==0.18.1",
+    "trl==0.23.1",
+    "bitsandbytes==0.50.2",
+    "datasets==4.3.0",
+    # Studio has numpy 2.5.2, but that wheel requires Python >= 3.12 and this project is
+    # pinned to 3.11 (CLAUDE.md). Take the newest 2.x that supports 3.11 instead.
+    "numpy>=2.2,<3",
+    "huggingface-hub>=1.8.0",
+    "unsloth==2026.9.2",
+    "unsloth-zoo==2026.9.1",
+    # Windows gets Triton from the triton-windows wheel; on Linux torch brings its own.
+    "triton-windows==3.6.0.post26 ; sys_platform == 'win32'",
+]
+
+[project.optional-dependencies]
+# GGUF engine. Warn-only in `task doctor`: on Windows without MSVC this can only be
+# installed if a prebuilt CUDA wheel exists (see docs/windows-setup.md R2).
+llamacpp = ["llama-cpp-python>=0.3.0"]
+# NOTE: vLLM is deliberately NOT an extra here.
+# `uv lock` resolves universally across every extra and platform at once, so a `vllm`
+# extra — even one marked `sys_platform == 'linux'` — must still co-resolve with our
+# pinned stack, and it cannot: every vllm release pins its own exact torch and a
+# transformers range that excludes 5.5.0. Making it fit would mean unpinning torch and
+# transformers, i.e. giving up the reproducibility this file exists for.
+# vLLM is a *baseline runner* for the eval, not part of this library's dependency
+# closure, so it gets its own environment on the Linux box:
+#     uv venv .venv-vllm && uv pip install --python .venv-vllm vllm
+# `src/s1decide/engine/vllm.py` stays guarded by `sys.platform != "win32"` and its tests
+# skip when vllm is absent. See docs/windows-setup.md.
+server = ["fastapi>=0.115", "uvicorn>=0.32"]
+plots = ["matplotlib>=3.9"]
+
+[project.scripts]
+task = "s1decide.tasks:main"
+
+[project.urls]
+Homepage = "https://github.com/ziyacivan/s1decide"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=5.0",
+    "ruff>=0.8",
+]
+
+# --- torch index -------------------------------------------------------------
+# The reference machine has NO standalone CUDA toolkit and no nvcc: the CUDA
+# runtime ships inside the torch wheel (cudart64_13.dll etc.), so the "toolkit"
+# we must match is torch's own, i.e. cu130. `task doctor` asserts
+# torch.version.cuda == "13.0" rather than diffing against a non-existent nvcc.
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu130" }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/s1decide"]
+
+# --- tooling -----------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests", "eval", "train", "scripts"]
+extend-exclude = [
+    # Unsloth writes generated, machine-authored modules here on import. Not ours to lint.
+    "unsloth_compiled_cache",
+    # Ruff formats fenced Python blocks inside Markdown. docs/research/ is a factual record
+    # quoting other people's code verbatim; reformatting it silently edits the evidence.
+    "*.md",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "PTH", "RUF"]
+ignore = [
+    "E501",    # line length is handled by the formatter
+    "B905",    # zip(strict=) noise
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]
+
+[tool.ruff.format]
+line-ending = "lf"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = [
+    "gpu: requires a CUDA GPU (run with `uv run task test-gpu`)",
+    "weights: requires downloaded model weights",
+    "tokenizer: requires the base-model tokenizer in the HF cache",
+    "slow: takes more than a few seconds",
+]
+filterwarnings = ["default"]
