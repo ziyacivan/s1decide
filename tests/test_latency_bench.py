@@ -166,7 +166,40 @@ def test_plot_is_drawn_from_the_committed_json(tmp_path) -> None:
             "repeats": 2,
             "state_tokens_actual": 1500,
         },
-        "target": {"ratio_64_over_1": 5800.0 / 1500.0, "met": False},
+        "targets": {
+            "speedup_16": {
+                "description": "s16",
+                "threshold": 8.0,
+                "direction": "at least",
+                "measured": 9.0,
+                "met": True,
+            },
+            "speedup_64": {
+                "description": "s64",
+                "threshold": 12.0,
+                "direction": "at least",
+                "measured": 15.4,
+                "met": True,
+            },
+            "marginal_ms_64": {
+                "description": "m",
+                "threshold": 150.0,
+                "direction": "at most",
+                "measured": 81.0,
+                "met": True,
+            },
+            "format_overhead": {
+                "description": "f",
+                "threshold": 0.25,
+                "direction": "at most",
+                "measured": 0.52,
+                "met": False,
+            },
+            "amortised_ms_64": {"description": "a", "measured": 104.0},
+            "all_met": False,
+        },
+        "format_overhead": {"by_qtype": {}, "boilerplate_fraction": 0.52},
+        "retired_target": {"rule": "retired", "ratio_64_over_1": 5800.0 / 1500.0, "met": False},
         "decomposition": {"per_pass_ms": 1.0, "per_token_ms": 1.0, "r_squared": 1.0},
         "points": points,
     }
@@ -179,3 +212,91 @@ def test_plot_is_drawn_from_the_committed_json(tmp_path) -> None:
 def test_median_of_an_even_sample_count_is_the_mean_of_the_middle_two() -> None:
     """Pinned so the reported median is unambiguous with the default 20 repeats."""
     assert statistics.median([1.0, 2.0, 3.0, 4.0]) == pytest.approx(2.5)
+
+
+# --- targets ------------------------------------------------------------------
+
+
+def test_measure_format_overhead_separates_boilerplate_from_content(tokenizer) -> None:
+    """Measured against the real tokenizer, since token counts are the whole point."""
+    from eval.latency_bench import measure_format_overhead
+
+    overhead = measure_format_overhead(
+        lambda s: tokenizer.encode(s, add_special_tokens=False), make_questions(3)
+    )
+    assert set(overhead["by_qtype"]) == {"noul", "choice", "score"}
+    for breakdown in overhead["by_qtype"].values():
+        assert (
+            breakdown["boilerplate_tokens"] + breakdown["content_tokens"]
+            == breakdown["suffix_tokens"]
+        )
+        assert 0.0 < breakdown["boilerplate_fraction"] < 1.0
+    # Noul carries the least caller content, so it is the worst case.
+    assert overhead["worst_qtype"] == "noul"
+    assert overhead["worst_fraction"] >= overhead["boilerplate_fraction"]
+
+
+def test_format_overhead_is_the_current_known_baseline(tokenizer) -> None:
+    """Pinned so ADR 0003 option B can be shown to have moved it, not assumed to."""
+    from eval.latency_bench import measure_format_overhead
+
+    overhead = measure_format_overhead(
+        lambda s: tokenizer.encode(s, add_special_tokens=False), make_questions(3)
+    )
+    assert overhead["boilerplate_fraction"] == pytest.approx(0.52, abs=0.03)
+    assert overhead["by_qtype"]["noul"]["boilerplate_fraction"] == pytest.approx(0.70, abs=0.03)
+
+
+def targets_payload(speedup16=9.0, speedup64=15.4, median1=1548.0, median64=6674.0, overhead=0.52):
+    from eval.latency_bench import evaluate_targets
+
+    points = [
+        {"n_questions": 1, "median_ms": median1, "median_separate_ms": median1},
+        {"n_questions": 16, "median_ms": 2864.0, "median_separate_ms": 2864.0 * speedup16},
+        {"n_questions": 64, "median_ms": median64, "median_separate_ms": median64 * speedup64},
+    ]
+    return evaluate_targets(points, {"boilerplate_fraction": overhead})
+
+
+def test_targets_are_scored_against_the_definition_of_done() -> None:
+    result = targets_payload()
+    assert result["speedup_16"]["met"] is True
+    assert result["speedup_64"]["met"] is True
+    assert result["marginal_ms_64"]["met"] is True
+    assert result["format_overhead"]["met"] is False  # current baseline, ADR 0003 option B
+    assert result["all_met"] is False
+
+
+def test_marginal_cost_is_incremental_not_amortised() -> None:
+    """(median(64) - median(1)) / 63, not median(64)/64 — the cost of each *extra* question."""
+    result = targets_payload(median1=1548.0, median64=6674.0)
+    assert result["marginal_ms_64"]["measured"] == pytest.approx((6674.0 - 1548.0) / 63)
+    assert result["amortised_ms_64"]["measured"] == pytest.approx(6674.0 / 64)
+
+
+def test_all_met_is_true_only_when_every_target_passes() -> None:
+    assert targets_payload(overhead=0.20)["all_met"] is True
+    assert targets_payload(overhead=0.20, speedup64=11.0)["all_met"] is False
+    assert targets_payload(overhead=0.20, speedup16=7.0)["all_met"] is False
+    assert targets_payload(overhead=0.20, median64=1548.0 + 63 * 200)["all_met"] is False
+
+
+def test_targets_report_none_when_a_question_count_is_missing() -> None:
+    from eval.latency_bench import evaluate_targets
+
+    result = evaluate_targets(
+        [{"n_questions": 1, "median_ms": 100.0, "median_separate_ms": 100.0}],
+        {"boilerplate_fraction": 0.2},
+    )
+    assert result["speedup_64"]["measured"] is None
+    assert result["speedup_64"]["met"] is None
+    assert result["format_overhead"]["met"] is True
+
+
+def test_target_thresholds_match_the_documented_definition_of_done() -> None:
+    from eval.latency_bench import TARGETS
+
+    assert TARGETS["speedup_16"][1] == 8.0
+    assert TARGETS["speedup_64"][1] == 12.0
+    assert TARGETS["marginal_ms_64"][1] == 150.0
+    assert TARGETS["format_overhead"][1] == 0.25

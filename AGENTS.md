@@ -121,7 +121,10 @@ Checklist before hand-off
 - [ ] Fuzz test: 10k random schemas → zero off-schema outputs (type safety by
       construction).
 - [ ] Contract tests pass identically on all engines (within tolerance).
-- [ ] `uv run task bench` shows 64-question latency < 2× 1-question latency on 3090.
+- [ ] `uv run task bench` meets the latency targets in `CLAUDE.md`'s definition of
+      done (bundling speedup, marginal cost per question, fitted cost model, format
+      overhead). The old "64-question < 2× 1-question" rule was retired by ADR 0003:
+      KV broadcast amortises the state, not the questions.
 - [ ] `scripts/convert_gguf.py` produces Q8 / Q5_K_M / Q4_K_M from merged BF16
       using llama.cpp's converter, and the same command works on Linux.
 - [ ] KV-broadcast implementation is verified against the GDN hybrid cache

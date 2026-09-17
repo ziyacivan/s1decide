@@ -164,7 +164,8 @@ def render_latency(payload: Mapping[str, Any]) -> str:
         Markdown source.
     """
     meta = payload["meta"]
-    target = payload["target"]
+    targets = payload["targets"]
+    retired = payload["retired_target"]
     fit = payload["decomposition"]
     points = payload["points"]
     baseline = points[0]["median_ms"]
@@ -180,9 +181,29 @@ def render_latency(payload: Mapping[str, Any]) -> str:
         f"system prompt) · median of {meta['repeats']} timed runs after {meta['warmup']} warm-ups",
         f"- **Created**: {meta.get('created', '?')} · torch {meta.get('torch', '?')}",
         "",
-        f"## Target: {target['rule']}",
+        "## Targets",
         "",
-        f"**{target['ratio_64_over_1']:.2f}x — {'MET' if target['met'] else 'MISSED'}.**",
+        "| target | measured | threshold | met |",
+        "|---|---|---|---|",
+    ]
+    for result in targets.values():
+        if not isinstance(result, dict) or "threshold" not in result:
+            continue
+        value = result["measured"]
+        out.append(
+            f"| {result['description']} | {value:.3f} | {result['direction']} "
+            f"{result['threshold']} | {'yes' if result['met'] else '**no**'} |"
+        )
+    amortised = targets.get("amortised_ms_64", {}).get("measured")
+    out += [
+        "",
+        f"**All targets met: {'yes' if targets.get('all_met') else 'no'}.**"
+        + (f" Amortised cost at 64 questions: {amortised:.0f} ms/question." if amortised else ""),
+        "",
+        f"The retired rule (`{retired['rule']}`) would read "
+        f"**{retired['ratio_64_over_1']:.2f}x**. ADR 0003 explains why it was replaced: it is met "
+        "only when `prefix_tokens >~ 61 x tokens_per_question`, which measures the benchmark's "
+        "state size more than the engine.",
         "",
         "## Measurements",
         "",
@@ -215,6 +236,24 @@ def render_latency(payload: Mapping[str, Any]) -> str:
         f"{points[0]['median_prefill_ms'] / meta.get('prefix_tokens', meta['state_tokens_actual']):.3f} ms, so a suffix "
         "token costs essentially the same as a prefix token: batching the rows buys no "
         "per-token discount at this batch size, because the pass is already compute-bound.",
+        "",
+        "## Format overhead",
+        "",
+        "Boilerplate is what the renderer adds (chat tail, `### Question` header, `### Answer` "
+        "block); content is the caller's instruction and option labels, which no format change "
+        "can remove. ADR 0003 option B is the work of shrinking the former.",
+        "",
+        "| primitive | suffix tok | tail | header | answer block | content | boilerplate |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for qtype, b in payload.get("format_overhead", {}).get("by_qtype", {}).items():
+        out.append(
+            f"| {qtype} | {b['suffix_tokens']} | {b['tail_tokens']} | {b['header_tokens']} | "
+            f"{b['answer_block_tokens']} | {b['content_tokens']} | "
+            f"{b['boilerplate_fraction']:.0%} |"
+        )
+
+    out += [
         "",
         "## Files",
         "",

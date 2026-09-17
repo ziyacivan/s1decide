@@ -62,6 +62,22 @@ this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   generated `LATENCY.md`. `docs/adr/0003-latency-target.md` records that the "64 questions
   < 2x one question" target is missed (4.31x) and why, with options and a recommendation.
 
+- **Phase 0 complete** (tag `phase-0`). Decisions recorded at its close:
+  - `docs/adr/0003-latency-target.md` **accepted** — the "64-question call < 2x the 1-question
+    call" rule is retired. KV broadcast amortises the state, not the questions; latency is flat
+    in question count only when `prefix_tokens >~ 61 x tokens_per_question`. Replaced in
+    `CLAUDE.md` and `AGENTS.md` by four measurable targets produced by `eval/latency_bench.py`:
+    bundling speedup (>= 8x at 16, >= 12x at 64), marginal cost per question at 64 (<= 150 ms),
+    the fitted cost model committed per release, and format overhead (<= 25% of suffix tokens).
+    Three are met; format overhead is the baseline for option B.
+  - `docs/adr/0004-training-data-licence-gate.md` **accepted** — `pngwn/system-one-decisions` is
+    eval-only permanently; train splits require a licence from an allowlist, enforced by a test.
+  - `docs/research/latency-amortisation-2026-09-17.md` — why the `a/b` ratio is a property of
+    the hardware rather than the model, and a falsifiable hypothesis for a competitor's
+    flat-latency claim.
+- `eval/latency_bench.py` now measures format overhead and scores the run against the four
+  targets; `LATENCY.md` reports them.
+
 ### Notes
 
 - vLLM is deliberately **not** a project extra: uv's universal lock cannot satisfy

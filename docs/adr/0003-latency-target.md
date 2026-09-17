@@ -1,8 +1,22 @@
-# ADR 0003 — The "64 questions < 2x one question" target is not reachable at a 1.5k state
+# ADR 0003 — Retire the "64 questions < 2x one question" target
 
-- **Status:** proposed — needs a decision from the project owner
+- **Status:** **accepted** (2026-09-17)
 - **Date:** 2026-09-17, Phase 0 Step 6
 - **Deciders:** project owner (human), inference-engineer role
+
+## The finding, stated plainly
+
+**KV broadcast amortises the state, not the questions.** Prefilling once and broadcasting the
+cache removes the cost of re-reading the state; it does nothing about the cost of reading the
+questions, which still traverse every layer. Latency is flat in question count only when
+
+```
+prefix_tokens  >~  61 x tokens_per_question
+```
+
+Below that threshold, latency is dominated by the questions and grows close to linearly in
+their number. The original "< 2x" rule encoded this threshold accidentally, so it measured the
+benchmark's state size at least as much as the engine. It has been replaced (see Decision).
 - **Evidence:** `results/20260917-120323-qwen38-27b-unsloth-bnb-4bit-nf4-bf16-latency/`
   (`latency.json` is the source of truth; `LATENCY.md` and `latency.png` are generated from it).
   Measured twice, half an hour apart, agreeing to within 0.3%.
@@ -112,25 +126,54 @@ needs its own numerical validation against the Step 4 contract test.
 turn green without anything improving. Rejected: that is measuring to the target rather than
 targeting the measurement.
 
-## Recommendation
+## Decision
 
-**A now, C next, B folded into Phase 1.**
+**A now, C next, B in Phase 1. D rejected.**
 
-- **A** because the target as written couples two independent quantities and is met only in a
-  regime we did not choose; the honest deliverable is the curve, the crossover rule and the
-  15.4x bundling result, all of which are measured and committed.
-- **C** next because it is free of prompt changes and re-uses the existing contract test — and
-  because 7 rows per pass is a VRAM accident, not a design choice.
-- **B** folded into Phase 1, where `FORMAT_VERSION` bumps anyway for training. Changing the
-  prompt now would invalidate the Step 5 baseline for a ~17% latency gain.
+- **A** — adopted. `CLAUDE.md`'s definition of done no longer contains the "< 2x" rule. It is
+  replaced by four targets, all produced by `eval/latency_bench.py` and written to
+  `results/<run_id>/latency.json`:
 
-**Rejected: D.**
+  | target | threshold | status at adoption |
+  |---|---|---|
+  | bundled vs N separate calls, 16 questions | at least 8x | met |
+  | bundled vs N separate calls, 64 questions | at least 12x | met |
+  | marginal cost per question at 64, `(median(64) - median(1)) / 63` | at most 150 ms | met |
+  | format boilerplate as a fraction of suffix tokens | at most 25% | **not met** — this is option B's acceptance criterion |
+
+  The fitted cost model (`a * passes + b * suffix_tokens`, with R²) is re-fitted and committed
+  per release, so a regression in either term is visible rather than inferred.
+
+- **C** — next, owned by `inference-engineer`. Raise rows-per-pass above the current 7 by
+  reducing per-row cache cost (bf16 gated-deltanet recurrent state, and/or freeing VRAM by
+  quantizing the GDN input projections the checkpoint leaves in 16-bit).
+  **Conditions on any such change, both required:**
+  1. the `N-row broadcast == N independent runs` contract test stays green
+     (`tests/test_engine_gpu_27b.py`, and the CPU equivalent), and
+  2. **no ECE regression** on the Step 5 eval — re-run `uv run task eval` and compare
+     `results/<run_id>/metrics.json` against the committed zero-shot baseline.
+
+  A latency win that moves calibration is not a win; the project's differentiator is the
+  calibration, not the milliseconds.
+
+- **B** — Phase 1, owned by `architect` with `training-engineer`. Trim the `### Question`
+  header and `### Answer` block, bumping `FORMAT_VERSION` to 0.2 alongside the training-data
+  format change, so accuracy and calibration are re-measured in the same breath. Acceptance is
+  the 25% overhead target above. Baseline to beat, measured and committed: **51.7% overall,
+  70% for Noul**.
+
+- **D** — rejected. Specifying a longer benchmark state would turn the number green without
+  anything improving.
 
 ## Consequences
 
-- `CLAUDE.md`'s definition of done needs its latency line edited. That is the project owner's
-  call, which is why this ADR is `proposed` and not `accepted`.
+- `CLAUDE.md`'s definition of done and the `inference-engineer` checklist in `AGENTS.md` have
+  both been updated; the "< 2x" rule appears nowhere as a live requirement. `latency.json`
+  still reports it under `retired_target` so the historical number stays traceable.
 - Any published latency claim must state the state size and the question mix. "Latency barely
-  changes with more questions" is true only when the state dominates; we should say so, and say
-  where the crossover is, rather than repeat a competitor's framing.
+  changes with more questions" is true only when the state dominates; we say where the
+  crossover is rather than repeat a competitor's framing.
+- The crossover rule has a second consequence worth chasing: it suggests why a competitor can
+  claim flat latency when we cannot. See
+  `docs/research/latency-amortisation-2026-09-17.md`.
 - Options B and C each get their own measurement before adoption; neither is assumed.

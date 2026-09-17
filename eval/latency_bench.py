@@ -25,7 +25,7 @@ import json
 import platform
 import statistics
 import time
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -34,7 +34,30 @@ from typing import Any
 from s1decide.primitives import Choice, Noul, Question, Score
 from s1decide.prompt import FORMAT_VERSION, render
 
-__all__ = ["BenchConfig", "Measurement", "main", "make_questions", "make_state", "run"]
+__all__ = [
+    "TARGETS",
+    "BenchConfig",
+    "Measurement",
+    "evaluate_targets",
+    "main",
+    "make_questions",
+    "make_state",
+    "measure_format_overhead",
+    "run",
+]
+
+#: The latency targets in `CLAUDE.md`'s definition of done, as of ADR 0003.
+#:
+#: The original rule — a 64-question call under 2x a 1-question call — was retired because it
+#: couples two independent quantities: it is met only when ``prefix_tokens >~ 61 x
+#: tokens_per_question``, which says more about the benchmark's state size than about the
+#: engine. These four replace it and are all produced here.
+TARGETS = {
+    "speedup_16": ("bundled vs 16 separate calls", 8.0, "at least"),
+    "speedup_64": ("bundled vs 64 separate calls", 12.0, "at least"),
+    "marginal_ms_64": ("marginal ms per question at 64", 150.0, "at most"),
+    "format_overhead": ("format boilerplate as a fraction of suffix tokens", 0.25, "at most"),
+}
 
 GIB = 2**30
 
@@ -191,6 +214,112 @@ def make_questions(n: int) -> list[Question]:
     return out
 
 
+def measure_format_overhead(encode: Any, questions: Sequence[Question]) -> dict[str, Any]:
+    """Measure how much of each suffix is format boilerplate rather than caller content.
+
+    Boilerplate is everything the renderer adds: the chat tail, the ``### Question`` header and
+    the ``### Answer`` block. Content is the caller's instruction text and option labels, which
+    no format change can remove. ADR 0003 option B is the work of shrinking the former, and
+    ``TARGETS["format_overhead"]`` is its acceptance criterion.
+
+    Args:
+        encode: Callable turning text into token ids.
+        questions: Questions to measure, one rendering each.
+
+    Returns:
+        Per-primitive breakdowns plus the token-weighted overall fraction.
+    """
+    from s1decide.prompt import DEFAULT_TEMPLATE
+
+    tail_tokens = len(encode(DEFAULT_TEMPLATE.tail))
+    header_tokens = len(encode("### Question\n"))
+    by_qtype: dict[str, dict[str, Any]] = {}
+    total_suffix = 0
+    total_boilerplate = 0
+
+    for question in questions:
+        rendered = render("placeholder state", [question])
+        suffix = rendered.suffixes[0]
+        body = suffix[: -len(DEFAULT_TEMPLATE.tail)]
+        answer_tokens = len(encode(body[body.index("### Answer") :]))
+        suffix_tokens = len(encode(suffix))
+        boilerplate = tail_tokens + header_tokens + answer_tokens
+        total_suffix += suffix_tokens
+        total_boilerplate += boilerplate
+        by_qtype.setdefault(
+            question.qtype,
+            {
+                "suffix_tokens": suffix_tokens,
+                "tail_tokens": tail_tokens,
+                "header_tokens": header_tokens,
+                "answer_block_tokens": answer_tokens,
+                "content_tokens": suffix_tokens - boilerplate,
+                "boilerplate_tokens": boilerplate,
+                "boilerplate_fraction": boilerplate / suffix_tokens,
+            },
+        )
+
+    return {
+        "by_qtype": by_qtype,
+        "boilerplate_fraction": total_boilerplate / total_suffix,
+        "mean_suffix_tokens": total_suffix / len(questions),
+        "worst_qtype": max(by_qtype, key=lambda k: by_qtype[k]["boilerplate_fraction"]),
+        "worst_fraction": max(v["boilerplate_fraction"] for v in by_qtype.values()),
+    }
+
+
+def evaluate_targets(
+    points: Sequence[dict[str, Any]], overhead: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Score the run against the latency targets in ``CLAUDE.md``'s definition of done.
+
+    Args:
+        points: Serialised :class:`Measurement` records, ascending in question count.
+        overhead: Result of :func:`measure_format_overhead`.
+
+    Returns:
+        One entry per target with its measured value, threshold and whether it is met, plus
+        ``all_met``.
+    """
+    by_n = {p["n_questions"]: p for p in points}
+    measured: dict[str, float | None] = {
+        "speedup_16": None,
+        "speedup_64": None,
+        "marginal_ms_64": None,
+        "format_overhead": overhead["boilerplate_fraction"],
+    }
+    for n, key in ((16, "speedup_16"), (64, "speedup_64")):
+        point = by_n.get(n)
+        if point and point.get("median_separate_ms"):
+            measured[key] = point["median_separate_ms"] / point["median_ms"]
+    if 64 in by_n and 1 in by_n:
+        # Marginal, not amortised: what each *extra* question costs once the state is paid for.
+        measured["marginal_ms_64"] = (by_n[64]["median_ms"] - by_n[1]["median_ms"]) / 63
+
+    results: dict[str, Any] = {}
+    for key, (description, threshold, direction) in TARGETS.items():
+        value = measured[key]
+        met = (
+            None
+            if value is None
+            else (value >= threshold if direction == "at least" else value <= threshold)
+        )
+        results[key] = {
+            "description": description,
+            "threshold": threshold,
+            "direction": direction,
+            "measured": value,
+            "met": met,
+        }
+    if 64 in by_n:
+        results["amortised_ms_64"] = {
+            "description": "informational: median(64) / 64",
+            "measured": by_n[64]["median_ms"] / 64,
+        }
+    results["all_met"] = all(r["met"] for r in results.values() if isinstance(r.get("met"), bool))
+    return results
+
+
 def _time_call(engine: Any, state: str, questions: Sequence[Question]) -> tuple[float, Any]:
     """Run one bundled call and return ``(wall_ms, engine_meta)``."""
     rendered = render(state, list(questions))
@@ -296,6 +425,8 @@ def run(config: BenchConfig, out_root: Path | None = None) -> Path:
 
     baseline = measurements[0].median_ms
     largest = measurements[-1]
+    overhead = measure_format_overhead(engine.encode, make_questions(3))
+    points = [m.to_json() for m in measurements]
     payload = {
         "meta": {
             # config first: its `run_id` field is the *requested* one and may be empty.
@@ -311,22 +442,32 @@ def run(config: BenchConfig, out_root: Path | None = None) -> Path:
             "prefix_tokens": measurements[0].prefix_tokens,
             "state_tokens_actual": len(engine.encode(state)),
         },
-        "target": {
-            "rule": "64-question call < 2x the 1-question call",
+        "targets": evaluate_targets(points, overhead),
+        "format_overhead": overhead,
+        "retired_target": {
+            "rule": "64-question call < 2x the 1-question call (retired by ADR 0003)",
             "ratio_64_over_1": largest.median_ms / baseline,
             "met": largest.median_ms < 2.0 * baseline,
         },
         "decomposition": _fit_two_term(measurements),
-        "points": [m.to_json() for m in measurements],
+        "points": points,
     }
     (directory / "latency.json").write_text(
         json.dumps(payload, indent=2) + "\n", encoding="utf-8", newline="\n"
     )
 
-    ratio = payload["target"]["ratio_64_over_1"]
+    print("  targets (CLAUDE.md definition of done, ADR 0003):")
+    for key, spec in TARGETS.items():
+        result = payload["targets"][key]
+        value = result["measured"]
+        print(
+            f"    [{'MET ' if result['met'] else 'MISS'}] {spec[0]:52} "
+            f"{value:7.3f} ({spec[2]} {spec[1]})"
+        )
     print(
-        f"  target: {largest.n_questions}-question / 1-question = {ratio:.2f}x "
-        f"-> {'MET' if payload['target']['met'] else 'MISSED'} (bar is 2.00x)"
+        f"    informational: amortised {payload['targets']['amortised_ms_64']['measured']:.0f} "
+        f"ms/question at 64; retired 2x rule would read "
+        f"{payload['retired_target']['ratio_64_over_1']:.2f}x"
     )
     fit = payload["decomposition"]
     print(
@@ -422,9 +563,11 @@ def plot(run_dir: str | Path) -> Path:
     ax_ratio.grid(alpha=0.15, which="both")
     ax_ratio.legend(frameon=False, fontsize=9, loc="upper left")
 
-    target = payload["target"]
+    targets = payload["targets"]
     ax_ratio.set_title(
-        f"64/1 = {target['ratio_64_over_1']:.2f}x — target {'met' if target['met'] else 'missed'}",
+        f"bundling speedup {targets['speedup_64']['measured']:.1f}x at 64 · marginal "
+        f"{targets['marginal_ms_64']['measured']:.0f} ms/question · "
+        f"targets {'all met' if targets.get('all_met') else 'not all met'}",
         fontsize=10,
     )
 

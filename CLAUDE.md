@@ -237,8 +237,16 @@ Tasks that aren't implementable yet fail loudly with "not implemented".
       a stranger reproduce the environment.
 - [ ] `decide()` returns type-safe results for all three primitives; fuzz test
       proves no off-schema output in 10k random schemas.
-- [ ] Latency at 1 / 4 / 16 / 64 questions on the 3090 measured and plotted;
-      64-question call < 2× the 1-question call.
+- [ ] Latency at 1 / 4 / 16 / 64 questions on the 3090 measured and plotted, and
+      these targets met — all produced by `eval/latency_bench.py` into
+      `results/<run_id>/latency.json` (see ADR 0003, which retired the old
+      "64-question call < 2× the 1-question call" rule and explains why):
+      - [ ] bundled-vs-N-separate-calls speedup ≥ 8× at 16 questions and ≥ 12× at 64;
+      - [ ] marginal cost per question at 64, `(median(64) − median(1)) / 63`, ≤ 150 ms;
+      - [ ] fitted cost model (`a·passes + b·suffix_tokens`, with R²) re-fitted and
+            committed per release;
+      - [ ] format overhead ≤ 25% of suffix tokens (ADR 0003 option B; baseline at
+            adoption: 51.7% overall, 70% for Noul).
 - [ ] Zero-shot baseline (no LoRA) + S1 LoRA + S2 calibration evaluated on
       held-out families and ≥ 2 fully OOD sets; ECE, Brier, acc, AUROC per
       option-count bucket; reliability diagrams committed.

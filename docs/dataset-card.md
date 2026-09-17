@@ -10,7 +10,7 @@ and per-split figures are produced by code (`eval/data.py`, recorded in each run
 
 | | |
 |---|---|
-| Used for | **Evaluation only** (Phase 0 Step 5 zero-shot baseline and calibration) |
+| Used for | **Evaluation only, permanently** — ADR 0004. It never enters a train split. |
 | Licence | **CC-BY-NC-4.0** |
 | Splits | train 12,913 · val 1,452 · test 1,751 |
 | Revision pinned | `fe081073641c58f336acafe090002e4435313c0a` |
@@ -18,21 +18,16 @@ and per-split figures are produced by code (`eval/data.py`, recorded in each run
 | Families | `go_emotions`, `mmlu`, `ag_news`, `banking77`, `yelp_score`, `tickets_queue`, `tickets_priority`, `tickets_language`, `tickets_type` |
 | Primitives | `choice`, `score` (ordered), `noul` |
 
-**The licence is the thing to notice. CC-BY-NC-4.0 forbids commercial use.** Measuring a model
-against this data is fine and is all we do with it today. Training on it is a different matter:
-weights derived from NC data cannot be released under Apache 2.0 with a straight face, which
-directly contradicts the release plan in `CLAUDE.md`. Before Phase 1 uses any of this for
-training, one of these has to be true:
+**The licence is the thing to notice. CC-BY-NC-4.0 forbids commercial use**, so weights derived
+from it could not honestly be released under Apache 2.0. **Resolved by ADR 0004 (accepted
+2026-09-17): this dataset is eval-only, permanently**, and Phase 1 rebuilds training data from
+the underlying sources under their own licences. It stays a good yardstick precisely because we
+never fit it.
 
-1. we train only on sources whose licences permit redistribution of derived weights, and this
-   dataset stays an eval set; or
-2. we rebuild the equivalent data from the underlying sources under their own licences
-   (`go_emotions`, `ag_news`, `banking77`, MMLU and Yelp each have their own terms, which are
-   not all permissive either); or
-3. the release is not Apache 2.0, which is a decision for the project owner and needs an ADR.
-
-**Recommendation: option 1.** This dataset is a good, honest yardstick precisely because we did
-not train on it, and keeping it that way also keeps it clean as a held-out benchmark.
+Enforcement is a test, not this paragraph: every row in a train or validation split must carry
+a licence from the ADR 0004 allowlist (Apache-2.0, MIT, BSD-2/3-Clause, CC0-1.0, CC-BY-3.0/4.0).
+NC and ND sources may be tagged `eval` only; an unrecognised licence is refused rather than
+assumed.
 
 #### Normalisations applied at load
 
@@ -73,7 +68,10 @@ the base-rate control learns its frequencies from `val` only.
 
 The sources named in `AGENTS.md` for the `data-engineer` role — banking77, clinc150, MASSIVE
 (keeping Turkish and other non-English subsets), MNLI/ANLI/FEVER/BoolQ, SST-5 and review
-ratings, plus synthetic structured-state tasks. **Each needs its licence checked against the
-Apache-2.0 release before a single row is used for training**, per the note above. No teacher
-model has been used for synthetic labels yet; when one is, it will be an open-weight model and
-recorded here with its licence and the prompt hash.
+ratings, plus synthetic structured-state tasks. **Phase 1 opens with a source audit**: each
+licence is resolved to an SPDX identifier and classified `train` / `eval-only` / `refused`
+against the ADR 0004 allowlist *before any row is fetched*. Some of these will not survive the
+audit, and finding that out before the GPU-hours is the point.
+
+No teacher model has been used for synthetic labels yet; when one is, it will be an open-weight
+model, and its licence and the prompt hash are recorded here.
