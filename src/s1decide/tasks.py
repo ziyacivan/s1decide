@@ -773,12 +773,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0 if args else 2
 
     name, rest = args[0], args[1:]
-    try:
-        return run_task(name, rest)
-    except KeyError:
+    if name not in TASKS:
         print(f"unknown task: {name}\n", file=sys.stderr)
         print(_usage(), file=sys.stderr)
         return 2
+    # No blanket `except KeyError` here: a KeyError raised *inside* a task used to be
+    # reported as "unknown task: bench", which sent us reading the dispatcher, not the bug.
+    try:
+        return run_task(name, rest)
     except NotImplementedError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2

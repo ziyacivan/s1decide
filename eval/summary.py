@@ -270,18 +270,19 @@ def render_latency(payload: Mapping[str, Any]) -> str:
         "",
         "## Format overhead",
         "",
-        "Boilerplate is what the renderer adds (chat tail, `### Question` header, `### Answer` "
-        "block); content is the caller's instruction and option labels, which no format change "
-        "can remove. ADR 0003 option B is the work of shrinking the former.",
+        "Boilerplate is what the renderer adds; content is the caller's instruction and option "
+        "labels, which no format change can remove. Boilerplate splits into the chat tail, which "
+        "the base model's template imposes, and **ours** — the headers and answer block, which is "
+        "the only part ADR 0003 option B can shrink.",
         "",
-        "| primitive | suffix tok | tail | header | answer block | content | boilerplate |",
+        "| primitive | suffix tok | content | ours | chat tail | boilerplate | controllable |",
         "|---|---|---|---|---|---|---|",
     ]
     for qtype, b in payload.get("format_overhead", {}).get("by_qtype", {}).items():
         out.append(
-            f"| {qtype} | {b['suffix_tokens']} | {b['tail_tokens']} | {b['header_tokens']} | "
-            f"{b['answer_block_tokens']} | {b['content_tokens']} | "
-            f"{b['boilerplate_fraction']:.0%} |"
+            f"| {qtype} | {b['suffix_tokens']} | {b['content_tokens']} | "
+            f"{b['our_overhead_tokens']} | {b['tail_tokens']} | "
+            f"{b['boilerplate_fraction']:.0%} | {b['controllable_fraction']:.0%} |"
         )
 
     out += [

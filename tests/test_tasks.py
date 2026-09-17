@@ -113,3 +113,17 @@ def test_hf_cache_dir_is_absolute() -> None:
 def test_doctor_checks_are_unique() -> None:
     names = [check.__name__ for check in tasks.DOCTOR_CHECKS]
     assert len(names) == len(set(names))
+
+
+def test_main_reports_an_unknown_task_name() -> None:
+    assert tasks.main(["definitely-not-a-task"]) == 2
+
+
+def test_main_does_not_disguise_a_keyerror_from_inside_a_task(monkeypatch) -> None:
+    """A KeyError in the bench once surfaced as "unknown task: bench" and cost an hour."""
+    task = tasks.TASKS["doctor"]
+    monkeypatch.setitem(
+        tasks.TASKS, "doctor", type(task)(**{**vars(task), "fn": lambda _argv: {}["missing"]})
+    )
+    with pytest.raises(KeyError, match="missing"):
+        tasks.main(["doctor"])

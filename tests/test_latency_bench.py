@@ -275,8 +275,16 @@ def test_targets_are_scored_against_the_definition_of_done() -> None:
     assert result["speedup_16"]["met"] is True
     assert result["speedup_64"]["met"] is True
     assert result["marginal_ms_64"]["met"] is True
-    assert result["format_overhead"]["met"] is False  # current baseline, ADR 0003 option B
+    assert result["format_overhead_controllable"]["met"] is False  # 0.52 in this fixture
     assert result["all_met"] is False
+
+
+def test_all_in_format_overhead_is_reported_but_not_scored() -> None:
+    """ADR 0003: the bar is the controllable figure; all-in is unreachable for Noul."""
+    result = targets_payload()
+    assert "measured" in result["format_overhead"]
+    assert "met" not in result["format_overhead"]
+    assert "threshold" not in result["format_overhead"]
 
 
 def test_marginal_cost_is_incremental_not_amortised() -> None:
@@ -302,7 +310,7 @@ def test_targets_report_none_when_a_question_count_is_missing() -> None:
     )
     assert result["speedup_64"]["measured"] is None
     assert result["speedup_64"]["met"] is None
-    assert result["format_overhead"]["met"] is True
+    assert result["format_overhead_controllable"]["met"] is True
 
 
 def test_target_thresholds_match_the_documented_definition_of_done() -> None:
@@ -311,4 +319,48 @@ def test_target_thresholds_match_the_documented_definition_of_done() -> None:
     assert TARGETS["speedup_16"][1] == 8.0
     assert TARGETS["speedup_64"][1] == 12.0
     assert TARGETS["marginal_ms_64"][1] == 150.0
-    assert TARGETS["format_overhead"][1] == 0.25
+    assert TARGETS["format_overhead_controllable"][1] == 0.25
+    assert "format_overhead" not in TARGETS  # reported, not a bar
+
+
+def test_latency_summary_renders_the_overhead_payload_the_bench_actually_produces(
+    tmp_path, tokenizer
+) -> None:
+    """The renderer drifted from ``measure_format_overhead`` once and shipped a KeyError.
+
+    The plot test above passes ``by_qtype: {}``, so it could not catch it. This one builds the
+    breakdown with the real function, which is the only way the two stay in step.
+    """
+    import json
+
+    from eval.latency_bench import make_questions, measure_format_overhead
+    from eval.summary import write_latency_summary
+
+    points = [
+        measurement(n, [wall, wall * 1.01], suffix_tokens=60 * n).to_json()
+        for n, wall in ((1, 1500.0), (16, 2500.0), (64, 5800.0))
+    ]
+    overhead = measure_format_overhead(
+        lambda s: tokenizer.encode(s, add_special_tokens=False), make_questions(3)
+    )
+    assert overhead["by_qtype"], "the fixture is worthless if the breakdown is empty"
+    payload = {
+        "meta": {
+            "run_id": "unit",
+            "model": "x/y",
+            "quantization": "nf4-bf16",
+            "gpu": "RTX 3090",
+            "repeats": 2,
+            "warmup": 1,
+            "state_tokens_actual": 1500,
+        },
+        "targets": {"all_met": True, "amortised_ms_64": {"description": "a", "measured": 104.0}},
+        "format_overhead": overhead,
+        "retired_target": {"rule": "retired", "ratio_64_over_1": 4.5, "met": False},
+        "decomposition": {"per_pass_ms": 1.0, "per_token_ms": 1.0, "r_squared": 1.0},
+        "points": points,
+    }
+    (tmp_path / "latency.json").write_text(json.dumps(payload), encoding="utf-8")
+    text = write_latency_summary(tmp_path).read_text(encoding="utf-8")
+    for qtype in overhead["by_qtype"]:
+        assert f"| {qtype} |" in text
