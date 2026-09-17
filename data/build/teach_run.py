@@ -81,7 +81,7 @@ def load_teacher(setting: TeacherSetting) -> tuple[Any, Any]:
     tokenizer = AutoTokenizer.from_pretrained(setting.model, local_files_only=True)
     kwargs: dict[str, Any] = {
         "dtype": torch.bfloat16,
-        "device_map": "cuda",
+        "device_map": {"": 0},
         "local_files_only": True,
         "attn_implementation": "sdpa",
     }
@@ -92,9 +92,71 @@ def load_teacher(setting: TeacherSetting) -> tuple[Any, Any]:
     config = AutoConfig.from_pretrained(setting.model, local_files_only=True)
     if getattr(config, "quantization_config", None) is None:
         kwargs["quantization_config"] = nf4_config()
+    elif getattr(config, "vision_config", None) is not None:
+        # A pre-quantized vision-language checkpoint: `AutoModelForCausalLM` builds the text
+        # tower from `text_config`, which does not carry the parent's `quantization_config`, so
+        # the weights arrive quantized and the model does not expect them to be. Hand it the
+        # text config with the quantization config copied across — the same fix `engine/hf.py`
+        # carries, and the reason Qwen3.8-27B took three attempts to load in Phase 0.
+        import copy
 
-    model = AutoModelForCausalLM.from_pretrained(setting.model, **kwargs).eval()
+        text_config = copy.deepcopy(config.get_text_config())
+        text_config.quantization_config = config.quantization_config
+        kwargs["config"] = text_config
+
+    def _load(**extra: Any) -> Any:
+        """Try the causal-LM head, then the image-text head for vision-language checkpoints.
+
+        Magistral and Qwen3.8 are both VLM classes whose text tower is what we want. There is no
+        text-only AutoModel for them, so the full class is loaded and only text is ever passed.
+        """
+        merged = {**kwargs, **extra}
+        try:
+            return AutoModelForCausalLM.from_pretrained(setting.model, **merged)
+        except ValueError as exc:
+            if "Unrecognized configuration class" not in str(exc):
+                raise
+            from transformers import AutoModelForImageTextToText
+
+            print(f"  {setting.model}: vision-language class, loading the full model", flush=True)
+            return AutoModelForImageTextToText.from_pretrained(setting.model, **merged)
+
+    try:
+        model = _load().eval()
+    except ValueError as exc:
+        if "scaled_dot_product_attention" not in str(exc):
+            raise
+        # gpt-oss has no SDPA path in transformers 5.5. Falling back is fine *here* and would
+        # not be in `engine/hf.py`: CLAUDE.md pins sdpa for the inference path we publish and
+        # benchmark, not for a teacher that generates training data once.
+        kwargs["attn_implementation"] = "eager"
+        print(f"  {setting.model}: no sdpa kernel, falling back to eager", flush=True)
+        model = _load().eval()
+
     force_quantized_model_dtype(model, torch.bfloat16)
+
+    # `device_map="cuda"` does not always place an MXFP4 MoE's expert weights: gpt-oss loaded
+    # with its experts left on CPU and failed mid-generate with "mat2 is on cpu". Check rather
+    # than hope — a half-placed model fails deep inside a kernel, hours in, with a message that
+    # says nothing about loading.
+    stragglers = [
+        name
+        for name, tensor in list(model.named_parameters()) + list(model.named_buffers())
+        if tensor.device.type != "cuda"
+    ]
+    if stragglers:
+        print(f"  {setting.model}: {len(stragglers)} tensors left on CPU, moving", flush=True)
+        model = model.to("cuda")
+        still = [
+            name
+            for name, tensor in list(model.named_parameters()) + list(model.named_buffers())
+            if tensor.device.type != "cuda"
+        ]
+        if still:
+            raise RuntimeError(
+                f"{setting.model}: {len(still)} tensors are still not on the GPU after .to(), "
+                f"first few {still[:5]} — generation would fail inside a kernel instead"
+            )
     return model, tokenizer
 
 

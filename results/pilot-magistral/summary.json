@@ -1,0 +1,29 @@
+{
+  "run_id": "pilot-magistral",
+  "finished": "2026-09-17T21:02:52+00:00",
+  "rows_total": 100,
+  "rows_this_run": 100,
+  "rows_resumed": 0,
+  "elapsed_seconds": 266.99,
+  "setting": {
+    "model": "unsloth/Magistral-Small-2509-unsloth-bnb-4bit",
+    "label": "magistral-384",
+    "effort": null,
+    "max_new_tokens": 384,
+    "revision": null,
+    "quantization": "nf4-bf16",
+    "effort_description": "no native effort control; bounded by max_new_tokens=384 (a cap, not an effort level)"
+  },
+  "committed": 25,
+  "uncommitted": 75,
+  "truncation_rate": 0.75,
+  "hit_cap_rate": 0.76,
+  "trace_tokens": {
+    "n": 100,
+    "mean": 367.6,
+    "p90": 384.0,
+    "max": 384.0
+  },
+  "tokens_per_second": 137.68305929061012,
+  "reparsed_with_fixed_parser": true
+}

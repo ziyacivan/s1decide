@@ -1,0 +1,20 @@
+{
+  "setting": {
+    "model": "unsloth/Magistral-Small-2509-unsloth-bnb-4bit",
+    "label": "magistral-384",
+    "effort": null,
+    "max_new_tokens": 384,
+    "revision": null,
+    "quantization": "nf4-bf16",
+    "effort_description": "no native effort control; bounded by max_new_tokens=384 (a cap, not an effort level)"
+  },
+  "rubric": [
+    "1 - none: the state contains nothing relevant to the question",
+    "2 - slight: a passing or indirect mention, not enough to act on",
+    "3 - moderate: relevant and explicit, but partial or hedged",
+    "4 - strong: clearly and directly stated, enough to act on",
+    "5 - decisive: stated unambiguously and central to the state"
+  ],
+  "batch_size": 16,
+  "started": "2026-09-17T20:58:25+00:00"
+}

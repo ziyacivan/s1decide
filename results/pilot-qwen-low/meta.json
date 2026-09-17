@@ -1,0 +1,20 @@
+{
+  "setting": {
+    "model": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+    "label": "qwen-low",
+    "effort": "low",
+    "max_new_tokens": 384,
+    "revision": null,
+    "quantization": "nf4-bf16",
+    "effort_description": "native effort=low, max_new_tokens=384"
+  },
+  "rubric": [
+    "1 - none: the state contains nothing relevant to the question",
+    "2 - slight: a passing or indirect mention, not enough to act on",
+    "3 - moderate: relevant and explicit, but partial or hedged",
+    "4 - strong: clearly and directly stated, enough to act on",
+    "5 - decisive: stated unambiguously and central to the state"
+  ],
+  "batch_size": 4,
+  "started": "2026-09-17T21:06:25+00:00"
+}

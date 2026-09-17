@@ -47,10 +47,18 @@ RUBRIC: tuple[str, ...] = (
 #: Levels, as the student will see them.
 LEVELS: tuple[str, ...] = ("none", "slight", "moderate", "strong", "decisive")
 
-#: Matches the teacher's committed answer. Deliberately strict: the model is instructed to end
-#: with this exact form, and anything looser would silently accept a level mentioned in passing
-#: inside the reasoning trace.
-_ANSWER = re.compile(r"(?:^|\n)\s*FINAL:\s*([1-5])\b", re.IGNORECASE)
+#: Matches the teacher's committed answer.
+#:
+#: Not anchored to a line start, and no word-boundary escape after the digit. Both were in
+#: the first version and both were wrong: Magistral emits ``FINAL: 1FINAL: 1`` — the marker
+#: twice, run together — so there is no line break before the second and no word boundary
+#: after the first digit. That parser scored 0 of 100 committed on a pilot where the model
+#: had in fact answered every time, which is the most expensive kind of bug: it looks like
+#: a model failure and would have disqualified a perfectly good teacher.
+#:
+#: The negative lookahead keeps `12` from reading as 1; the last match wins, so a model that
+#: reconsiders mid-trace is taken at its final word.
+_ANSWER = re.compile(r"FINAL:\s*([1-5])(?![0-9])", re.IGNORECASE)
 
 
 @dataclass(frozen=True)

@@ -209,6 +209,11 @@ def job_status(directory: Path) -> JobStatus:
 
     paths = JobPaths(directory)
     done_rows = len(read_done_ids(paths))
+    # The checkpoint only flushes every `CHECKPOINT_EVERY` rows, so a short run reports 0 done
+    # until the very end even while it is plainly working. The progress file is written every
+    # batch, so prefer its count when it is ahead — otherwise `--status` on a pilot says
+    # nothing is happening, which is exactly when someone is watching.
+    unflushed = 0
 
     total_rows: int | None = None
     rate: float | None = None
@@ -225,6 +230,7 @@ def job_status(directory: Path) -> JobStatus:
                 continue
         if entries:
             last = entries[-1]
+            unflushed = int(last.get("rows_done") or 0)
             total_rows = last.get("total_rows")
             elapsed = last.get("elapsed_seconds")
             completed = last.get("rows_this_run")
@@ -247,6 +253,7 @@ def job_status(directory: Path) -> JobStatus:
     else:
         state = "running"
 
+    done_rows = max(done_rows, unflushed)
     eta = None
     if rate and total_rows:
         eta = max(0, total_rows - done_rows) / rate

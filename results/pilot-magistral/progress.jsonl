@@ -1,0 +1,7 @@
+{"at": "2026-09-17T20:59:08+00:00", "rows_this_run": 16, "rows_done": 16, "total_rows": 100, "elapsed_seconds": 42.472076, "rows_per_second": 0.3767, "teacher": "magistral-384", "truncated": 12, "uncommitted": 16}
+{"at": "2026-09-17T20:59:47+00:00", "rows_this_run": 32, "rows_done": 32, "total_rows": 100, "elapsed_seconds": 82.136265, "rows_per_second": 0.3896, "teacher": "magistral-384", "truncated": 13, "uncommitted": 16}
+{"at": "2026-09-17T21:00:27+00:00", "rows_this_run": 48, "rows_done": 48, "total_rows": 100, "elapsed_seconds": 121.400466, "rows_per_second": 0.3954, "teacher": "magistral-384", "truncated": 11, "uncommitted": 16}
+{"at": "2026-09-17T21:01:06+00:00", "rows_this_run": 64, "rows_done": 64, "total_rows": 100, "elapsed_seconds": 160.645422, "rows_per_second": 0.3984, "teacher": "magistral-384", "truncated": 14, "uncommitted": 16}
+{"at": "2026-09-17T21:01:45+00:00", "rows_this_run": 80, "rows_done": 80, "total_rows": 100, "elapsed_seconds": 200.152453, "rows_per_second": 0.3997, "teacher": "magistral-384", "truncated": 14, "uncommitted": 16}
+{"at": "2026-09-17T21:02:26+00:00", "rows_this_run": 96, "rows_done": 96, "total_rows": 100, "elapsed_seconds": 240.526631, "rows_per_second": 0.3991, "teacher": "magistral-384", "truncated": 10, "uncommitted": 16}
+{"at": "2026-09-17T21:02:52+00:00", "rows_this_run": 100, "rows_done": 100, "total_rows": 100, "elapsed_seconds": 266.986221, "rows_per_second": 0.3746, "teacher": "magistral-384", "truncated": 2, "uncommitted": 4}
