@@ -239,10 +239,17 @@ Python, not ours.)
 **Conclusion: do not install VS 2022 Build Tools.** They are not needed for Triton,
 and therefore not needed for Unsloth's vendored `fla` gated-deltanet kernels.
 
+**Confirmed in Step 3 (2026-09-17):** the kernels that matter — Unsloth's vendored
+`flash-linear-attention` gated-deltanet Triton kernels — compile and run through this
+bundled toolchain. `scripts/derisk_base_model.py` showed 3/3 GDN modules on the fla path,
+~9x faster than the pure-torch fallback, bf16-level agreement. Cold compile of the GDN
+kernels took ~29 s; warm cache ~1.7 s.
+
 **Still open:** TCC compiles C, not C++. Anything that builds a *C++* extension at
 runtime — `torch.compile`'s inductor C++ backend, `torch.utils.cpp_extension` custom
-ops, a from-source `llama-cpp-python` — remains blocked. Step 3 must check whether the
-Unsloth training path for a GDN hybrid hits any of those.
+ops, a from-source `llama-cpp-python` — remains blocked. Importing, patching and kernel
+compilation in Unsloth needed none of these; whether a *training step* does is answered
+by `task smoke`.
 
 **R2 — `llama-cpp-python` may not install. (medium)**
 No compiler means we depend on a prebuilt CUDA wheel matching Python 3.11 + cu13x,

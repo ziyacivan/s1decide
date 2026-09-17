@@ -22,6 +22,13 @@ this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   generated from the renderer by `scripts/render_format_spec.py` and checked for staleness
   by a test.
 
+- Phase 0 Step 3: base-model de-risking. `docs/research/qwen38-stack-support-2026-09-17.md`
+  audits transformers / peft / trl / bitsandbytes / unsloth / llama.cpp support for
+  Qwen3.8-27B's GDN hybrid on the pinned stack; `docs/adr/0002-base-model.md` is now
+  **accepted** (proceed with Qwen3.8-27B; smoke model `Qwen/Qwen3.5-0.8B`);
+  `scripts/derisk_base_model.py` reproduces the GPU measurements without downloads.
+- `pyproject.toml`: pin `torchao==0.17.0` (Studio's version; 0.18.0 wants torch >= 2.11).
+
 ### Notes
 
 - vLLM is deliberately **not** a project extra: uv's universal lock cannot satisfy

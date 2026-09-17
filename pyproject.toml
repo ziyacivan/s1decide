@@ -32,6 +32,9 @@ dependencies = [
     "huggingface-hub>=1.8.0",
     "unsloth==2026.9.2",
     "unsloth-zoo==2026.9.1",
+    # Pulled in transitively by unsloth. 0.18.0 wants torch >= 2.11 and logs "Skipping import of
+    # cpp extensions" on our 2.10.0; 0.17.0 is what Studio runs. Pin it to stay on the known-good tuple.
+    "torchao==0.17.0",
     # Windows gets Triton from the triton-windows wheel; on Linux torch brings its own.
     "triton-windows==3.6.0.post26 ; sys_platform == 'win32'",
 ]
