@@ -1,7 +1,11 @@
 # CLAUDE.md — s1decide
 
-> Working name. `s1decide` = "System-One-style decisions". Rename freely, but
-> never include "Jev" or "TypeSafe" in the project, package, model or repo name.
+> **Final name** (ADR 0006). `s1decide` = "System-One-style decisions". It is the
+> PyPI package, the GitHub repository, and the Hugging Face organisation and model
+> prefix. **No rename.** Never include "Jev", "TypeSafe" or "System One Model" in the
+> project, package, model or repo name, the description, or any marketing copy —
+> referring to them in docs and comparisons is expected, naming ourselves after them
+> is not.
 
 ## What this project is
 
@@ -231,7 +235,13 @@ Tasks that aren't implementable yet fail loudly with "not implemented".
   Small commits. Never amend a commit that has been pushed.
 - Language of code, docs, commits, model card: English.
 
-## Definition of done (v0.1 public release)
+## Definition of done (v0.1 — **pre-release**, 3090-only; ADR 0006)
+
+v0.1 is **S1 QLoRA trained on the 3090 plus S2 post-hoc temperature scaling**, published
+as a pre-release. Two items are deferred to v0.2 because they need hardware we do not
+own; they are listed at the end of this section rather than deleted, and the model card
+states plainly what was not measured.
+
 
 - [ ] `uv run task doctor` green on this machine; `docs/windows-setup.md` lets
       a stranger reproduce the environment.
@@ -253,15 +263,27 @@ Tasks that aren't implementable yet fail loudly with "not implemented".
 - [ ] Zero-shot baseline (no LoRA) + S1 LoRA + S2 calibration evaluated on
       held-out families and ≥ 2 fully OOD sets; ECE, Brier, acc, AUROC per
       option-count bucket; reliability diagrams committed.
-- [ ] Quantization table BF16 / Q8 / Q5_K_M / Q4_K_M with acc + ECE
-      (BF16 row produced on the Linux GPU, others on the 3090).
+- [ ] Quantization table **Q8 / Q5_K_M / Q4_K_M** with acc + ECE, all on the 3090.
+      **BF16 is deferred to v0.2** — a BF16 27B forward pass does not fit in 24 GiB.
+      The model card states that BF16 was not measured, in those words, next to the table.
 - [ ] Fair LLM baselines (Qwen3.8-27B itself with constrained decode + logprobs,
-      at least one other open model) on the same splits.
+      at least one other open model) on the same splits — **in 4-bit on the 3090**,
+      matching the deployment quantization the table covers.
 - [ ] Head-to-head on TypeSafe public workflow evals (strict common subset),
-      with the reference-label caveat stated verbatim.
+      with the reference-label caveat stated verbatim — **in 4-bit on the 3090**.
 - [ ] Model card + dataset card list every source dataset and license, every
-      teacher model, all hyperparameters, and the exact commit hash.
+      teacher model, all hyperparameters, and the exact commit hash. The model card
+      states that calibration is **post-hoc temperature scaling, not learned**.
 - [ ] `uv run task smoke` green on a fresh clone, on Windows and on Linux.
+- [ ] Published as a **pre-release**, under the name `s1decide` and no other (ADR 0006).
+
+### Deferred to v0.2 (rented H100 — needs an explicit "go", costs money)
+
+- [ ] **BF16 row** of the quantization table, closing the hole v0.1 ships with.
+- [ ] **S3 GRPO calibration RL** with a proper scoring rule reward (already
+      "Linux GPU only" in the locked decisions above; it was never a 3090 item).
+
+v0.2 is a scope, not a commitment to rent anything.
 
 ## How to work in this repo
 
