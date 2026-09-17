@@ -25,28 +25,47 @@ which, because `b ≈` the prefill's per-token cost, reduces to a **pure token-c
 the prefix must be much larger than the sum of all question suffixes. For the retired 2x rule
 at N = 64 that came out as `prefix_tokens >~ 61 × tokens_per_question` (ADR 0003).
 
-## The ratio `a/b` is a property of the hardware, not the model
+## Is `a/b` a property of the hardware rather than the model? **No — measured and refuted**
 
-This is the part that generalises, and it is worth stating because it is counter-intuitive.
+The first draft of this note argued that it was. The reasoning: per-pass cost is weight
+streaming (`a ≈ bytes(weights)/bandwidth`), per-token cost is matmuls (`b ≈ 2·params/FLOPS`),
+both linear in model size, so `a/b ≈ FLOPS/(2·bandwidth)` cancels the model and leaves the
+accelerator's arithmetic intensity. The predicted consequence was that **a smaller model would
+not be any flatter**.
 
-- Per-pass fixed cost is dominated by streaming the weights: `a ≈ bytes(weights) / bandwidth`.
-- Per-token marginal cost is dominated by the matmuls: `b ≈ 2·params / FLOPS`.
+That prediction was testable in ten minutes, so it was tested. It is **wrong**.
 
-Both scale linearly with model size, so the ratio
+`results/20260917-invariance-qwen35-08b-bf16-latency/latency.json`, same bench, same 1,554-token
+state, same machine, `Qwen/Qwen3.5-0.8B` in bf16:
 
-```
-a / b  ≈  FLOPS / (2 · bandwidth)
-```
+| | Qwen3.8-27B (nf4) | Qwen3.5-0.8B (bf16) | ratio |
+|---|---|---|---|
+| `a` — ms per forward pass | 156.4 | 30.8 | 5.1x |
+| `b` — ms per suffix token | 0.989 | 0.027 | 36.6x |
+| **`a/b` — tokens per pass** | **158** | **1,141** | **0.14x** |
+| parameters | 27B | 0.8B | 34x |
+| rows per pass (VRAM) | 7 | 16 | |
+| 64-question call | 6,662 ms | 291 ms | |
+| marginal ms per question at 64 | 81.2 | **3.1** | |
 
-**cancels the model size** and leaves the accelerator's arithmetic intensity. Our measured
-`a/b ≈ 158 tokens`; an RTX 3090's headline bf16 throughput over its memory bandwidth is the
-same order (tens of ops per byte), which is consistent once 4-bit dequantisation overhead is
-included.
+**`b` scales almost exactly with parameter count** (36.6x measured against a 34x parameter
+ratio) — that half of the theory holds. **`a` does not**: it grew only 5.1x for a 34x larger
+model, far short of the ~12x its weight bytes alone would predict. So `a/b` is not invariant; it
+*falls* with model size, and large models are relatively more token-bound.
 
-**Consequence: running a smaller model does not make latency flatter.** It makes everything
-faster in proportion and leaves the crossover token ratio roughly where it was. Anyone claiming
-flat latency is, if this analysis holds, either running a state-heavy workload or sending very
-few tokens per question.
+Two consequences, both more useful than the claim they replace:
+
+1. **Smaller models really are flatter.** Rewriting the crossover with each model's own
+   constants, the prefix needed to satisfy the retired 2x rule at 64 questions and ~58
+   tokens per question is **~3,600 tokens for the 27B but ~1,800 for the 0.8B** — and the 0.8B
+   at our 1,617-token prefix lands at 3.04x, only just outside. A small model on a slightly
+   larger state is comfortably flat.
+2. **A large part of `a` is our own software, not the hardware.** Weight streaming accounts for
+   roughly 21 ms of the 27B's 156 ms. The rest is per-layer launch overhead and — importantly —
+   the `copy.deepcopy` of the prefix cache and the `.contiguous()` in `expand_cache`, both of
+   which we perform once per pass. At 10 passes that is ~1.5 s of a 6.7 s call. **This is a
+   concrete lead for ADR 0003 option C** and it is cheaper than changing the state dtype: reuse
+   one pre-expanded cache buffer across passes instead of deep-copying per pass.
 
 ## Hypothesis about Jev's flat-latency claim
 
@@ -54,9 +73,16 @@ TypeSafe's documented behaviour (see `jev-landscape-2026-09-17.md` §1) is that 
 one call are evaluated in parallel and in isolation against the same state; adding questions
 barely changes latency", with 70–500 ms end-to-end.
 
-Given the analysis above, the most likely explanation is **not** that they have a better cache
-trick than ours — the state is the easy part, and we already amortise it fully. It is that
-**their per-question token cost is far below ours.** Ours is ~58 tokens per question, of which
+Given the *corrected* analysis above, there are now two credible explanations rather than one,
+and they compound.
+
+**Model size, which the first draft wrongly dismissed.** A 0.8B model on this same benchmark has
+a marginal cost of **3.1 ms per question** against the 27B's 81 ms, and reaches flatness at
+roughly half the prefix length. A small decision model on datacenter hardware would look flat on
+almost any realistic state. Jev's 70–500 ms end-to-end is consistent with something far smaller
+than 27B, and nothing in their published material says otherwise.
+
+**A smaller per-question token cost.** Ours is ~58 tokens per question, of which
 **52% is format boilerplate** we render ourselves (`### Question` header, `### Answer` block,
 chat tail; 70% for a Noul). Plausible ways their number could be much smaller:
 
@@ -76,22 +102,36 @@ Note these are not mutually exclusive, and (1) and (3) are both things we could 
 
 ### What would confirm or refute this
 
-- **Cheap, and we should do it:** run `uv run task bench` against `Qwen/Qwen3.5-0.8B`, already
-  in the local cache. If `a/b` lands near the 27B's ~158 tokens, the model-independence argument
-  holds and "use a smaller model" is ruled out as an explanation for flatness. If `a/b` is
-  dramatically larger, the argument is wrong and this note needs revising. *Not yet run —
-  proposed as a follow-up, not scheduled.*
-- **Refutes the hypothesis:** any published evidence that Jev's latency is flat on a workload
-  with a short state and many verbose questions. That would mean they have something we have
+- **Done (2026-09-17):** the `Qwen3.5-0.8B` run above. It refuted the model-independence
+  argument and put model size back on the list of explanations. Recorded rather than quietly
+  dropped, because the refuted version is what the first draft of this note claimed.
+- **Refutes the remaining hypothesis:** published evidence that Jev's latency is flat on a
+  workload with a *short* state and many *verbose* questions. That would mean something we have
   not accounted for.
-- **Supports it:** any disclosure that questions are embedded rather than rendered as text.
+- **Supports it:** any disclosure of model size, or that questions are embedded rather than
+  rendered as text.
+
+### A caution about our own numbers
+
+The 0.8B comparison is bf16 against the 27B's nf4, so `a` and `b` are not like-for-like in
+quantization. The parameter-scaling conclusion for `b` survives that (36.6x against 34x is close
+enough that dequantisation overhead cannot be doing the work), but the exact `a` ratio should not
+be over-read. A cleaner comparison would quantize both identically; it was not worth the GPU time
+for a secondary result.
 
 ## What we do about it
 
-Nothing in this note changes a locked decision. It does raise the priority of ADR 0003's
-option B: trimming format boilerplate is not merely a ~17% latency saving, it moves us toward
-the regime where the flatness claim becomes true for realistic states. That is a better
-argument for doing it than the milliseconds are.
+Nothing in this note changes a locked decision. Three things it does change:
+
+1. It raises the priority of ADR 0003's **option B**: trimming format boilerplate is not merely
+   a ~17% latency saving, it moves us toward the regime where the flatness claim becomes true
+   for realistic states.
+2. It hands **option C** a cheaper first move than the one the ADR named: cut the per-pass cache
+   `deepcopy` and `.contiguous()` before touching the state dtype. `a` is largely ours.
+3. It means we should **stop treating model size as irrelevant to the latency story**. A 27B is
+   the right choice for the project's stated goal — the first open decision model at that scale —
+   but we should say plainly that it costs flatness, and quote the 0.8B numbers beside it rather
+   than implying the architecture alone delivers flat latency.
 
 It also sharpens what we should claim. "Adding questions barely changes latency" is not
 something we can say at a 1.5k state. What we can say, and have measured, is that bundling 64

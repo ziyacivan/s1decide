@@ -78,6 +78,16 @@ this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `eval/latency_bench.py` now measures format overhead and scores the run against the four
   targets; `LATENCY.md` reports them.
 
+- **Phase 1 Step 1** — licence gate and source audit. `data/build/licences.py` implements ADR
+  0004's gate (allowlist, `classify_licence`, `assert_train_splits_are_licensed`, plus the
+  Tier-2 `drop_leaked_rows` guard), enforced by `tests/test_licences.py` — 77 tests, no GPU, no
+  network. `docs/research/source-licences-2026-09-17.md` records the audit;
+  `docs/adr/0005-ambiguous-source-licences.md` collects the ambiguous cases with a
+  recommendation per source. `docs/phase-1-plan.md` is the approved plan of record.
+  Nine sources are train-eligible; MNLI, FEVER, BoolQ, SNLI, ARC, AG News, SST-5 and Yelp are
+  not. `docs/research/latency-amortisation-2026-09-17.md` corrected: the predicted
+  model-independence of `a/b` was **measured and refuted** on `Qwen/Qwen3.5-0.8B`.
+
 ### Notes
 
 - vLLM is deliberately **not** a project extra: uv's universal lock cannot satisfy
