@@ -1,0 +1,1292 @@
+{"id": "val-00100-f6cb9a61eb30", "family": "go_emotions", "qtype": "noul", "logits": [20.625, 27.125], "answer_idx": 1}
+{"id": "val-00101-55c8295ad943", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 20.75], "answer_idx": 1}
+{"id": "val-00102-199616cd775b", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 18.25], "answer_idx": 0}
+{"id": "val-00103-338415a049e8", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 17.25], "answer_idx": 0}
+{"id": "val-00104-b4ce529900d6", "family": "go_emotions", "qtype": "noul", "logits": [23.875, 20.125], "answer_idx": 1}
+{"id": "val-00105-b99db603e6af", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 19.5], "answer_idx": 0}
+{"id": "val-00106-f11bb4eeb5ea", "family": "go_emotions", "qtype": "noul", "logits": [26.0, 19.75], "answer_idx": 0}
+{"id": "val-00107-218f2ef3bc4e", "family": "go_emotions", "qtype": "noul", "logits": [21.25, 26.75], "answer_idx": 1}
+{"id": "val-00108-daa68bb43c20", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 22.375], "answer_idx": 0}
+{"id": "val-00109-d8ec1ba7a3e3", "family": "go_emotions", "qtype": "noul", "logits": [26.5, 18.625], "answer_idx": 0}
+{"id": "val-00110-c090a0f53db5", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 19.75], "answer_idx": 1}
+{"id": "val-00111-f76fe834deb7", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 17.75], "answer_idx": 0}
+{"id": "val-00112-af68ce3dec46", "family": "go_emotions", "qtype": "noul", "logits": [24.5, 17.25], "answer_idx": 0}
+{"id": "val-00113-fb0843a7afc9", "family": "go_emotions", "qtype": "noul", "logits": [22.25, 24.5], "answer_idx": 1}
+{"id": "val-00114-7b0fb8f2aef7", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 21.0], "answer_idx": 0}
+{"id": "val-00115-2fdaf75e8872", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 18.625], "answer_idx": 0}
+{"id": "val-00116-2365c75f50df", "family": "go_emotions", "qtype": "noul", "logits": [22.25, 23.25], "answer_idx": 1}
+{"id": "val-00117-8ec2eb1f367d", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 17.625], "answer_idx": 0}
+{"id": "val-00118-57e2557d2ec1", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 22.25], "answer_idx": 0}
+{"id": "val-00119-a3fbed713a03", "family": "go_emotions", "qtype": "noul", "logits": [22.75, 22.375], "answer_idx": 1}
+{"id": "val-00120-583e7060e6e0", "family": "go_emotions", "qtype": "noul", "logits": [21.75, 24.0], "answer_idx": 1}
+{"id": "val-00121-576080c86920", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 17.75], "answer_idx": 0}
+{"id": "val-00122-118e2d9b9d6a", "family": "go_emotions", "qtype": "noul", "logits": [24.625, 18.625], "answer_idx": 0}
+{"id": "val-00123-bf8796ad484e", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 23.25], "answer_idx": 1}
+{"id": "val-00124-2fbb01980a4b", "family": "go_emotions", "qtype": "noul", "logits": [26.5, 19.75], "answer_idx": 0}
+{"id": "val-00125-66a3d90d2bd9", "family": "go_emotions", "qtype": "noul", "logits": [26.5, 20.0], "answer_idx": 0}
+{"id": "val-00126-d547f54f67d4", "family": "go_emotions", "qtype": "noul", "logits": [24.375, 20.75], "answer_idx": 1}
+{"id": "val-00127-70532fbbeb33", "family": "go_emotions", "qtype": "noul", "logits": [22.375, 23.375], "answer_idx": 0}
+{"id": "val-00128-ec8f399b0414", "family": "go_emotions", "qtype": "noul", "logits": [24.375, 21.25], "answer_idx": 0}
+{"id": "val-00129-4aef9b1f02fc", "family": "go_emotions", "qtype": "noul", "logits": [23.875, 21.375], "answer_idx": 1}
+{"id": "val-00130-388b87b7a24f", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 20.0], "answer_idx": 0}
+{"id": "val-00131-14e59bb1f480", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 20.375], "answer_idx": 0}
+{"id": "val-00132-9a56c485462c", "family": "go_emotions", "qtype": "noul", "logits": [24.25, 19.5], "answer_idx": 1}
+{"id": "val-00133-fec4c8d58207", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 18.25], "answer_idx": 0}
+{"id": "val-00134-91f3f94e0067", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 19.5], "answer_idx": 0}
+{"id": "val-00135-aecbbd2f88fc", "family": "go_emotions", "qtype": "noul", "logits": [23.125, 21.0], "answer_idx": 1}
+{"id": "val-00136-e596695466ca", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 19.875], "answer_idx": 0}
+{"id": "val-00137-9bed4eabf40b", "family": "go_emotions", "qtype": "noul", "logits": [24.625, 21.125], "answer_idx": 0}
+{"id": "val-00138-c4174498f600", "family": "go_emotions", "qtype": "noul", "logits": [22.0, 24.0], "answer_idx": 1}
+{"id": "val-00139-90fd16b92a98", "family": "go_emotions", "qtype": "noul", "logits": [24.375, 19.75], "answer_idx": 0}
+{"id": "val-00140-f3e2e9ba8e20", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 20.125], "answer_idx": 0}
+{"id": "val-00141-efa2b6969831", "family": "go_emotions", "qtype": "noul", "logits": [21.5, 24.25], "answer_idx": 1}
+{"id": "val-00142-d5ec08c42675", "family": "go_emotions", "qtype": "noul", "logits": [24.5, 18.5], "answer_idx": 1}
+{"id": "val-00143-b6c987ef4db6", "family": "go_emotions", "qtype": "noul", "logits": [24.5, 17.625], "answer_idx": 0}
+{"id": "val-00144-a64e38019bee", "family": "go_emotions", "qtype": "noul", "logits": [24.0, 17.125], "answer_idx": 0}
+{"id": "val-00145-4c44fd5056e0", "family": "go_emotions", "qtype": "noul", "logits": [23.125, 22.25], "answer_idx": 1}
+{"id": "val-00146-ab65590ee87c", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 19.75], "answer_idx": 0}
+{"id": "val-00147-ca0776a114c8", "family": "go_emotions", "qtype": "noul", "logits": [22.5, 22.125], "answer_idx": 0}
+{"id": "val-00148-047649178809", "family": "go_emotions", "qtype": "noul", "logits": [22.75, 23.75], "answer_idx": 1}
+{"id": "val-00149-fb6ec6de4bb9", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 20.0], "answer_idx": 0}
+{"id": "val-00150-f011a136e585", "family": "go_emotions", "qtype": "noul", "logits": [24.875, 22.375], "answer_idx": 0}
+{"id": "val-00151-4db26f6c9666", "family": "go_emotions", "qtype": "noul", "logits": [22.875, 24.75], "answer_idx": 1}
+{"id": "val-00152-efc4907f1483", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 17.875], "answer_idx": 0}
+{"id": "val-00153-995885e00512", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 19.375], "answer_idx": 0}
+{"id": "val-00154-b412ef11bd68", "family": "go_emotions", "qtype": "noul", "logits": [24.0, 23.0], "answer_idx": 1}
+{"id": "val-00155-9bf9193a6da7", "family": "go_emotions", "qtype": "noul", "logits": [22.625, 23.5], "answer_idx": 0}
+{"id": "val-00156-f9a47e7d14ee", "family": "go_emotions", "qtype": "noul", "logits": [26.25, 21.0], "answer_idx": 0}
+{"id": "val-00157-eadf6c090480", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 22.375], "answer_idx": 1}
+{"id": "val-00158-c2562d2eb233", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 22.75], "answer_idx": 0}
+{"id": "val-00159-4c3d3e8b2fa3", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 19.625], "answer_idx": 0}
+{"id": "val-00160-73590c026fd5", "family": "go_emotions", "qtype": "noul", "logits": [23.0, 20.875], "answer_idx": 1}
+{"id": "val-00161-af14f9c468b9", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 19.25], "answer_idx": 0}
+{"id": "val-00162-97c4d39e2b09", "family": "go_emotions", "qtype": "noul", "logits": [22.75, 21.375], "answer_idx": 0}
+{"id": "val-00163-a024727ab8a2", "family": "go_emotions", "qtype": "noul", "logits": [24.875, 18.375], "answer_idx": 1}
+{"id": "val-00164-ea7dd21670dc", "family": "go_emotions", "qtype": "noul", "logits": [22.75, 24.75], "answer_idx": 1}
+{"id": "val-00165-7813c25ae0f5", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 19.125], "answer_idx": 0}
+{"id": "val-00166-6ac0cbf7267b", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 18.125], "answer_idx": 0}
+{"id": "val-00167-1f8950c63e4f", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 19.25], "answer_idx": 1}
+{"id": "val-00168-0d2ab8056812", "family": "go_emotions", "qtype": "noul", "logits": [23.25, 22.625], "answer_idx": 0}
+{"id": "val-00169-05f7bf76158d", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 19.75], "answer_idx": 0}
+{"id": "val-00170-1acae916b196", "family": "go_emotions", "qtype": "noul", "logits": [23.625, 25.625], "answer_idx": 1}
+{"id": "val-00171-4e26a9ffca60", "family": "go_emotions", "qtype": "noul", "logits": [26.625, 17.75], "answer_idx": 0}
+{"id": "val-00172-f42670eba598", "family": "go_emotions", "qtype": "noul", "logits": [26.25, 19.75], "answer_idx": 0}
+{"id": "val-00173-019fbb26c5be", "family": "go_emotions", "qtype": "noul", "logits": [21.375, 26.5], "answer_idx": 1}
+{"id": "val-00174-dca004576620", "family": "go_emotions", "qtype": "noul", "logits": [26.75, 19.625], "answer_idx": 0}
+{"id": "val-00175-adf6e69ac649", "family": "go_emotions", "qtype": "noul", "logits": [22.125, 26.125], "answer_idx": 0}
+{"id": "val-00176-b8d5c55d5c36", "family": "go_emotions", "qtype": "noul", "logits": [22.0, 26.875], "answer_idx": 1}
+{"id": "val-00177-83f5a744fec5", "family": "go_emotions", "qtype": "noul", "logits": [26.0, 17.875], "answer_idx": 0}
+{"id": "val-00178-1fa1de7b0be3", "family": "go_emotions", "qtype": "noul", "logits": [26.0, 18.75], "answer_idx": 0}
+{"id": "val-00179-d7b6b371e0db", "family": "go_emotions", "qtype": "noul", "logits": [23.25, 25.0], "answer_idx": 1}
+{"id": "val-00180-2959141afe13", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 23.25], "answer_idx": 1}
+{"id": "val-00181-329dd575cd41", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 23.25], "answer_idx": 0}
+{"id": "val-00182-534bc2c113a4", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 21.75], "answer_idx": 0}
+{"id": "val-00183-747e03275a22", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 19.875], "answer_idx": 1}
+{"id": "val-00184-7b1b29e18ee3", "family": "go_emotions", "qtype": "noul", "logits": [22.5, 24.5], "answer_idx": 0}
+{"id": "val-00185-1553ea397197", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 19.0], "answer_idx": 0}
+{"id": "val-00186-c310999f41b1", "family": "go_emotions", "qtype": "noul", "logits": [24.0, 22.125], "answer_idx": 1}
+{"id": "val-00187-68e4e800b492", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 22.625], "answer_idx": 0}
+{"id": "val-00188-4aa7367fc39e", "family": "go_emotions", "qtype": "noul", "logits": [23.875, 23.25], "answer_idx": 0}
+{"id": "val-00189-64299216366c", "family": "go_emotions", "qtype": "noul", "logits": [23.375, 22.0], "answer_idx": 1}
+{"id": "val-00190-8f1af5e85aaf", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 18.875], "answer_idx": 0}
+{"id": "val-00191-7f3dd3f83879", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 19.75], "answer_idx": 0}
+{"id": "val-00192-c9b0a952fe3d", "family": "go_emotions", "qtype": "noul", "logits": [22.375, 23.5], "answer_idx": 1}
+{"id": "val-00193-8cb06d4fb0ef", "family": "go_emotions", "qtype": "noul", "logits": [24.625, 18.875], "answer_idx": 1}
+{"id": "val-00194-98d92d00e791", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 18.5], "answer_idx": 0}
+{"id": "val-00195-bd1cd7c157be", "family": "go_emotions", "qtype": "noul", "logits": [22.375, 23.125], "answer_idx": 0}
+{"id": "val-00196-e4f2a8dbedc2", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 21.0], "answer_idx": 1}
+{"id": "val-00197-886269acb36b", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 20.75], "answer_idx": 0}
+{"id": "val-00198-6b44ccc82167", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 20.25], "answer_idx": 0}
+{"id": "val-00199-428c56ec77cb", "family": "go_emotions", "qtype": "noul", "logits": [23.125, 21.125], "answer_idx": 1}
+{"id": "val-00200-8465b2867401", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 18.75], "answer_idx": 0}
+{"id": "val-00201-833ffe4cf689", "family": "go_emotions", "qtype": "noul", "logits": [24.5, 22.375], "answer_idx": 0}
+{"id": "val-00202-c605470fbbf8", "family": "go_emotions", "qtype": "noul", "logits": [23.375, 26.625], "answer_idx": 1}
+{"id": "val-00203-f5f2b961bf6a", "family": "go_emotions", "qtype": "noul", "logits": [26.375, 20.375], "answer_idx": 0}
+{"id": "val-00204-347cc6969974", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 17.875], "answer_idx": 0}
+{"id": "val-00205-d9cb88e9a426", "family": "go_emotions", "qtype": "noul", "logits": [23.125, 24.0], "answer_idx": 1}
+{"id": "val-00206-6aa0e6ff17c2", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 17.125], "answer_idx": 0}
+{"id": "val-00207-7b9389d965b0", "family": "go_emotions", "qtype": "noul", "logits": [21.5, 26.125], "answer_idx": 0}
+{"id": "val-00208-eafe3125696b", "family": "go_emotions", "qtype": "noul", "logits": [22.5, 23.375], "answer_idx": 1}
+{"id": "val-00209-78113b6ca525", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 19.75], "answer_idx": 0}
+{"id": "val-00210-507a6a3f0e70", "family": "go_emotions", "qtype": "noul", "logits": [26.375, 18.625], "answer_idx": 0}
+{"id": "val-00211-64c22ecf8657", "family": "go_emotions", "qtype": "noul", "logits": [22.0, 24.25], "answer_idx": 1}
+{"id": "val-00212-2cd5a93a82b5", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 19.875], "answer_idx": 0}
+{"id": "val-00213-4962d6a758c8", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 17.75], "answer_idx": 0}
+{"id": "val-00214-e9cb943a89ec", "family": "go_emotions", "qtype": "noul", "logits": [23.625, 23.25], "answer_idx": 1}
+{"id": "val-00215-1e0afd5593b4", "family": "go_emotions", "qtype": "noul", "logits": [24.625, 22.125], "answer_idx": 0}
+{"id": "val-00216-3774483109c4", "family": "go_emotions", "qtype": "noul", "logits": [26.0, 18.875], "answer_idx": 0}
+{"id": "val-00217-2eb98c8ef149", "family": "go_emotions", "qtype": "noul", "logits": [21.5, 25.5], "answer_idx": 1}
+{"id": "val-00218-0e8c4945b821", "family": "go_emotions", "qtype": "noul", "logits": [26.25, 19.375], "answer_idx": 1}
+{"id": "val-00219-6a68e4181ae5", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 19.75], "answer_idx": 0}
+{"id": "val-00220-3ead6c11aacb", "family": "go_emotions", "qtype": "noul", "logits": [26.375, 19.75], "answer_idx": 0}
+{"id": "val-00221-16b4b4ae8ae6", "family": "go_emotions", "qtype": "noul", "logits": [24.875, 16.875], "answer_idx": 1}
+{"id": "val-00222-ae6c9c2171b3", "family": "go_emotions", "qtype": "noul", "logits": [23.375, 23.0], "answer_idx": 0}
+{"id": "val-00223-cf56d16e44c5", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 15.9375], "answer_idx": 0}
+{"id": "val-00224-6b4bbb942433", "family": "go_emotions", "qtype": "noul", "logits": [23.75, 23.25], "answer_idx": 1}
+{"id": "val-00225-fd389fdba51c", "family": "go_emotions", "qtype": "noul", "logits": [26.25, 22.125], "answer_idx": 0}
+{"id": "val-00226-01a222cb8ad8", "family": "go_emotions", "qtype": "noul", "logits": [27.25, 20.875], "answer_idx": 0}
+{"id": "val-00227-608e40223d71", "family": "go_emotions", "qtype": "noul", "logits": [22.625, 22.0], "answer_idx": 1}
+{"id": "val-00228-dcbb931a4d70", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 20.75], "answer_idx": 0}
+{"id": "val-00229-2d546e6c06fc", "family": "go_emotions", "qtype": "noul", "logits": [24.375, 19.375], "answer_idx": 0}
+{"id": "val-00230-79e06880ebd6", "family": "go_emotions", "qtype": "noul", "logits": [21.75, 25.5], "answer_idx": 1}
+{"id": "val-00231-e0db3fa8da64", "family": "go_emotions", "qtype": "noul", "logits": [24.875, 19.375], "answer_idx": 1}
+{"id": "val-00232-33b05d4a34b9", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 20.0], "answer_idx": 0}
+{"id": "val-00233-2c0973bf28f2", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 21.0], "answer_idx": 0}
+{"id": "val-00234-1eb05c676e96", "family": "go_emotions", "qtype": "noul", "logits": [26.0, 19.125], "answer_idx": 1}
+{"id": "val-00235-5a9fd35d1a27", "family": "go_emotions", "qtype": "noul", "logits": [26.0, 20.875], "answer_idx": 0}
+{"id": "val-00236-ad7639155dfb", "family": "go_emotions", "qtype": "noul", "logits": [26.0, 19.0], "answer_idx": 0}
+{"id": "val-00237-99d630288532", "family": "go_emotions", "qtype": "noul", "logits": [21.125, 25.875], "answer_idx": 1}
+{"id": "val-00238-242444e60622", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 19.5], "answer_idx": 0}
+{"id": "val-00239-05f8ab2035e5", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 18.625], "answer_idx": 0}
+{"id": "val-00240-25aa622479ab", "family": "go_emotions", "qtype": "noul", "logits": [22.5, 24.125], "answer_idx": 1}
+{"id": "val-00241-d4a34ea8fe31", "family": "go_emotions", "qtype": "noul", "logits": [23.125, 23.625], "answer_idx": 1}
+{"id": "val-00242-97cdea91a905", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 19.125], "answer_idx": 0}
+{"id": "val-00243-0fcf2f679df2", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 20.0], "answer_idx": 0}
+{"id": "val-00244-933c22844f83", "family": "go_emotions", "qtype": "noul", "logits": [21.875, 28.0], "answer_idx": 1}
+{"id": "val-00245-12676a3d71b2", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 22.375], "answer_idx": 0}
+{"id": "val-00246-968ea142c643", "family": "go_emotions", "qtype": "noul", "logits": [26.75, 21.125], "answer_idx": 0}
+{"id": "val-00247-a235e41b429a", "family": "go_emotions", "qtype": "noul", "logits": [23.0, 20.75], "answer_idx": 1}
+{"id": "val-00248-285834d867d5", "family": "go_emotions", "qtype": "noul", "logits": [23.0, 19.75], "answer_idx": 0}
+{"id": "val-00249-d7c91f94331e", "family": "go_emotions", "qtype": "noul", "logits": [23.375, 21.5], "answer_idx": 0}
+{"id": "val-00250-47f427f9c460", "family": "go_emotions", "qtype": "noul", "logits": [22.375, 25.625], "answer_idx": 1}
+{"id": "val-00251-ae958ac23b15", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 21.625], "answer_idx": 0}
+{"id": "val-00252-7909264c34df", "family": "go_emotions", "qtype": "noul", "logits": [22.625, 24.75], "answer_idx": 0}
+{"id": "val-00253-64b3e9482f67", "family": "go_emotions", "qtype": "noul", "logits": [23.5, 24.875], "answer_idx": 1}
+{"id": "val-00254-3d3f7f30a391", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 18.25], "answer_idx": 0}
+{"id": "val-00255-1db687b5b927", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 18.375], "answer_idx": 0}
+{"id": "val-00256-2fb8006cc978", "family": "go_emotions", "qtype": "noul", "logits": [23.625, 19.375], "answer_idx": 1}
+{"id": "val-00257-d5c9cea320ea", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 21.125], "answer_idx": 0}
+{"id": "val-00258-89190bab15af", "family": "go_emotions", "qtype": "noul", "logits": [23.5, 18.125], "answer_idx": 0}
+{"id": "val-00259-a87a9e58be31", "family": "go_emotions", "qtype": "noul", "logits": [22.125, 22.875], "answer_idx": 1}
+{"id": "val-00260-48231bd2aa07", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 21.125], "answer_idx": 0}
+{"id": "val-00261-ea6cf86c5bfa", "family": "go_emotions", "qtype": "noul", "logits": [23.75, 21.5], "answer_idx": 0}
+{"id": "val-00262-a1380a1a480c", "family": "go_emotions", "qtype": "noul", "logits": [23.5, 23.125], "answer_idx": 1}
+{"id": "val-00263-12fe84a0bcad", "family": "go_emotions", "qtype": "noul", "logits": [24.625, 19.875], "answer_idx": 0}
+{"id": "val-00264-2215878027cb", "family": "go_emotions", "qtype": "noul", "logits": [24.0, 22.75], "answer_idx": 0}
+{"id": "val-00265-84216b54b89a", "family": "go_emotions", "qtype": "noul", "logits": [24.625, 19.0], "answer_idx": 1}
+{"id": "val-00266-f52aa86eeb23", "family": "go_emotions", "qtype": "noul", "logits": [22.875, 25.25], "answer_idx": 0}
+{"id": "val-00267-541557f2b44c", "family": "go_emotions", "qtype": "noul", "logits": [24.875, 16.375], "answer_idx": 0}
+{"id": "val-00268-2c30316a5520", "family": "go_emotions", "qtype": "noul", "logits": [22.25, 25.375], "answer_idx": 1}
+{"id": "val-00269-7a06b71b7da1", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 18.375], "answer_idx": 0}
+{"id": "val-00270-3e491f14b070", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 22.375], "answer_idx": 0}
+{"id": "val-00271-ecba7cd82500", "family": "go_emotions", "qtype": "noul", "logits": [23.125, 23.75], "answer_idx": 1}
+{"id": "val-00272-100b9d750a9f", "family": "go_emotions", "qtype": "noul", "logits": [26.0, 18.0], "answer_idx": 0}
+{"id": "val-00273-826e090d85c6", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 21.0], "answer_idx": 0}
+{"id": "val-00274-40c6e6eaf2be", "family": "go_emotions", "qtype": "noul", "logits": [22.625, 22.875], "answer_idx": 1}
+{"id": "val-00275-69d01a2e9d49", "family": "go_emotions", "qtype": "noul", "logits": [23.5, 25.625], "answer_idx": 0}
+{"id": "val-00276-d19f8f63b9b2", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 16.625], "answer_idx": 0}
+{"id": "val-00277-c312e0bf95ed", "family": "go_emotions", "qtype": "noul", "logits": [21.25, 25.0], "answer_idx": 1}
+{"id": "val-00278-0f545a3e951d", "family": "go_emotions", "qtype": "noul", "logits": [21.125, 24.875], "answer_idx": 1}
+{"id": "val-00279-7e780273b807", "family": "go_emotions", "qtype": "noul", "logits": [21.125, 25.25], "answer_idx": 0}
+{"id": "val-00280-3c615677f016", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 19.625], "answer_idx": 0}
+{"id": "val-00281-7edd33781450", "family": "go_emotions", "qtype": "noul", "logits": [22.875, 22.25], "answer_idx": 1}
+{"id": "val-00282-e6e3d1ed3369", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 18.5], "answer_idx": 0}
+{"id": "val-00283-10d623fbd28a", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 21.125], "answer_idx": 0}
+{"id": "val-00284-5e315a3ab5b3", "family": "go_emotions", "qtype": "noul", "logits": [22.25, 24.75], "answer_idx": 1}
+{"id": "val-00285-1edc20401392", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 18.875], "answer_idx": 0}
+{"id": "val-00286-43b334b0763b", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 21.0], "answer_idx": 0}
+{"id": "val-00287-7f8b50ed8bf7", "family": "go_emotions", "qtype": "noul", "logits": [22.125, 24.5], "answer_idx": 1}
+{"id": "val-00288-fdc6def54637", "family": "go_emotions", "qtype": "noul", "logits": [21.0, 24.375], "answer_idx": 0}
+{"id": "val-00289-d3b9404e973d", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 18.625], "answer_idx": 0}
+{"id": "val-00290-71daa192b3f7", "family": "go_emotions", "qtype": "noul", "logits": [22.0, 27.375], "answer_idx": 1}
+{"id": "val-00291-1569390b1852", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 22.75], "answer_idx": 0}
+{"id": "val-00292-093fabe4ae88", "family": "go_emotions", "qtype": "noul", "logits": [24.875, 21.75], "answer_idx": 0}
+{"id": "val-00293-e1e6b85e717b", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 21.375], "answer_idx": 1}
+{"id": "val-00294-89b8a4a09ec8", "family": "go_emotions", "qtype": "noul", "logits": [26.0, 19.25], "answer_idx": 0}
+{"id": "val-00295-678050b1ff1a", "family": "go_emotions", "qtype": "noul", "logits": [24.25, 23.875], "answer_idx": 0}
+{"id": "val-00296-88a2d5be5037", "family": "go_emotions", "qtype": "noul", "logits": [21.75, 26.875], "answer_idx": 1}
+{"id": "val-00297-429ffbb25af4", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 23.0], "answer_idx": 1}
+{"id": "val-00298-4896db7cabed", "family": "go_emotions", "qtype": "noul", "logits": [26.375, 18.625], "answer_idx": 0}
+{"id": "val-00299-b0d8939fe95e", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 18.5], "answer_idx": 0}
+{"id": "val-00300-a0375053d6e8", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 22.5], "answer_idx": 1}
+{"id": "val-00301-7c706119c835", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 23.375], "answer_idx": 0}
+{"id": "val-00302-38260231a111", "family": "go_emotions", "qtype": "noul", "logits": [27.125, 19.25], "answer_idx": 0}
+{"id": "val-00303-8a14669e30ed", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 18.125], "answer_idx": 1}
+{"id": "val-00304-c086713de285", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 19.375], "answer_idx": 0}
+{"id": "val-00305-1c91acc64551", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 18.375], "answer_idx": 0}
+{"id": "val-00306-8d93205d56a8", "family": "go_emotions", "qtype": "noul", "logits": [23.0, 20.375], "answer_idx": 1}
+{"id": "val-00307-3f9cb1032d78", "family": "go_emotions", "qtype": "noul", "logits": [23.375, 21.0], "answer_idx": 0}
+{"id": "val-00308-6832ef17cc1a", "family": "go_emotions", "qtype": "noul", "logits": [23.125, 20.5], "answer_idx": 0}
+{"id": "val-00309-5e39bcdb37f4", "family": "go_emotions", "qtype": "noul", "logits": [23.5, 20.875], "answer_idx": 1}
+{"id": "val-00310-b9eee318b574", "family": "go_emotions", "qtype": "noul", "logits": [21.5, 22.25], "answer_idx": 1}
+{"id": "val-00311-7267299af057", "family": "go_emotions", "qtype": "noul", "logits": [23.5, 21.25], "answer_idx": 0}
+{"id": "val-00312-94d2360c65da", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 20.25], "answer_idx": 0}
+{"id": "val-00313-5e1ad8ec3cc5", "family": "go_emotions", "qtype": "noul", "logits": [24.5, 24.0], "answer_idx": 1}
+{"id": "val-00314-f51eaaafce94", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 18.75], "answer_idx": 0}
+{"id": "val-00315-97986f835366", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 18.875], "answer_idx": 0}
+{"id": "val-00316-38e6a7bd3e47", "family": "go_emotions", "qtype": "noul", "logits": [23.125, 24.0], "answer_idx": 1}
+{"id": "val-00317-5233080c150e", "family": "go_emotions", "qtype": "noul", "logits": [23.625, 22.125], "answer_idx": 1}
+{"id": "val-00318-1ec5fee983a1", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 18.625], "answer_idx": 0}
+{"id": "val-00319-af50ee3aab7c", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 18.25], "answer_idx": 0}
+{"id": "val-00320-5b0a6505ae56", "family": "go_emotions", "qtype": "noul", "logits": [21.375, 24.125], "answer_idx": 1}
+{"id": "val-00321-fde6e8b6a9c8", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 19.25], "answer_idx": 0}
+{"id": "val-00322-2f8168922ae4", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 17.5], "answer_idx": 0}
+{"id": "val-00323-899d6ad4bf90", "family": "go_emotions", "qtype": "noul", "logits": [26.0, 20.125], "answer_idx": 1}
+{"id": "val-00324-0a87019c2a60", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 19.625], "answer_idx": 0}
+{"id": "val-00325-abc3d80744ef", "family": "go_emotions", "qtype": "noul", "logits": [26.5, 19.125], "answer_idx": 0}
+{"id": "val-00326-79c20aa2429e", "family": "go_emotions", "qtype": "noul", "logits": [21.0, 26.75], "answer_idx": 1}
+{"id": "val-00327-553349786f34", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 19.375], "answer_idx": 0}
+{"id": "val-00328-1bc7b9296c9f", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 18.75], "answer_idx": 0}
+{"id": "val-00329-4d94ba01d44d", "family": "go_emotions", "qtype": "noul", "logits": [21.375, 24.375], "answer_idx": 1}
+{"id": "val-00330-b0f9ca25a6ba", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 17.125], "answer_idx": 0}
+{"id": "val-00331-d5a00f0f36ef", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 18.125], "answer_idx": 0}
+{"id": "val-00332-ef7fef7803a1", "family": "go_emotions", "qtype": "noul", "logits": [24.375, 20.25], "answer_idx": 1}
+{"id": "val-00333-539f13beebbf", "family": "go_emotions", "qtype": "noul", "logits": [24.5, 22.125], "answer_idx": 0}
+{"id": "val-00334-1a91d871932e", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 18.5], "answer_idx": 0}
+{"id": "val-00335-6329d465e941", "family": "go_emotions", "qtype": "noul", "logits": [23.75, 22.375], "answer_idx": 1}
+{"id": "val-00336-e14d906980bf", "family": "go_emotions", "qtype": "noul", "logits": [26.0, 18.625], "answer_idx": 0}
+{"id": "val-00337-3c0ab7ee7b66", "family": "go_emotions", "qtype": "noul", "logits": [23.0, 22.125], "answer_idx": 0}
+{"id": "val-00338-c1eb63367c97", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 21.875], "answer_idx": 1}
+{"id": "val-00339-e81f1647617d", "family": "go_emotions", "qtype": "noul", "logits": [22.875, 24.625], "answer_idx": 1}
+{"id": "val-00340-0480ee4f24cd", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 20.0], "answer_idx": 0}
+{"id": "val-00341-455efed63fcc", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 20.0], "answer_idx": 0}
+{"id": "val-00342-1cc6a2edacf1", "family": "go_emotions", "qtype": "noul", "logits": [23.375, 24.375], "answer_idx": 1}
+{"id": "val-00343-1ad806d4a05e", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 20.5], "answer_idx": 0}
+{"id": "val-00344-36e3d29c30e4", "family": "go_emotions", "qtype": "noul", "logits": [26.25, 20.375], "answer_idx": 0}
+{"id": "val-00345-57cfe21f9a0f", "family": "go_emotions", "qtype": "noul", "logits": [21.875, 25.125], "answer_idx": 1}
+{"id": "val-00346-7b4e4bec943a", "family": "go_emotions", "qtype": "noul", "logits": [26.625, 18.875], "answer_idx": 0}
+{"id": "val-00347-7159d6de6803", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 20.25], "answer_idx": 0}
+{"id": "val-00348-eac7a8494b94", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 18.625], "answer_idx": 1}
+{"id": "val-00349-d00a4635b36c", "family": "go_emotions", "qtype": "noul", "logits": [24.0, 22.25], "answer_idx": 0}
+{"id": "val-00350-7515f0628ccc", "family": "go_emotions", "qtype": "noul", "logits": [26.625, 19.25], "answer_idx": 0}
+{"id": "val-00351-27ea69342004", "family": "go_emotions", "qtype": "noul", "logits": [23.125, 22.875], "answer_idx": 1}
+{"id": "val-00352-488bc01b6086", "family": "go_emotions", "qtype": "noul", "logits": [23.75, 23.125], "answer_idx": 0}
+{"id": "val-00353-31b142049d71", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 19.25], "answer_idx": 0}
+{"id": "val-00354-4ee3d30d899f", "family": "go_emotions", "qtype": "noul", "logits": [22.0, 26.375], "answer_idx": 1}
+{"id": "val-00355-df7f7e28271c", "family": "go_emotions", "qtype": "noul", "logits": [24.25, 22.625], "answer_idx": 0}
+{"id": "val-00356-6cbdb7d41e9d", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 17.875], "answer_idx": 0}
+{"id": "val-00357-ccee5f137534", "family": "go_emotions", "qtype": "noul", "logits": [22.25, 21.75], "answer_idx": 1}
+{"id": "val-00358-2b4fa6433e34", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 20.875], "answer_idx": 0}
+{"id": "val-00359-6a61c892d16c", "family": "go_emotions", "qtype": "noul", "logits": [21.75, 23.375], "answer_idx": 0}
+{"id": "val-00360-53ba41fa1fe1", "family": "go_emotions", "qtype": "noul", "logits": [22.75, 25.125], "answer_idx": 1}
+{"id": "val-00361-1ade4b9e2bb4", "family": "go_emotions", "qtype": "noul", "logits": [22.625, 24.0], "answer_idx": 0}
+{"id": "val-00362-6970936be094", "family": "go_emotions", "qtype": "noul", "logits": [22.75, 25.5], "answer_idx": 0}
+{"id": "val-00363-1e22b43e44ca", "family": "go_emotions", "qtype": "noul", "logits": [24.0, 22.125], "answer_idx": 1}
+{"id": "val-00364-c05846ac6a56", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 19.375], "answer_idx": 0}
+{"id": "val-00365-fb3164213805", "family": "go_emotions", "qtype": "noul", "logits": [26.75, 19.5], "answer_idx": 0}
+{"id": "val-00366-70e05a2bcd0c", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 18.5], "answer_idx": 1}
+{"id": "val-00367-cb34f49fc57a", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 17.25], "answer_idx": 0}
+{"id": "val-00368-05fe91840d7d", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 17.0], "answer_idx": 0}
+{"id": "val-00369-fe4106078359", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 21.125], "answer_idx": 1}
+{"id": "val-00370-3685e25492f2", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 19.25], "answer_idx": 0}
+{"id": "val-00371-bd5e5d07579a", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 20.125], "answer_idx": 0}
+{"id": "val-00372-8499e4ea3de6", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 21.0], "answer_idx": 1}
+{"id": "val-00373-194458ace89e", "family": "go_emotions", "qtype": "noul", "logits": [21.375, 26.625], "answer_idx": 1}
+{"id": "val-00374-95f01712015a", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 18.75], "answer_idx": 0}
+{"id": "val-00375-c3459db7af91", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 19.5], "answer_idx": 0}
+{"id": "val-00376-c430dcb1cb7a", "family": "go_emotions", "qtype": "noul", "logits": [23.5, 22.25], "answer_idx": 1}
+{"id": "val-00377-d798ec978bf3", "family": "go_emotions", "qtype": "noul", "logits": [23.0, 22.625], "answer_idx": 1}
+{"id": "val-00378-78f8eed9d97e", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 20.5], "answer_idx": 0}
+{"id": "val-00379-ae5b84f0f910", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 19.625], "answer_idx": 0}
+{"id": "val-00380-3364bad37f0b", "family": "go_emotions", "qtype": "noul", "logits": [23.125, 23.625], "answer_idx": 1}
+{"id": "val-00381-587ee6f3d9d6", "family": "go_emotions", "qtype": "noul", "logits": [24.625, 18.875], "answer_idx": 0}
+{"id": "val-00382-a8097e6dda66", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 19.0], "answer_idx": 0}
+{"id": "val-00383-aa384c8627ea", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 22.5], "answer_idx": 1}
+{"id": "val-00384-435ce0e0e659", "family": "go_emotions", "qtype": "noul", "logits": [23.375, 24.875], "answer_idx": 0}
+{"id": "val-00385-11ed01a14a1e", "family": "go_emotions", "qtype": "noul", "logits": [26.0, 17.75], "answer_idx": 0}
+{"id": "val-00386-9fe4024a042a", "family": "go_emotions", "qtype": "noul", "logits": [23.625, 21.25], "answer_idx": 1}
+{"id": "val-00387-ebd8f2a11a16", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 17.75], "answer_idx": 0}
+{"id": "val-00388-235bd2709ebc", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 18.75], "answer_idx": 0}
+{"id": "val-00389-dabd712c539f", "family": "go_emotions", "qtype": "noul", "logits": [20.875, 27.25], "answer_idx": 1}
+{"id": "val-00390-880321cbc1d5", "family": "go_emotions", "qtype": "noul", "logits": [26.5, 18.625], "answer_idx": 0}
+{"id": "val-00391-0266cae4449c", "family": "go_emotions", "qtype": "noul", "logits": [26.375, 18.25], "answer_idx": 0}
+{"id": "val-00392-256bf5e5cf75", "family": "go_emotions", "qtype": "noul", "logits": [23.875, 21.375], "answer_idx": 1}
+{"id": "val-00393-58466c274cdc", "family": "go_emotions", "qtype": "noul", "logits": [23.375, 23.125], "answer_idx": 0}
+{"id": "val-00394-95ab5480dd6e", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 21.25], "answer_idx": 0}
+{"id": "val-00395-ae51fc71ca8d", "family": "go_emotions", "qtype": "noul", "logits": [22.25, 23.875], "answer_idx": 1}
+{"id": "val-00396-9c270ef22022", "family": "go_emotions", "qtype": "noul", "logits": [21.5, 25.625], "answer_idx": 1}
+{"id": "val-00397-1cfc92dd50ea", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 21.25], "answer_idx": 0}
+{"id": "val-00398-f4f6ab67cdf7", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 21.5], "answer_idx": 0}
+{"id": "val-00399-9d8b4286917f", "family": "go_emotions", "qtype": "noul", "logits": [24.25, 20.875], "answer_idx": 1}
+{"id": "val-00400-dfd62be3fd54", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 20.75], "answer_idx": 0}
+{"id": "val-00401-30b7329fed9d", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 22.0], "answer_idx": 0}
+{"id": "val-00402-940a510a84ef", "family": "go_emotions", "qtype": "noul", "logits": [22.5, 22.25], "answer_idx": 1}
+{"id": "val-00403-0b6fdf206cc1", "family": "go_emotions", "qtype": "noul", "logits": [24.625, 20.125], "answer_idx": 0}
+{"id": "val-00404-abf7461bf150", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 19.75], "answer_idx": 0}
+{"id": "val-00405-0f56d5bdcf0a", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 18.875], "answer_idx": 1}
+{"id": "val-00406-57dbd95dbc44", "family": "go_emotions", "qtype": "noul", "logits": [26.25, 19.375], "answer_idx": 0}
+{"id": "val-00407-c52349c1b185", "family": "go_emotions", "qtype": "noul", "logits": [22.125, 26.125], "answer_idx": 0}
+{"id": "val-00408-12b711d1343b", "family": "go_emotions", "qtype": "noul", "logits": [20.875, 24.875], "answer_idx": 1}
+{"id": "val-00409-9505b44e9d51", "family": "go_emotions", "qtype": "noul", "logits": [24.875, 18.625], "answer_idx": 0}
+{"id": "val-00410-db49089083d2", "family": "go_emotions", "qtype": "noul", "logits": [22.25, 22.875], "answer_idx": 0}
+{"id": "val-00411-10aaa4dd7e84", "family": "go_emotions", "qtype": "noul", "logits": [20.125, 27.625], "answer_idx": 1}
+{"id": "val-00412-02078fc289b2", "family": "go_emotions", "qtype": "noul", "logits": [21.25, 28.125], "answer_idx": 1}
+{"id": "val-00413-5eb872278d64", "family": "go_emotions", "qtype": "noul", "logits": [26.25, 20.875], "answer_idx": 0}
+{"id": "val-00414-590334e1a365", "family": "go_emotions", "qtype": "noul", "logits": [26.375, 19.125], "answer_idx": 0}
+{"id": "val-00415-8c139328978a", "family": "go_emotions", "qtype": "noul", "logits": [22.5, 25.875], "answer_idx": 1}
+{"id": "val-00416-10fef5103d2f", "family": "go_emotions", "qtype": "noul", "logits": [20.375, 27.75], "answer_idx": 1}
+{"id": "val-00417-ebfb15ac1747", "family": "go_emotions", "qtype": "noul", "logits": [26.25, 19.875], "answer_idx": 0}
+{"id": "val-00418-060067f561c1", "family": "go_emotions", "qtype": "noul", "logits": [27.5, 18.5], "answer_idx": 0}
+{"id": "val-00419-1e69ef830269", "family": "go_emotions", "qtype": "noul", "logits": [23.25, 22.375], "answer_idx": 1}
+{"id": "val-00420-7478fd1c8bf1", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 19.625], "answer_idx": 0}
+{"id": "val-00421-1c481b9b8ca6", "family": "go_emotions", "qtype": "noul", "logits": [22.75, 23.0], "answer_idx": 0}
+{"id": "val-00422-a639ce271942", "family": "go_emotions", "qtype": "noul", "logits": [22.875, 24.25], "answer_idx": 1}
+{"id": "val-00423-bb028d6d3ef0", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 20.875], "answer_idx": 0}
+{"id": "val-00424-df52293f1a95", "family": "go_emotions", "qtype": "noul", "logits": [23.375, 22.125], "answer_idx": 0}
+{"id": "val-00425-5b2ebe95b6ca", "family": "go_emotions", "qtype": "noul", "logits": [20.75, 24.5], "answer_idx": 1}
+{"id": "val-00426-8b2e5a9ad8de", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 18.375], "answer_idx": 0}
+{"id": "val-00427-69856dd605ca", "family": "go_emotions", "qtype": "noul", "logits": [24.875, 19.0], "answer_idx": 0}
+{"id": "val-00428-7326f21905a1", "family": "go_emotions", "qtype": "noul", "logits": [22.375, 23.0], "answer_idx": 1}
+{"id": "val-00429-fc80f0f8bb7c", "family": "go_emotions", "qtype": "noul", "logits": [24.625, 19.625], "answer_idx": 0}
+{"id": "val-00430-0283a1d1aa94", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 21.125], "answer_idx": 0}
+{"id": "val-00431-224dc47eb048", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 22.25], "answer_idx": 1}
+{"id": "val-00432-f061ec92b4b5", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 22.75], "answer_idx": 1}
+{"id": "val-00433-8a2767e4fffd", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 20.25], "answer_idx": 0}
+{"id": "val-00434-563ac0edfaf1", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 22.375], "answer_idx": 0}
+{"id": "val-00435-0de927e209a4", "family": "go_emotions", "qtype": "noul", "logits": [21.125, 26.625], "answer_idx": 1}
+{"id": "val-00436-d6e23ff7397c", "family": "go_emotions", "qtype": "noul", "logits": [27.25, 19.125], "answer_idx": 0}
+{"id": "val-00437-829853e7341c", "family": "go_emotions", "qtype": "noul", "logits": [26.5, 18.5], "answer_idx": 0}
+{"id": "val-00438-7dc13588d86d", "family": "go_emotions", "qtype": "noul", "logits": [23.625, 21.75], "answer_idx": 1}
+{"id": "val-00439-9312da9ece56", "family": "go_emotions", "qtype": "noul", "logits": [23.75, 21.5], "answer_idx": 0}
+{"id": "val-00440-28ea3da78d99", "family": "go_emotions", "qtype": "noul", "logits": [23.875, 16.875], "answer_idx": 0}
+{"id": "val-00441-1f53f5fc45c9", "family": "go_emotions", "qtype": "noul", "logits": [23.75, 22.5], "answer_idx": 1}
+{"id": "val-00442-876478a6fa44", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 18.875], "answer_idx": 0}
+{"id": "val-00443-d8417e2715e6", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 20.5], "answer_idx": 0}
+{"id": "val-00444-7160dd8e531b", "family": "go_emotions", "qtype": "noul", "logits": [21.5, 25.25], "answer_idx": 1}
+{"id": "val-00445-0723ccdfd60c", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 19.25], "answer_idx": 0}
+{"id": "val-00446-d57e4176e6e3", "family": "go_emotions", "qtype": "noul", "logits": [22.375, 24.125], "answer_idx": 0}
+{"id": "val-00447-3c291df84139", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 22.125], "answer_idx": 1}
+{"id": "val-00448-697c65a0e4db", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 20.75], "answer_idx": 0}
+{"id": "val-00449-47e363350139", "family": "go_emotions", "qtype": "noul", "logits": [23.25, 24.125], "answer_idx": 0}
+{"id": "val-00450-f655decfcb7d", "family": "go_emotions", "qtype": "noul", "logits": [23.75, 22.5], "answer_idx": 1}
+{"id": "val-00451-eb515642beef", "family": "go_emotions", "qtype": "noul", "logits": [23.0, 23.375], "answer_idx": 1}
+{"id": "val-00452-4963e524e7a8", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 18.625], "answer_idx": 0}
+{"id": "val-00453-480282016669", "family": "go_emotions", "qtype": "noul", "logits": [23.125, 24.125], "answer_idx": 0}
+{"id": "val-00454-72df3a77fe10", "family": "go_emotions", "qtype": "noul", "logits": [20.875, 25.875], "answer_idx": 1}
+{"id": "val-00455-60e27655f5b6", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 18.375], "answer_idx": 0}
+{"id": "val-00456-992d04fc2ef8", "family": "go_emotions", "qtype": "noul", "logits": [24.375, 20.875], "answer_idx": 0}
+{"id": "val-00457-5d2e17233795", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 20.875], "answer_idx": 1}
+{"id": "val-00458-7bdefe3158bb", "family": "go_emotions", "qtype": "noul", "logits": [22.875, 22.25], "answer_idx": 1}
+{"id": "val-00459-3dfffc3f1536", "family": "go_emotions", "qtype": "noul", "logits": [24.625, 20.375], "answer_idx": 0}
+{"id": "val-00460-f7a8acdc84c8", "family": "go_emotions", "qtype": "noul", "logits": [24.5, 20.0], "answer_idx": 0}
+{"id": "val-00461-1f51bf24653d", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 21.125], "answer_idx": 1}
+{"id": "val-00462-19df687806f4", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 21.625], "answer_idx": 0}
+{"id": "val-00463-83c6797026ac", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 19.125], "answer_idx": 0}
+{"id": "val-00464-52267ac4b73f", "family": "go_emotions", "qtype": "noul", "logits": [20.625, 27.625], "answer_idx": 1}
+{"id": "val-00465-ff0095c4cb57", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 18.75], "answer_idx": 0}
+{"id": "val-00466-be9cadd58c9f", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 21.5], "answer_idx": 0}
+{"id": "val-00467-9d6a60c06390", "family": "go_emotions", "qtype": "noul", "logits": [24.25, 19.75], "answer_idx": 1}
+{"id": "val-00468-1789bd6128db", "family": "go_emotions", "qtype": "noul", "logits": [23.75, 22.375], "answer_idx": 0}
+{"id": "val-00469-51b394438e5e", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 18.0], "answer_idx": 0}
+{"id": "val-00470-2e70f573c858", "family": "go_emotions", "qtype": "noul", "logits": [23.125, 23.875], "answer_idx": 1}
+{"id": "val-00471-bbebaf899fbf", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 20.0], "answer_idx": 0}
+{"id": "val-00472-3248309cbe8e", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 23.125], "answer_idx": 0}
+{"id": "val-00473-82e7cacfe15a", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 19.5], "answer_idx": 1}
+{"id": "val-00474-8c86f5dc3f24", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 22.5], "answer_idx": 0}
+{"id": "val-00475-58fd570edfc5", "family": "go_emotions", "qtype": "noul", "logits": [24.0, 22.5], "answer_idx": 0}
+{"id": "val-00476-feb6b73d66fd", "family": "go_emotions", "qtype": "noul", "logits": [20.5, 27.375], "answer_idx": 1}
+{"id": "val-00477-d97fe8f14727", "family": "go_emotions", "qtype": "noul", "logits": [22.0, 26.25], "answer_idx": 0}
+{"id": "val-00478-705fca530a0f", "family": "go_emotions", "qtype": "noul", "logits": [27.125, 20.0], "answer_idx": 0}
+{"id": "val-00479-3aeb931f8682", "family": "go_emotions", "qtype": "noul", "logits": [22.125, 21.0], "answer_idx": 1}
+{"id": "val-00480-67dfffd4a276", "family": "go_emotions", "qtype": "noul", "logits": [23.375, 20.125], "answer_idx": 0}
+{"id": "val-00481-aaa85feebe8e", "family": "go_emotions", "qtype": "noul", "logits": [23.5, 20.375], "answer_idx": 0}
+{"id": "val-00482-07b4049073a8", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 18.75], "answer_idx": 1}
+{"id": "val-00483-7c2149719367", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 21.25], "answer_idx": 0}
+{"id": "val-00484-7eb4d57ac349", "family": "go_emotions", "qtype": "noul", "logits": [23.25, 22.25], "answer_idx": 0}
+{"id": "val-00485-1258fc1c5ee0", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 18.375], "answer_idx": 1}
+{"id": "val-00486-918959f58c69", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 17.5], "answer_idx": 0}
+{"id": "val-00487-e97da9597840", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 20.75], "answer_idx": 0}
+{"id": "val-00488-3d8e8c168444", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 21.5], "answer_idx": 1}
+{"id": "val-00489-a2cbb13e630c", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 20.125], "answer_idx": 0}
+{"id": "val-00490-9f99ba80b3b8", "family": "go_emotions", "qtype": "noul", "logits": [24.375, 18.0], "answer_idx": 0}
+{"id": "val-00491-9abc0d325b43", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 22.375], "answer_idx": 1}
+{"id": "val-00492-50121ead8231", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 21.125], "answer_idx": 1}
+{"id": "val-00493-15d85e8ebe92", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 19.375], "answer_idx": 0}
+{"id": "val-00494-7a53406ac41c", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 21.0], "answer_idx": 0}
+{"id": "val-00495-ffa94f95d326", "family": "go_emotions", "qtype": "noul", "logits": [21.125, 27.75], "answer_idx": 1}
+{"id": "val-00496-cbbfc778e466", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 20.375], "answer_idx": 1}
+{"id": "val-00497-8c48233f99ec", "family": "go_emotions", "qtype": "noul", "logits": [26.625, 20.375], "answer_idx": 0}
+{"id": "val-00498-d932e58f4855", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 18.75], "answer_idx": 0}
+{"id": "val-00499-42aa489d0616", "family": "go_emotions", "qtype": "noul", "logits": [24.0, 22.375], "answer_idx": 1}
+{"id": "val-00500-90054c589d8d", "family": "go_emotions", "qtype": "noul", "logits": [26.25, 21.125], "answer_idx": 0}
+{"id": "val-00501-0626759a25b7", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 18.875], "answer_idx": 0}
+{"id": "val-00502-aae872555ea9", "family": "go_emotions", "qtype": "noul", "logits": [23.0, 23.625], "answer_idx": 1}
+{"id": "val-00503-3b26858f6a52", "family": "go_emotions", "qtype": "noul", "logits": [21.5, 26.5], "answer_idx": 0}
+{"id": "val-00504-6743e7cde504", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 20.875], "answer_idx": 0}
+{"id": "val-00505-0f23f405e2f1", "family": "go_emotions", "qtype": "noul", "logits": [21.375, 25.625], "answer_idx": 1}
+{"id": "val-00506-a4deedac108b", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 19.5], "answer_idx": 0}
+{"id": "val-00507-0dfab034b82a", "family": "go_emotions", "qtype": "noul", "logits": [26.375, 19.625], "answer_idx": 0}
+{"id": "val-00508-a17bedb16e89", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 21.25], "answer_idx": 1}
+{"id": "val-00509-1ed5e6e0acc3", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 21.625], "answer_idx": 1}
+{"id": "val-00510-fe40439cfe98", "family": "go_emotions", "qtype": "noul", "logits": [26.0, 18.375], "answer_idx": 0}
+{"id": "val-00511-2328f146651b", "family": "go_emotions", "qtype": "noul", "logits": [26.25, 18.75], "answer_idx": 0}
+{"id": "val-00512-30dc0f5c8fa3", "family": "go_emotions", "qtype": "noul", "logits": [26.75, 20.125], "answer_idx": 1}
+{"id": "val-00513-6c9430ef3607", "family": "go_emotions", "qtype": "noul", "logits": [24.875, 20.875], "answer_idx": 1}
+{"id": "val-00514-7da329909648", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 19.625], "answer_idx": 0}
+{"id": "val-00515-828de7d3455f", "family": "go_emotions", "qtype": "noul", "logits": [26.25, 19.5], "answer_idx": 0}
+{"id": "val-00516-8e72f4cf35dc", "family": "go_emotions", "qtype": "noul", "logits": [20.5, 27.25], "answer_idx": 1}
+{"id": "val-00517-821c3dd47932", "family": "go_emotions", "qtype": "noul", "logits": [26.875, 19.375], "answer_idx": 0}
+{"id": "val-00518-340ffc65c22f", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 22.0], "answer_idx": 0}
+{"id": "val-00519-12bd9a38d524", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 18.125], "answer_idx": 1}
+{"id": "val-00520-4aa7273a6afa", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 18.0], "answer_idx": 0}
+{"id": "val-00521-7509d8894ddb", "family": "go_emotions", "qtype": "noul", "logits": [23.25, 23.5], "answer_idx": 0}
+{"id": "val-00522-303a80045f82", "family": "go_emotions", "qtype": "noul", "logits": [23.0, 23.5], "answer_idx": 1}
+{"id": "val-00523-8850f1c87cdf", "family": "go_emotions", "qtype": "noul", "logits": [24.625, 19.75], "answer_idx": 0}
+{"id": "val-00524-36477bb0254d", "family": "go_emotions", "qtype": "noul", "logits": [24.875, 19.875], "answer_idx": 0}
+{"id": "val-00525-8222df799597", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 18.5], "answer_idx": 1}
+{"id": "val-00526-f0e9b05ebcb8", "family": "go_emotions", "qtype": "noul", "logits": [24.625, 17.875], "answer_idx": 0}
+{"id": "val-00527-1ed5b97cad8d", "family": "go_emotions", "qtype": "noul", "logits": [23.125, 21.5], "answer_idx": 0}
+{"id": "val-00528-56a60d6c8602", "family": "go_emotions", "qtype": "noul", "logits": [22.75, 19.875], "answer_idx": 1}
+{"id": "val-00529-833749f6b86a", "family": "go_emotions", "qtype": "noul", "logits": [21.875, 20.125], "answer_idx": 0}
+{"id": "val-00530-fc3626c3df8a", "family": "go_emotions", "qtype": "noul", "logits": [23.0, 18.375], "answer_idx": 0}
+{"id": "val-00531-73de7058a388", "family": "go_emotions", "qtype": "noul", "logits": [24.25, 22.625], "answer_idx": 1}
+{"id": "val-00532-295d4fd609f9", "family": "go_emotions", "qtype": "noul", "logits": [26.0, 18.375], "answer_idx": 0}
+{"id": "val-00533-b0262ce7c440", "family": "go_emotions", "qtype": "noul", "logits": [24.875, 23.375], "answer_idx": 0}
+{"id": "val-00534-e6a2ab1d245a", "family": "go_emotions", "qtype": "noul", "logits": [20.375, 26.0], "answer_idx": 1}
+{"id": "val-00535-c28edd19e4e3", "family": "go_emotions", "qtype": "noul", "logits": [23.625, 22.875], "answer_idx": 0}
+{"id": "val-00536-b92683e49a4f", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 18.75], "answer_idx": 0}
+{"id": "val-00537-2c94ba5cf79c", "family": "go_emotions", "qtype": "noul", "logits": [22.5, 18.75], "answer_idx": 1}
+{"id": "val-00538-9230dfa0dd99", "family": "go_emotions", "qtype": "noul", "logits": [23.0, 18.75], "answer_idx": 0}
+{"id": "val-00539-02489f12fcb6", "family": "go_emotions", "qtype": "noul", "logits": [22.875, 18.25], "answer_idx": 0}
+{"id": "val-00540-1a05fa5e15a1", "family": "go_emotions", "qtype": "noul", "logits": [21.75, 23.625], "answer_idx": 1}
+{"id": "val-00541-5ea62096af2a", "family": "go_emotions", "qtype": "noul", "logits": [20.0, 24.875], "answer_idx": 1}
+{"id": "val-00542-8cf4c4638e99", "family": "go_emotions", "qtype": "noul", "logits": [24.5, 19.375], "answer_idx": 0}
+{"id": "val-00543-d540bfe7a4cc", "family": "go_emotions", "qtype": "noul", "logits": [24.875, 19.0], "answer_idx": 0}
+{"id": "val-00544-9811653d80ba", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 22.875], "answer_idx": 1}
+{"id": "val-00545-810955cd17ca", "family": "go_emotions", "qtype": "noul", "logits": [24.5, 22.5], "answer_idx": 1}
+{"id": "val-00546-2a9603f0a53e", "family": "go_emotions", "qtype": "noul", "logits": [23.875, 24.25], "answer_idx": 0}
+{"id": "val-00547-0d828b8ec994", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 18.75], "answer_idx": 0}
+{"id": "val-00548-93280c79416d", "family": "go_emotions", "qtype": "noul", "logits": [20.0, 25.25], "answer_idx": 1}
+{"id": "val-00549-e5aa91e32765", "family": "go_emotions", "qtype": "noul", "logits": [24.875, 18.375], "answer_idx": 0}
+{"id": "val-00550-f83fd96195c3", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 18.625], "answer_idx": 0}
+{"id": "val-00551-153c8a7a081d", "family": "go_emotions", "qtype": "noul", "logits": [24.5, 19.0], "answer_idx": 1}
+{"id": "val-00552-a7ceefc171f8", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 18.0], "answer_idx": 0}
+{"id": "val-00553-3629cbf4b0e6", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 18.0], "answer_idx": 0}
+{"id": "val-00554-550d35f15a07", "family": "go_emotions", "qtype": "noul", "logits": [22.125, 22.75], "answer_idx": 1}
+{"id": "val-00555-62176b1799d8", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 21.25], "answer_idx": 0}
+{"id": "val-00556-c04f37ff4338", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 18.5], "answer_idx": 0}
+{"id": "val-00557-917771571dc0", "family": "go_emotions", "qtype": "noul", "logits": [19.75, 26.875], "answer_idx": 1}
+{"id": "val-00558-c021fd9336fc", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 18.625], "answer_idx": 0}
+{"id": "val-00559-3e47b5dffafc", "family": "go_emotions", "qtype": "noul", "logits": [20.75, 26.0], "answer_idx": 0}
+{"id": "val-00560-b90ab1c72297", "family": "go_emotions", "qtype": "noul", "logits": [23.625, 22.75], "answer_idx": 1}
+{"id": "val-00561-745ed086c0ff", "family": "go_emotions", "qtype": "noul", "logits": [24.625, 19.375], "answer_idx": 0}
+{"id": "val-00562-dacf3c36c807", "family": "go_emotions", "qtype": "noul", "logits": [24.625, 18.75], "answer_idx": 0}
+{"id": "val-00563-62f2ec030929", "family": "go_emotions", "qtype": "noul", "logits": [21.75, 23.625], "answer_idx": 1}
+{"id": "val-00564-4e645dace3bd", "family": "go_emotions", "qtype": "noul", "logits": [24.375, 18.5], "answer_idx": 0}
+{"id": "val-00565-04a62b80f649", "family": "go_emotions", "qtype": "noul", "logits": [24.625, 18.125], "answer_idx": 0}
+{"id": "val-00566-58db7df69fdd", "family": "go_emotions", "qtype": "noul", "logits": [21.25, 26.125], "answer_idx": 1}
+{"id": "val-00567-1bc11b901fa9", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 23.0], "answer_idx": 0}
+{"id": "val-00568-970ef4831e60", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 17.75], "answer_idx": 0}
+{"id": "val-00569-0c176161b650", "family": "go_emotions", "qtype": "noul", "logits": [23.125, 23.125], "answer_idx": 1}
+{"id": "val-00570-fc1139f4fa86", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 20.0], "answer_idx": 0}
+{"id": "val-00571-66c5351f52a1", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 21.0], "answer_idx": 0}
+{"id": "val-00572-7545fdb7f843", "family": "go_emotions", "qtype": "noul", "logits": [23.625, 24.75], "answer_idx": 1}
+{"id": "val-00573-342b6d153707", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 17.375], "answer_idx": 0}
+{"id": "val-00574-3f9f7523f650", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 18.0], "answer_idx": 0}
+{"id": "val-00575-fb4cdd6c9b1b", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 23.0], "answer_idx": 1}
+{"id": "val-00576-d48cf70052f6", "family": "go_emotions", "qtype": "noul", "logits": [24.875, 17.75], "answer_idx": 0}
+{"id": "val-00577-8c43b3efa2d9", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 20.75], "answer_idx": 0}
+{"id": "val-00578-2252e41a5164", "family": "go_emotions", "qtype": "noul", "logits": [22.375, 23.375], "answer_idx": 1}
+{"id": "val-00579-52e7e5e59802", "family": "go_emotions", "qtype": "noul", "logits": [24.375, 23.125], "answer_idx": 0}
+{"id": "val-00580-8b6bb87d0b99", "family": "go_emotions", "qtype": "noul", "logits": [23.25, 23.125], "answer_idx": 0}
+{"id": "val-00581-6ee0a5fa35a0", "family": "go_emotions", "qtype": "noul", "logits": [21.625, 26.625], "answer_idx": 1}
+{"id": "val-00582-ecb0b6d14525", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 20.125], "answer_idx": 0}
+{"id": "val-00583-f5127b1c82c8", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 18.125], "answer_idx": 0}
+{"id": "val-00584-2721cc325ca7", "family": "go_emotions", "qtype": "noul", "logits": [23.375, 21.125], "answer_idx": 1}
+{"id": "val-00585-c874b26f71f5", "family": "go_emotions", "qtype": "noul", "logits": [24.5, 18.875], "answer_idx": 0}
+{"id": "val-00586-3be70f1915db", "family": "go_emotions", "qtype": "noul", "logits": [23.0, 22.25], "answer_idx": 0}
+{"id": "val-00587-1824a736309d", "family": "go_emotions", "qtype": "noul", "logits": [21.5, 25.75], "answer_idx": 1}
+{"id": "val-00588-3f72913b17cb", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 20.0], "answer_idx": 0}
+{"id": "val-00589-6e44dd60445f", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 19.5], "answer_idx": 0}
+{"id": "val-00590-92e9e282a243", "family": "go_emotions", "qtype": "noul", "logits": [23.5, 23.75], "answer_idx": 1}
+{"id": "val-00591-7c3f12487f6d", "family": "go_emotions", "qtype": "noul", "logits": [24.5, 22.25], "answer_idx": 0}
+{"id": "val-00592-f842d998fda5", "family": "go_emotions", "qtype": "noul", "logits": [23.625, 24.625], "answer_idx": 0}
+{"id": "val-00593-3192b1eb0093", "family": "go_emotions", "qtype": "noul", "logits": [23.25, 23.25], "answer_idx": 1}
+{"id": "val-00594-2cf487ca63f8", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 22.0], "answer_idx": 0}
+{"id": "val-00595-6f95b781d53f", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 22.875], "answer_idx": 0}
+{"id": "val-00596-6ac4f5a06536", "family": "go_emotions", "qtype": "noul", "logits": [20.625, 23.875], "answer_idx": 1}
+{"id": "val-00597-b3efb9860d79", "family": "go_emotions", "qtype": "noul", "logits": [20.375, 24.625], "answer_idx": 1}
+{"id": "val-00598-668bad7b0edf", "family": "go_emotions", "qtype": "noul", "logits": [24.0, 18.625], "answer_idx": 0}
+{"id": "val-00599-bc9aab2eae4c", "family": "go_emotions", "qtype": "noul", "logits": [23.5, 21.0], "answer_idx": 0}
+{"id": "val-00600-8f60fb9d2f3e", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 19.5], "answer_idx": 1}
+{"id": "val-00601-ca8297e328d0", "family": "go_emotions", "qtype": "noul", "logits": [20.625, 26.25], "answer_idx": 0}
+{"id": "val-00602-c6c3c3c8de74", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 18.375], "answer_idx": 0}
+{"id": "val-00603-04e1742817b4", "family": "go_emotions", "qtype": "noul", "logits": [22.375, 24.0], "answer_idx": 1}
+{"id": "val-00604-16dca6336bac", "family": "go_emotions", "qtype": "noul", "logits": [22.75, 23.125], "answer_idx": 1}
+{"id": "val-00605-715a97212465", "family": "go_emotions", "qtype": "noul", "logits": [23.75, 21.625], "answer_idx": 0}
+{"id": "val-00606-717e58d7130f", "family": "go_emotions", "qtype": "noul", "logits": [23.5, 21.25], "answer_idx": 0}
+{"id": "val-00607-3c0b4a40e218", "family": "go_emotions", "qtype": "noul", "logits": [23.125, 21.5], "answer_idx": 1}
+{"id": "val-00608-472a0e1051a4", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 18.5], "answer_idx": 0}
+{"id": "val-00609-ad82ae9e03ea", "family": "go_emotions", "qtype": "noul", "logits": [24.625, 20.875], "answer_idx": 0}
+{"id": "val-00610-3a3b70c5209b", "family": "go_emotions", "qtype": "noul", "logits": [23.5, 22.125], "answer_idx": 1}
+{"id": "val-00611-bd542b8f0efc", "family": "go_emotions", "qtype": "noul", "logits": [26.875, 19.25], "answer_idx": 0}
+{"id": "val-00612-b1b90632726d", "family": "go_emotions", "qtype": "noul", "logits": [26.75, 19.875], "answer_idx": 0}
+{"id": "val-00613-851af5babbc3", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 20.375], "answer_idx": 1}
+{"id": "val-00614-484cb868369b", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 16.875], "answer_idx": 0}
+{"id": "val-00615-0cdab174eb36", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 17.0], "answer_idx": 0}
+{"id": "val-00616-0f5fdbcf8488", "family": "go_emotions", "qtype": "noul", "logits": [21.375, 26.75], "answer_idx": 1}
+{"id": "val-00617-bd54e99b7fc9", "family": "go_emotions", "qtype": "noul", "logits": [23.0, 25.375], "answer_idx": 1}
+{"id": "val-00618-1436630673e8", "family": "go_emotions", "qtype": "noul", "logits": [26.375, 20.75], "answer_idx": 0}
+{"id": "val-00619-04c0fbbe2029", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 19.0], "answer_idx": 0}
+{"id": "val-00620-4f82f8a63594", "family": "go_emotions", "qtype": "noul", "logits": [21.625, 23.25], "answer_idx": 1}
+{"id": "val-00621-155e5638b9c2", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 20.375], "answer_idx": 0}
+{"id": "val-00622-0faf1abce643", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 19.625], "answer_idx": 0}
+{"id": "val-00623-40ffc674d7c6", "family": "go_emotions", "qtype": "noul", "logits": [20.25, 26.625], "answer_idx": 1}
+{"id": "val-00624-7f517eebcff0", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 19.5], "answer_idx": 0}
+{"id": "val-00625-ef0fd4ab9cb8", "family": "go_emotions", "qtype": "noul", "logits": [23.125, 24.5], "answer_idx": 0}
+{"id": "val-00626-a360b180643c", "family": "go_emotions", "qtype": "noul", "logits": [23.375, 21.75], "answer_idx": 1}
+{"id": "val-00627-cae0735439e7", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 18.875], "answer_idx": 0}
+{"id": "val-00628-cfa99fde2d5b", "family": "go_emotions", "qtype": "noul", "logits": [24.625, 19.0], "answer_idx": 0}
+{"id": "val-00629-c27b17e47164", "family": "go_emotions", "qtype": "noul", "logits": [24.375, 20.0], "answer_idx": 1}
+{"id": "val-00630-d8cabcccdff9", "family": "go_emotions", "qtype": "noul", "logits": [21.5, 24.875], "answer_idx": 0}
+{"id": "val-00631-d34082ac2d50", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 18.25], "answer_idx": 0}
+{"id": "val-00632-fa2427e51231", "family": "go_emotions", "qtype": "noul", "logits": [23.875, 22.875], "answer_idx": 1}
+{"id": "val-00633-884af38d0505", "family": "go_emotions", "qtype": "noul", "logits": [26.0, 21.875], "answer_idx": 0}
+{"id": "val-00634-1472a9596f56", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 18.875], "answer_idx": 0}
+{"id": "val-00635-02a753686b8e", "family": "go_emotions", "qtype": "noul", "logits": [22.75, 23.125], "answer_idx": 1}
+{"id": "val-00636-839186916db3", "family": "go_emotions", "qtype": "noul", "logits": [22.0, 26.25], "answer_idx": 1}
+{"id": "val-00637-2ce4f23a9465", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 20.25], "answer_idx": 0}
+{"id": "val-00638-e840364e55ca", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 19.875], "answer_idx": 0}
+{"id": "val-00639-117bc94dd833", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 22.25], "answer_idx": 1}
+{"id": "val-00640-9f0dc6078dd7", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 21.5], "answer_idx": 0}
+{"id": "val-00641-646778992538", "family": "go_emotions", "qtype": "noul", "logits": [26.5, 20.625], "answer_idx": 0}
+{"id": "val-00642-2bd88f9cc650", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 23.125], "answer_idx": 1}
+{"id": "val-00643-5f19e3a23fd1", "family": "go_emotions", "qtype": "noul", "logits": [20.875, 27.0], "answer_idx": 1}
+{"id": "val-00644-fb8ac5bf413e", "family": "go_emotions", "qtype": "noul", "logits": [27.75, 19.375], "answer_idx": 0}
+{"id": "val-00645-b76d89aa9948", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 23.375], "answer_idx": 0}
+{"id": "val-00646-c79ad004a248", "family": "go_emotions", "qtype": "noul", "logits": [22.5, 25.5], "answer_idx": 1}
+{"id": "val-00647-23298b6a46ad", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 22.25], "answer_idx": 0}
+{"id": "val-00648-6e1a3e07105b", "family": "go_emotions", "qtype": "noul", "logits": [26.25, 19.625], "answer_idx": 0}
+{"id": "val-00649-2ca21e05fe1b", "family": "go_emotions", "qtype": "noul", "logits": [23.25, 22.125], "answer_idx": 1}
+{"id": "val-00650-240364238249", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 20.875], "answer_idx": 0}
+{"id": "val-00651-0a25ffff2432", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 18.125], "answer_idx": 0}
+{"id": "val-00652-e38b260b66d3", "family": "go_emotions", "qtype": "noul", "logits": [23.375, 20.75], "answer_idx": 1}
+{"id": "val-00653-e228c47ce3dc", "family": "go_emotions", "qtype": "noul", "logits": [24.375, 19.5], "answer_idx": 1}
+{"id": "val-00654-3426c08d30bb", "family": "go_emotions", "qtype": "noul", "logits": [23.5, 18.5], "answer_idx": 0}
+{"id": "val-00655-4e5b5dc4f263", "family": "go_emotions", "qtype": "noul", "logits": [24.375, 18.75], "answer_idx": 0}
+{"id": "val-00656-351def5e6060", "family": "go_emotions", "qtype": "noul", "logits": [24.5, 19.75], "answer_idx": 1}
+{"id": "val-00657-058145cbd79f", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 19.5], "answer_idx": 0}
+{"id": "val-00658-a90fb2602c0e", "family": "go_emotions", "qtype": "noul", "logits": [24.875, 20.625], "answer_idx": 0}
+{"id": "val-00659-3c46fdbbbb52", "family": "go_emotions", "qtype": "noul", "logits": [23.75, 23.5], "answer_idx": 1}
+{"id": "val-00660-538ec3c45b45", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 22.375], "answer_idx": 0}
+{"id": "val-00661-a4b6ca7283e5", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 19.875], "answer_idx": 0}
+{"id": "val-00662-9726d312f7e3", "family": "go_emotions", "qtype": "noul", "logits": [22.375, 26.25], "answer_idx": 1}
+{"id": "val-00663-7b3e43b532d5", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 21.125], "answer_idx": 0}
+{"id": "val-00664-713b585d5036", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 17.75], "answer_idx": 0}
+{"id": "val-00665-4328d235ddf9", "family": "go_emotions", "qtype": "noul", "logits": [20.625, 24.625], "answer_idx": 1}
+{"id": "val-00666-b8ad78a9841b", "family": "go_emotions", "qtype": "noul", "logits": [24.375, 19.375], "answer_idx": 0}
+{"id": "val-00667-c75aafab1292", "family": "go_emotions", "qtype": "noul", "logits": [23.625, 19.5], "answer_idx": 0}
+{"id": "val-00668-9e1ab6c977fc", "family": "go_emotions", "qtype": "noul", "logits": [21.375, 26.5], "answer_idx": 1}
+{"id": "val-00669-f48f7495663f", "family": "go_emotions", "qtype": "noul", "logits": [26.25, 19.25], "answer_idx": 0}
+{"id": "val-00670-a72871d18d53", "family": "go_emotions", "qtype": "noul", "logits": [23.875, 22.75], "answer_idx": 0}
+{"id": "val-00671-66fb168a38c3", "family": "go_emotions", "qtype": "noul", "logits": [24.875, 18.5], "answer_idx": 1}
+{"id": "val-00672-3fa940da33ca", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 21.5], "answer_idx": 1}
+{"id": "val-00673-e103bcaa3059", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 18.875], "answer_idx": 0}
+{"id": "val-00674-701497a41162", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 18.75], "answer_idx": 0}
+{"id": "val-00675-656ec614c3b9", "family": "go_emotions", "qtype": "noul", "logits": [21.875, 24.5], "answer_idx": 1}
+{"id": "val-00676-432e06a17f9d", "family": "go_emotions", "qtype": "noul", "logits": [24.375, 21.75], "answer_idx": 0}
+{"id": "val-00677-0500f4ebcdf5", "family": "go_emotions", "qtype": "noul", "logits": [24.5, 19.375], "answer_idx": 0}
+{"id": "val-00678-962a9e0adfe6", "family": "go_emotions", "qtype": "noul", "logits": [23.5, 23.5], "answer_idx": 1}
+{"id": "val-00679-ccbf8892b58d", "family": "go_emotions", "qtype": "noul", "logits": [23.375, 23.75], "answer_idx": 0}
+{"id": "val-00680-dce8782902c3", "family": "go_emotions", "qtype": "noul", "logits": [26.25, 20.125], "answer_idx": 0}
+{"id": "val-00681-634b20e155be", "family": "go_emotions", "qtype": "noul", "logits": [24.5, 19.625], "answer_idx": 1}
+{"id": "val-00682-65cb69d1eeb1", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 18.375], "answer_idx": 0}
+{"id": "val-00683-d4882adfdb47", "family": "go_emotions", "qtype": "noul", "logits": [23.0, 22.75], "answer_idx": 0}
+{"id": "val-00684-de7a0095c4b1", "family": "go_emotions", "qtype": "noul", "logits": [22.0, 23.375], "answer_idx": 1}
+{"id": "val-00685-1647fc73e36f", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 19.5], "answer_idx": 0}
+{"id": "val-00686-91839e135650", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 21.125], "answer_idx": 0}
+{"id": "val-00687-8d23dc7dcdd0", "family": "go_emotions", "qtype": "noul", "logits": [22.625, 21.75], "answer_idx": 1}
+{"id": "val-00688-a86e386efa08", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 19.5], "answer_idx": 0}
+{"id": "val-00689-28f9ff253caa", "family": "go_emotions", "qtype": "noul", "logits": [24.25, 20.375], "answer_idx": 0}
+{"id": "val-00690-0f266e3ff5fa", "family": "go_emotions", "qtype": "noul", "logits": [24.875, 20.375], "answer_idx": 1}
+{"id": "val-00691-76da70fb45e1", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 19.375], "answer_idx": 0}
+{"id": "val-00692-e9828a6507ac", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 21.75], "answer_idx": 0}
+{"id": "val-00693-a65a9f825ce2", "family": "go_emotions", "qtype": "noul", "logits": [23.375, 23.375], "answer_idx": 1}
+{"id": "val-00694-9ed7b0067da6", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 18.0], "answer_idx": 0}
+{"id": "val-00695-bb145d27a624", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 19.25], "answer_idx": 0}
+{"id": "val-00696-d9bb9ecff515", "family": "go_emotions", "qtype": "noul", "logits": [23.75, 22.875], "answer_idx": 1}
+{"id": "val-00697-3f4cbebd786d", "family": "go_emotions", "qtype": "noul", "logits": [26.375, 22.0], "answer_idx": 0}
+{"id": "val-00698-f4c04a71ac64", "family": "go_emotions", "qtype": "noul", "logits": [26.25, 19.625], "answer_idx": 0}
+{"id": "val-00699-d1cb915c4c4c", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 20.375], "answer_idx": 1}
+{"id": "val-00700-daeefd07ee29", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 21.5], "answer_idx": 0}
+{"id": "val-00701-de002f2115b9", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 19.5], "answer_idx": 0}
+{"id": "val-00702-56be5203d857", "family": "go_emotions", "qtype": "noul", "logits": [25.625, 18.875], "answer_idx": 1}
+{"id": "val-00703-96ef93107d27", "family": "go_emotions", "qtype": "noul", "logits": [25.75, 18.0], "answer_idx": 0}
+{"id": "val-00704-559a96bc6ffe", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 18.25], "answer_idx": 0}
+{"id": "val-00705-48de0598d0c2", "family": "go_emotions", "qtype": "noul", "logits": [20.5, 26.375], "answer_idx": 1}
+{"id": "val-00706-280a50a31382", "family": "go_emotions", "qtype": "noul", "logits": [26.0, 18.5], "answer_idx": 0}
+{"id": "val-00707-215f98ba9ecc", "family": "go_emotions", "qtype": "noul", "logits": [26.125, 18.875], "answer_idx": 0}
+{"id": "val-00708-66f4d06c1031", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 20.25], "answer_idx": 1}
+{"id": "val-00709-c5e7495aaea9", "family": "go_emotions", "qtype": "noul", "logits": [24.375, 22.875], "answer_idx": 0}
+{"id": "val-00710-daf7c7fec001", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 22.25], "answer_idx": 0}
+{"id": "val-00711-57e79c125ab4", "family": "go_emotions", "qtype": "noul", "logits": [22.5, 20.0], "answer_idx": 1}
+{"id": "val-00712-0fb47ffd3333", "family": "go_emotions", "qtype": "noul", "logits": [23.125, 19.75], "answer_idx": 0}
+{"id": "val-00713-9f5d2046fbe4", "family": "go_emotions", "qtype": "noul", "logits": [22.75, 18.375], "answer_idx": 0}
+{"id": "val-00714-f0bc42f7df75", "family": "go_emotions", "qtype": "noul", "logits": [22.375, 21.5], "answer_idx": 1}
+{"id": "val-00715-ac152210e0f7", "family": "go_emotions", "qtype": "noul", "logits": [24.125, 21.0], "answer_idx": 0}
+{"id": "val-00716-e6d9fa4fc4fc", "family": "go_emotions", "qtype": "noul", "logits": [24.5, 18.5], "answer_idx": 0}
+{"id": "val-00717-8f458cbd7138", "family": "go_emotions", "qtype": "noul", "logits": [24.5, 19.125], "answer_idx": 1}
+{"id": "val-00718-ac29017ebe29", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 22.125], "answer_idx": 0}
+{"id": "val-00719-45b98f0ac271", "family": "go_emotions", "qtype": "noul", "logits": [25.125, 19.125], "answer_idx": 0}
+{"id": "val-00720-eb887fe2dc28", "family": "go_emotions", "qtype": "noul", "logits": [22.5, 20.25], "answer_idx": 1}
+{"id": "val-00721-6f06db8853ef", "family": "go_emotions", "qtype": "noul", "logits": [21.75, 23.75], "answer_idx": 0}
+{"id": "val-00722-aff6a8a259bc", "family": "go_emotions", "qtype": "noul", "logits": [23.75, 20.375], "answer_idx": 0}
+{"id": "val-00723-dedadad92278", "family": "go_emotions", "qtype": "noul", "logits": [21.875, 24.25], "answer_idx": 1}
+{"id": "val-00724-ebf8f4f1e47f", "family": "go_emotions", "qtype": "noul", "logits": [24.875, 20.0], "answer_idx": 0}
+{"id": "val-00725-578d473bfac7", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 18.25], "answer_idx": 0}
+{"id": "val-00726-4167e6d151e1", "family": "go_emotions", "qtype": "noul", "logits": [22.75, 22.625], "answer_idx": 1}
+{"id": "val-00727-ed6000886993", "family": "go_emotions", "qtype": "noul", "logits": [25.375, 20.875], "answer_idx": 0}
+{"id": "val-00728-1fa51ac135f4", "family": "go_emotions", "qtype": "noul", "logits": [25.25, 20.125], "answer_idx": 0}
+{"id": "val-00729-125c6b62594d", "family": "go_emotions", "qtype": "noul", "logits": [23.25, 20.75], "answer_idx": 1}
+{"id": "val-00730-46cf3f1b6e5d", "family": "go_emotions", "qtype": "noul", "logits": [25.0, 20.375], "answer_idx": 0}
+{"id": "val-00731-6e167a1e08e3", "family": "go_emotions", "qtype": "noul", "logits": [23.625, 22.0], "answer_idx": 0}
+{"id": "val-00732-4420c80a3d0f", "family": "go_emotions", "qtype": "noul", "logits": [25.5, 17.875], "answer_idx": 1}
+{"id": "val-00733-efad0bde5400", "family": "go_emotions", "qtype": "noul", "logits": [25.875, 17.625], "answer_idx": 0}
+{"id": "val-00734-44dcf18433e2", "family": "go_emotions", "qtype": "noul", "logits": [24.75, 23.25], "answer_idx": 0}
+{"id": "val-00735-6aac0f0d98b9", "family": "ag_news", "qtype": "choice", "logits": [18.125, 28.375, 16.875, 17.875], "answer_idx": 1}
+{"id": "val-00736-453ad4fdd925", "family": "ag_news", "qtype": "choice", "logits": [17.5, 28.125, 16.375, 17.375], "answer_idx": 1}
+{"id": "val-00737-d1df086cbd35", "family": "ag_news", "qtype": "choice", "logits": [17.25, 30.0, 17.25, 18.125], "answer_idx": 1}
+{"id": "val-00738-9a34ff5ac88f", "family": "ag_news", "qtype": "choice", "logits": [21.625, 21.375, 28.5, 19.25], "answer_idx": 3}
+{"id": "val-00739-0f03c4ad11be", "family": "ag_news", "qtype": "choice", "logits": [28.375, 20.375, 19.875, 19.875], "answer_idx": 0}
+{"id": "val-00740-c3101a0e4d00", "family": "ag_news", "qtype": "choice", "logits": [22.0, 20.375, 25.25, 26.125], "answer_idx": 3}
+{"id": "val-00741-d4353990b4bc", "family": "ag_news", "qtype": "choice", "logits": [31.25, 18.625, 18.5, 18.0], "answer_idx": 0}
+{"id": "val-00742-5148c59c2122", "family": "ag_news", "qtype": "choice", "logits": [22.875, 20.875, 23.5, 25.875], "answer_idx": 3}
+{"id": "val-00743-3f7dd7164724", "family": "ag_news", "qtype": "choice", "logits": [24.25, 22.25, 26.625, 25.0], "answer_idx": 3}
+{"id": "val-00744-4c30b6a4ce61", "family": "ag_news", "qtype": "choice", "logits": [18.875, 28.375, 17.625, 17.5], "answer_idx": 1}
+{"id": "val-00745-66d2f1980250", "family": "ag_news", "qtype": "choice", "logits": [17.5, 30.0, 17.125, 17.625], "answer_idx": 1}
+{"id": "val-00746-55a8a179db8e", "family": "ag_news", "qtype": "choice", "logits": [29.25, 17.375, 17.75, 15.5], "answer_idx": 0}
+{"id": "val-00747-af295daf697b", "family": "ag_news", "qtype": "choice", "logits": [18.875, 18.5, 29.5, 16.75], "answer_idx": 2}
+{"id": "val-00748-0e56ec0ac55b", "family": "ag_news", "qtype": "choice", "logits": [20.25, 19.0, 18.75, 28.625], "answer_idx": 3}
+{"id": "val-00749-41d785e996db", "family": "ag_news", "qtype": "choice", "logits": [21.375, 19.5, 24.5, 26.625], "answer_idx": 3}
+{"id": "val-00750-84c7acffdae7", "family": "ag_news", "qtype": "choice", "logits": [23.25, 21.125, 23.25, 24.5], "answer_idx": 2}
+{"id": "val-00751-7b7db0f641a0", "family": "ag_news", "qtype": "choice", "logits": [30.375, 16.75, 16.75, 15.0], "answer_idx": 0}
+{"id": "val-00752-d8ddd760b328", "family": "ag_news", "qtype": "choice", "logits": [15.9375, 26.75, 15.4375, 17.0], "answer_idx": 1}
+{"id": "val-00753-5c2a59f5ec76", "family": "ag_news", "qtype": "choice", "logits": [20.75, 27.375, 21.625, 19.25], "answer_idx": 1}
+{"id": "val-00754-793e0881d666", "family": "ag_news", "qtype": "choice", "logits": [22.0, 20.625, 24.25, 26.625], "answer_idx": 0}
+{"id": "val-00755-39642a7aec1f", "family": "ag_news", "qtype": "choice", "logits": [20.75, 19.75, 22.875, 27.125], "answer_idx": 3}
+{"id": "val-00756-c6f6e7aeb8b1", "family": "ag_news", "qtype": "choice", "logits": [22.5, 20.75, 25.0, 27.75], "answer_idx": 3}
+{"id": "val-00757-143c6c8fd80a", "family": "ag_news", "qtype": "choice", "logits": [30.25, 17.125, 16.625, 15.0625], "answer_idx": 0}
+{"id": "val-00758-ab6d8046b442", "family": "ag_news", "qtype": "choice", "logits": [16.875, 28.25, 16.875, 17.625], "answer_idx": 1}
+{"id": "val-00759-c9da5f712c7c", "family": "ag_news", "qtype": "choice", "logits": [20.625, 19.0, 17.125, 29.125], "answer_idx": 3}
+{"id": "val-00760-db847e57994c", "family": "ag_news", "qtype": "choice", "logits": [21.0, 21.375, 27.0, 24.375], "answer_idx": 2}
+{"id": "val-00761-18593444f43e", "family": "ag_news", "qtype": "choice", "logits": [28.0, 19.125, 19.625, 19.875], "answer_idx": 0}
+{"id": "val-00762-98adf6d4e634", "family": "ag_news", "qtype": "choice", "logits": [21.875, 21.625, 28.0, 26.875], "answer_idx": 3}
+{"id": "val-00763-5c34d4463a18", "family": "ag_news", "qtype": "choice", "logits": [23.75, 22.25, 29.25, 18.875], "answer_idx": 2}
+{"id": "val-00764-aeebb972e9b2", "family": "ag_news", "qtype": "choice", "logits": [15.8125, 27.875, 15.9375, 16.375], "answer_idx": 1}
+{"id": "val-00765-b00520356954", "family": "ag_news", "qtype": "choice", "logits": [16.0, 28.0, 16.0, 16.75], "answer_idx": 1}
+{"id": "val-00766-1aa7b3c57af2", "family": "ag_news", "qtype": "choice", "logits": [19.75, 18.375, 16.375, 26.75], "answer_idx": 3}
+{"id": "val-00767-58f18880aa3e", "family": "ag_news", "qtype": "choice", "logits": [30.0, 19.625, 17.625, 17.5], "answer_idx": 0}
+{"id": "val-00768-b91b0dac0abe", "family": "ag_news", "qtype": "choice", "logits": [25.125, 21.375, 18.5, 25.75], "answer_idx": 3}
+{"id": "val-00769-040248445271", "family": "ag_news", "qtype": "choice", "logits": [23.875, 20.75, 18.75, 26.75], "answer_idx": 3}
+{"id": "val-00770-65de87ee96d6", "family": "ag_news", "qtype": "choice", "logits": [22.0, 23.0, 27.375, 18.625], "answer_idx": 1}
+{"id": "val-00771-7990b2e3b9eb", "family": "ag_news", "qtype": "choice", "logits": [20.0, 18.625, 29.0, 15.9375], "answer_idx": 2}
+{"id": "val-00772-a9f8f59c6ab4", "family": "ag_news", "qtype": "choice", "logits": [31.125, 17.875, 18.125, 17.0], "answer_idx": 0}
+{"id": "val-00773-14e308a75b14", "family": "ag_news", "qtype": "choice", "logits": [17.625, 30.0, 17.375, 18.25], "answer_idx": 1}
+{"id": "val-00774-5ff861528aa0", "family": "ag_news", "qtype": "choice", "logits": [28.5, 18.75, 19.75, 18.5], "answer_idx": 0}
+{"id": "val-00775-fa6aaa8c2ce5", "family": "ag_news", "qtype": "choice", "logits": [25.625, 20.375, 17.125, 24.375], "answer_idx": 3}
+{"id": "val-00776-562d553d480b", "family": "ag_news", "qtype": "choice", "logits": [16.875, 27.625, 16.25, 17.0], "answer_idx": 1}
+{"id": "val-00777-7578e2c91e65", "family": "ag_news", "qtype": "choice", "logits": [28.375, 17.875, 17.25, 17.5], "answer_idx": 0}
+{"id": "val-00778-108522b69f23", "family": "ag_news", "qtype": "choice", "logits": [22.125, 19.0, 19.0, 28.0], "answer_idx": 3}
+{"id": "val-00779-c12d91b4aac0", "family": "ag_news", "qtype": "choice", "logits": [29.625, 16.875, 17.25, 14.3125], "answer_idx": 0}
+{"id": "val-00780-32d7b64ab73f", "family": "ag_news", "qtype": "choice", "logits": [18.625, 20.25, 30.875, 16.875], "answer_idx": 2}
+{"id": "val-00781-817c5656fe56", "family": "ag_news", "qtype": "choice", "logits": [22.375, 20.125, 25.375, 26.5], "answer_idx": 3}
+{"id": "val-00782-d326ebae61c0", "family": "ag_news", "qtype": "choice", "logits": [20.625, 20.75, 29.125, 17.375], "answer_idx": 2}
+{"id": "val-00783-458df1394bc0", "family": "ag_news", "qtype": "choice", "logits": [31.75, 17.75, 17.375, 15.875], "answer_idx": 0}
+{"id": "val-00784-e193a8859f16", "family": "ag_news", "qtype": "choice", "logits": [19.875, 21.125, 29.875, 16.625], "answer_idx": 2}
+{"id": "val-00785-75b24290aaef", "family": "ag_news", "qtype": "choice", "logits": [22.5, 26.0, 18.875, 21.375], "answer_idx": 1}
+{"id": "val-00786-8446e935eca9", "family": "ag_news", "qtype": "choice", "logits": [22.125, 27.625, 19.0, 20.625], "answer_idx": 1}
+{"id": "val-00787-c52fe1e4dcb9", "family": "ag_news", "qtype": "choice", "logits": [30.125, 16.375, 15.9375, 15.0], "answer_idx": 0}
+{"id": "val-00788-ed154c327d55", "family": "ag_news", "qtype": "choice", "logits": [27.375, 17.125, 16.5, 15.9375], "answer_idx": 0}
+{"id": "val-00789-5538933de295", "family": "ag_news", "qtype": "choice", "logits": [17.25, 29.0, 17.375, 18.75], "answer_idx": 1}
+{"id": "val-00790-8148f306e764", "family": "ag_news", "qtype": "choice", "logits": [18.0, 28.375, 17.125, 18.125], "answer_idx": 1}
+{"id": "val-00791-4d9a5a8d55db", "family": "ag_news", "qtype": "choice", "logits": [23.0, 22.5, 27.625, 20.25], "answer_idx": 2}
+{"id": "val-00792-ee352ca917d4", "family": "ag_news", "qtype": "choice", "logits": [29.875, 17.75, 17.625, 15.1875], "answer_idx": 0}
+{"id": "val-00793-196a30e18c40", "family": "ag_news", "qtype": "choice", "logits": [17.875, 18.625, 29.25, 16.25], "answer_idx": 2}
+{"id": "val-00794-afec72a5b021", "family": "ag_news", "qtype": "choice", "logits": [26.5, 17.625, 18.625, 17.25], "answer_idx": 0}
+{"id": "val-00795-35c8c3503790", "family": "ag_news", "qtype": "choice", "logits": [18.125, 31.125, 17.875, 18.0], "answer_idx": 1}
+{"id": "val-00796-a499e5c166aa", "family": "ag_news", "qtype": "choice", "logits": [17.125, 28.625, 16.25, 17.625], "answer_idx": 1}
+{"id": "val-00797-a7f34922be42", "family": "ag_news", "qtype": "choice", "logits": [19.5, 17.875, 29.375, 16.375], "answer_idx": 2}
+{"id": "val-00798-f2b0dbb09f29", "family": "ag_news", "qtype": "choice", "logits": [29.375, 17.0, 18.125, 15.6875], "answer_idx": 3}
+{"id": "val-00799-06b1ada6e916", "family": "ag_news", "qtype": "choice", "logits": [16.75, 29.0, 16.875, 17.375], "answer_idx": 1}
+{"id": "val-00800-29527577a97b", "family": "ag_news", "qtype": "choice", "logits": [21.875, 20.625, 28.25, 22.375], "answer_idx": 3}
+{"id": "val-00801-d82e13e6d0ca", "family": "ag_news", "qtype": "choice", "logits": [18.25, 30.0, 18.5, 18.625], "answer_idx": 1}
+{"id": "val-00802-d814d985d717", "family": "ag_news", "qtype": "choice", "logits": [20.25, 19.375, 29.125, 17.375], "answer_idx": 2}
+{"id": "val-00803-2faffe109c20", "family": "ag_news", "qtype": "choice", "logits": [16.5, 28.625, 15.875, 15.8125], "answer_idx": 1}
+{"id": "val-00804-170e3c2ce825", "family": "ag_news", "qtype": "choice", "logits": [31.25, 16.25, 16.125, 15.125], "answer_idx": 0}
+{"id": "val-00805-cdf7e196fdbb", "family": "ag_news", "qtype": "choice", "logits": [24.0, 22.125, 27.25, 23.25], "answer_idx": 3}
+{"id": "val-00806-c50d57672bbd", "family": "ag_news", "qtype": "choice", "logits": [20.125, 19.375, 27.625, 20.125], "answer_idx": 3}
+{"id": "val-00807-73ea2ffa5db2", "family": "ag_news", "qtype": "choice", "logits": [29.625, 21.375, 19.25, 19.375], "answer_idx": 0}
+{"id": "val-00808-615ff5236605", "family": "ag_news", "qtype": "choice", "logits": [25.375, 21.625, 27.125, 18.5], "answer_idx": 0}
+{"id": "val-00809-6b2e8f72adab", "family": "ag_news", "qtype": "choice", "logits": [23.5, 21.625, 23.75, 27.625], "answer_idx": 3}
+{"id": "val-00810-c71cbe28e03f", "family": "ag_news", "qtype": "choice", "logits": [30.875, 16.5, 16.125, 14.6875], "answer_idx": 0}
+{"id": "val-00811-671de4963481", "family": "ag_news", "qtype": "choice", "logits": [19.625, 28.875, 17.875, 18.5], "answer_idx": 1}
+{"id": "val-00812-afa34b97ffeb", "family": "ag_news", "qtype": "choice", "logits": [19.625, 19.25, 31.0, 17.0], "answer_idx": 2}
+{"id": "val-00813-7a8c0532f9ec", "family": "ag_news", "qtype": "choice", "logits": [29.625, 16.0, 16.375, 14.875], "answer_idx": 0}
+{"id": "val-00814-d9f372d622bb", "family": "ag_news", "qtype": "choice", "logits": [24.75, 22.25, 25.625, 17.375], "answer_idx": 2}
+{"id": "val-00815-abd3bda93bec", "family": "ag_news", "qtype": "choice", "logits": [20.625, 20.0, 28.875, 18.75], "answer_idx": 2}
+{"id": "val-00816-55401027104d", "family": "ag_news", "qtype": "choice", "logits": [28.375, 16.375, 16.125, 15.0], "answer_idx": 0}
+{"id": "val-00817-c639ffb02387", "family": "ag_news", "qtype": "choice", "logits": [17.75, 17.75, 29.875, 16.5], "answer_idx": 2}
+{"id": "val-00818-c17bfd4b7a97", "family": "ag_news", "qtype": "choice", "logits": [18.5, 30.125, 17.875, 19.75], "answer_idx": 1}
+{"id": "val-00819-bd8e01061c18", "family": "ag_news", "qtype": "choice", "logits": [17.75, 28.625, 17.625, 17.75], "answer_idx": 1}
+{"id": "val-00820-74972eb47319", "family": "ag_news", "qtype": "choice", "logits": [30.125, 16.25, 16.125, 14.3125], "answer_idx": 0}
+{"id": "val-00821-19d2e1af2543", "family": "ag_news", "qtype": "choice", "logits": [16.5, 27.625, 15.8125, 16.125], "answer_idx": 1}
+{"id": "val-00822-1358532a5a9a", "family": "ag_news", "qtype": "choice", "logits": [25.0, 23.125, 28.625, 19.375], "answer_idx": 0}
+{"id": "val-00823-a5ed5b3342ad", "family": "ag_news", "qtype": "choice", "logits": [21.75, 19.875, 25.25, 26.875], "answer_idx": 3}
+{"id": "val-00824-2f4dbf067e0a", "family": "ag_news", "qtype": "choice", "logits": [30.75, 16.5, 16.5, 15.125], "answer_idx": 0}
+{"id": "val-00825-a9c5f4f4b689", "family": "ag_news", "qtype": "choice", "logits": [17.75, 17.875, 28.5, 16.75], "answer_idx": 2}
+{"id": "val-00826-6aadf36980cd", "family": "ag_news", "qtype": "choice", "logits": [20.625, 19.875, 25.625, 25.375], "answer_idx": 3}
+{"id": "val-00827-b7e97e85f79d", "family": "ag_news", "qtype": "choice", "logits": [16.5, 18.375, 29.625, 15.25], "answer_idx": 2}
+{"id": "val-00828-5872952555de", "family": "ag_news", "qtype": "choice", "logits": [19.75, 28.25, 18.0, 19.625], "answer_idx": 1}
+{"id": "val-00829-864535372d3c", "family": "ag_news", "qtype": "choice", "logits": [24.25, 23.5, 26.25, 22.125], "answer_idx": 2}
+{"id": "val-00830-f1f9574e7986", "family": "ag_news", "qtype": "choice", "logits": [16.75, 26.875, 15.6875, 16.125], "answer_idx": 0}
+{"id": "val-00831-05fb1f61767e", "family": "ag_news", "qtype": "choice", "logits": [17.5, 18.25, 29.75, 15.9375], "answer_idx": 2}
+{"id": "val-00832-d0ab38df349d", "family": "ag_news", "qtype": "choice", "logits": [24.75, 20.875, 20.5, 27.375], "answer_idx": 3}
+{"id": "val-00833-d4c46a782da4", "family": "ag_news", "qtype": "choice", "logits": [24.25, 22.875, 26.375, 21.5], "answer_idx": 3}
+{"id": "val-00834-398e091dd207", "family": "ag_news", "qtype": "choice", "logits": [22.25, 21.125, 28.0, 21.0], "answer_idx": 2}
+{"id": "val-00835-23789a095c31", "family": "ag_news", "qtype": "choice", "logits": [19.25, 18.875, 27.75, 16.25], "answer_idx": 2}
+{"id": "val-00836-60ee85004709", "family": "ag_news", "qtype": "choice", "logits": [21.625, 20.25, 25.125, 26.75], "answer_idx": 3}
+{"id": "val-00837-33b63640f2f7", "family": "ag_news", "qtype": "choice", "logits": [25.125, 23.5, 22.125, 22.5], "answer_idx": 0}
+{"id": "val-00838-80c680ba0e35", "family": "ag_news", "qtype": "choice", "logits": [20.625, 18.75, 19.5, 28.375], "answer_idx": 2}
+{"id": "val-00839-87d5ed8d0cfe", "family": "ag_news", "qtype": "choice", "logits": [17.375, 29.25, 17.0, 17.375], "answer_idx": 1}
+{"id": "val-00840-9b6a30fb4733", "family": "ag_news", "qtype": "choice", "logits": [17.625, 17.625, 28.25, 15.875], "answer_idx": 2}
+{"id": "val-00841-598e197169ea", "family": "ag_news", "qtype": "choice", "logits": [24.25, 21.375, 24.875, 27.75], "answer_idx": 3}
+{"id": "val-00842-1ab99b8755ba", "family": "ag_news", "qtype": "choice", "logits": [21.625, 21.5, 26.875, 26.125], "answer_idx": 3}
+{"id": "val-00843-2f4b2d84ca96", "family": "ag_news", "qtype": "choice", "logits": [16.75, 29.125, 16.25, 16.75], "answer_idx": 1}
+{"id": "val-00844-5b49a1019f54", "family": "ag_news", "qtype": "choice", "logits": [28.0, 17.875, 17.625, 17.375], "answer_idx": 0}
+{"id": "val-00845-a27d8f90327f", "family": "ag_news", "qtype": "choice", "logits": [29.875, 16.5, 16.25, 15.0625], "answer_idx": 0}
+{"id": "val-00846-bb4fa37bce5e", "family": "ag_news", "qtype": "choice", "logits": [16.75, 28.75, 16.75, 18.0], "answer_idx": 1}
+{"id": "val-00847-f57ec03c7d65", "family": "ag_news", "qtype": "choice", "logits": [20.125, 19.5, 18.875, 29.5], "answer_idx": 3}
+{"id": "val-00848-675ac09feb26", "family": "ag_news", "qtype": "choice", "logits": [20.625, 18.75, 17.125, 28.625], "answer_idx": 3}
+{"id": "val-00849-ed48057bb682", "family": "ag_news", "qtype": "choice", "logits": [30.875, 17.0, 16.75, 15.75], "answer_idx": 0}
+{"id": "val-00850-6ce2995a89cf", "family": "ag_news", "qtype": "choice", "logits": [19.125, 17.75, 30.0, 16.5], "answer_idx": 2}
+{"id": "val-00851-e3f48e3e53c7", "family": "ag_news", "qtype": "choice", "logits": [22.875, 26.875, 17.875, 19.625], "answer_idx": 1}
+{"id": "val-00852-fe0d89304565", "family": "ag_news", "qtype": "choice", "logits": [30.5, 17.5, 17.25, 15.375], "answer_idx": 0}
+{"id": "val-00853-d3633c7bf124", "family": "ag_news", "qtype": "choice", "logits": [28.5, 18.0, 17.875, 18.625], "answer_idx": 3}
+{"id": "val-00854-5cfb51ad3f62", "family": "ag_news", "qtype": "choice", "logits": [20.875, 19.25, 18.375, 28.75], "answer_idx": 3}
+{"id": "val-00855-2560c9e906c5", "family": "ag_news", "qtype": "choice", "logits": [23.375, 20.5, 21.25, 25.625], "answer_idx": 3}
+{"id": "val-00856-87a69a4444ae", "family": "ag_news", "qtype": "choice", "logits": [24.0, 22.625, 24.375, 22.25], "answer_idx": 2}
+{"id": "val-00857-b4c4bcf6660c", "family": "ag_news", "qtype": "choice", "logits": [27.75, 16.0, 15.6875, 14.6875], "answer_idx": 0}
+{"id": "val-00858-9f9f617744c0", "family": "ag_news", "qtype": "choice", "logits": [20.625, 28.5, 20.5, 19.875], "answer_idx": 1}
+{"id": "val-00859-413cbbfbc8b9", "family": "ag_news", "qtype": "choice", "logits": [21.25, 20.0, 21.25, 27.375], "answer_idx": 3}
+{"id": "val-00860-cdc4e6b1cc6e", "family": "ag_news", "qtype": "choice", "logits": [26.75, 16.875, 16.375, 16.875], "answer_idx": 0}
+{"id": "val-00861-3c50d59c0d94", "family": "ag_news", "qtype": "choice", "logits": [18.375, 30.0, 18.0, 18.25], "answer_idx": 1}
+{"id": "val-00862-74f46cda0714", "family": "ag_news", "qtype": "choice", "logits": [22.25, 20.125, 25.875, 26.125], "answer_idx": 3}
+{"id": "val-00863-cb610d91e2c2", "family": "ag_news", "qtype": "choice", "logits": [22.75, 26.625, 18.875, 21.0], "answer_idx": 0}
+{"id": "val-00864-a57e63f050af", "family": "ag_news", "qtype": "choice", "logits": [19.375, 29.625, 18.0, 18.625], "answer_idx": 1}
+{"id": "val-00865-899515e0f17e", "family": "ag_news", "qtype": "choice", "logits": [20.75, 19.5, 25.75, 25.375], "answer_idx": 2}
+{"id": "val-00866-261ee31a7527", "family": "ag_news", "qtype": "choice", "logits": [17.25, 28.625, 17.375, 18.25], "answer_idx": 1}
+{"id": "val-00867-bdafddad3803", "family": "ag_news", "qtype": "choice", "logits": [30.5, 15.5, 15.8125, 14.1875], "answer_idx": 0}
+{"id": "val-00868-a36f9fdd4af9", "family": "ag_news", "qtype": "choice", "logits": [17.625, 29.125, 16.625, 18.25], "answer_idx": 1}
+{"id": "val-00869-70fb52db6a91", "family": "ag_news", "qtype": "choice", "logits": [29.875, 18.25, 18.75, 15.875], "answer_idx": 0}
+{"id": "val-00870-1a8221ba5930", "family": "ag_news", "qtype": "choice", "logits": [20.5, 19.625, 27.25, 20.75], "answer_idx": 3}
+{"id": "val-00871-de226de4ba24", "family": "ag_news", "qtype": "choice", "logits": [22.375, 22.0, 28.5, 23.375], "answer_idx": 2}
+{"id": "val-00872-d1bd49822d06", "family": "ag_news", "qtype": "choice", "logits": [20.0, 17.875, 16.375, 28.5], "answer_idx": 3}
+{"id": "val-00873-512e818c4a3f", "family": "ag_news", "qtype": "choice", "logits": [30.875, 17.375, 17.125, 15.375], "answer_idx": 0}
+{"id": "val-00874-ff08bfd6a205", "family": "ag_news", "qtype": "choice", "logits": [16.625, 29.0, 15.875, 16.125], "answer_idx": 1}
+{"id": "val-00875-0b8bfc413172", "family": "ag_news", "qtype": "choice", "logits": [21.375, 20.875, 26.25, 23.375], "answer_idx": 3}
+{"id": "val-00876-b294d5222aa0", "family": "ag_news", "qtype": "choice", "logits": [17.125, 28.75, 16.5, 17.0], "answer_idx": 1}
+{"id": "val-00877-e26340c1e75f", "family": "ag_news", "qtype": "choice", "logits": [17.75, 19.25, 30.625, 16.0], "answer_idx": 2}
+{"id": "val-00878-8f0b031798fa", "family": "ag_news", "qtype": "choice", "logits": [30.375, 16.125, 16.25, 14.4375], "answer_idx": 0}
+{"id": "val-00879-f33d5bb2d79d", "family": "ag_news", "qtype": "choice", "logits": [26.25, 22.25, 26.25, 18.25], "answer_idx": 0}
+{"id": "val-00880-186a46baf3fd", "family": "ag_news", "qtype": "choice", "logits": [26.125, 21.875, 21.75, 22.5], "answer_idx": 0}
+{"id": "val-00881-ffa8400958db", "family": "ag_news", "qtype": "choice", "logits": [32.25, 17.0, 17.25, 14.875], "answer_idx": 0}
+{"id": "val-00882-31a27339ed9e", "family": "ag_news", "qtype": "choice", "logits": [17.0, 28.875, 16.875, 17.0], "answer_idx": 1}
+{"id": "val-00883-77ac7c5f15e0", "family": "ag_news", "qtype": "choice", "logits": [16.875, 29.125, 16.375, 17.0], "answer_idx": 0}
+{"id": "val-00884-b804061abe33", "family": "ag_news", "qtype": "choice", "logits": [30.875, 16.75, 16.375, 15.125], "answer_idx": 0}
+{"id": "val-00885-2fd326ca0ff6", "family": "mmlu", "qtype": "choice", "logits": [19.75, 24.375, 17.625, 24.5], "answer_idx": 3}
+{"id": "val-00886-5c8ac7162b87", "family": "mmlu", "qtype": "choice", "logits": [24.0, 25.0, 25.75, 24.125], "answer_idx": 2}
+{"id": "val-00887-b16064b84fee", "family": "mmlu", "qtype": "choice", "logits": [21.375, 22.0, 26.875, 21.625], "answer_idx": 2}
+{"id": "val-00888-202cbb370b10", "family": "mmlu", "qtype": "choice", "logits": [17.375, 16.875, 16.375, 25.0], "answer_idx": 3}
+{"id": "val-00889-bd1eb67eb5f5", "family": "mmlu", "qtype": "choice", "logits": [21.125, 21.125, 20.375, 26.375], "answer_idx": 3}
+{"id": "val-00890-7127b5424707", "family": "mmlu", "qtype": "choice", "logits": [25.125, 22.25, 23.875, 22.75], "answer_idx": 0}
+{"id": "val-00891-766f8c79c73f", "family": "mmlu", "qtype": "choice", "logits": [21.625, 20.0, 28.0, 20.75], "answer_idx": 2}
+{"id": "val-00892-ae99a089310d", "family": "mmlu", "qtype": "choice", "logits": [18.875, 19.0, 27.5, 20.625], "answer_idx": 2}
+{"id": "val-00893-c32456e1edfc", "family": "mmlu", "qtype": "choice", "logits": [21.375, 22.0, 23.0, 24.625], "answer_idx": 3}
+{"id": "val-00894-4ece8c1aeb32", "family": "mmlu", "qtype": "choice", "logits": [20.625, 22.375, 20.5, 25.75], "answer_idx": 3}
+{"id": "val-00895-3e6d8b4fae8b", "family": "mmlu", "qtype": "choice", "logits": [21.25, 19.625, 23.125, 25.0], "answer_idx": 3}
+{"id": "val-00896-15e7e638a79c", "family": "mmlu", "qtype": "choice", "logits": [20.25, 19.875, 26.75, 20.625], "answer_idx": 2}
+{"id": "val-00897-0d7258b0f424", "family": "mmlu", "qtype": "choice", "logits": [23.375, 21.625, 24.125, 22.75], "answer_idx": 2}
+{"id": "val-00898-ed2715cf2185", "family": "mmlu", "qtype": "choice", "logits": [24.0, 22.0, 22.875, 21.875], "answer_idx": 0}
+{"id": "val-00899-ec572228a32b", "family": "mmlu", "qtype": "choice", "logits": [22.625, 22.25, 18.75, 25.0], "answer_idx": 3}
+{"id": "val-00900-96d17efe03df", "family": "mmlu", "qtype": "choice", "logits": [21.0, 22.125, 23.625, 24.5], "answer_idx": 3}
+{"id": "val-00901-d933e44227b3", "family": "mmlu", "qtype": "choice", "logits": [21.5, 19.625, 17.875, 26.25], "answer_idx": 3}
+{"id": "val-00902-2c46d38d067c", "family": "mmlu", "qtype": "choice", "logits": [22.25, 22.875, 25.0, 24.75], "answer_idx": 0}
+{"id": "val-00903-8e0c9c832bef", "family": "mmlu", "qtype": "choice", "logits": [24.375, 27.5, 21.375, 22.625], "answer_idx": 1}
+{"id": "val-00904-9e83f59cc8ce", "family": "mmlu", "qtype": "choice", "logits": [21.875, 20.5, 24.5, 22.375], "answer_idx": 2}
+{"id": "val-00905-f9f1f2ae99cf", "family": "mmlu", "qtype": "choice", "logits": [27.25, 19.75, 21.625, 20.625], "answer_idx": 0}
+{"id": "val-00906-a06e32ba7c0b", "family": "mmlu", "qtype": "choice", "logits": [22.625, 22.125, 24.625, 22.5], "answer_idx": 2}
+{"id": "val-00907-2662b79f0eee", "family": "mmlu", "qtype": "choice", "logits": [21.5, 24.0, 21.875, 24.875], "answer_idx": 1}
+{"id": "val-00908-afbe5c2eda38", "family": "mmlu", "qtype": "choice", "logits": [18.5, 15.8125, 14.75, 25.5], "answer_idx": 3}
+{"id": "val-00909-c772b8fbca0e", "family": "mmlu", "qtype": "choice", "logits": [18.375, 18.5, 29.125, 18.875], "answer_idx": 2}
+{"id": "val-00910-d0946241b42e", "family": "mmlu", "qtype": "choice", "logits": [25.625, 21.75, 20.25, 19.75], "answer_idx": 0}
+{"id": "val-00911-721529e0354a", "family": "mmlu", "qtype": "choice", "logits": [26.875, 20.0, 21.125, 20.375], "answer_idx": 0}
+{"id": "val-00912-f2b067d4897c", "family": "mmlu", "qtype": "choice", "logits": [20.75, 22.25, 22.875, 23.375], "answer_idx": 1}
+{"id": "val-00913-7c3cc7dd2568", "family": "mmlu", "qtype": "choice", "logits": [20.25, 25.125, 20.625, 24.625], "answer_idx": 3}
+{"id": "val-00914-2bd69b8782e3", "family": "mmlu", "qtype": "choice", "logits": [23.0, 21.625, 22.25, 26.375], "answer_idx": 3}
+{"id": "val-00915-ea36742afa58", "family": "mmlu", "qtype": "choice", "logits": [21.875, 20.375, 18.75, 25.875], "answer_idx": 0}
+{"id": "val-00916-0b95ce68fc15", "family": "mmlu", "qtype": "choice", "logits": [20.625, 19.125, 28.125, 17.625], "answer_idx": 2}
+{"id": "val-00917-77026314f903", "family": "mmlu", "qtype": "choice", "logits": [22.875, 23.625, 22.875, 21.625], "answer_idx": 1}
+{"id": "val-00918-4f2dfb783745", "family": "mmlu", "qtype": "choice", "logits": [21.5, 21.625, 22.0, 23.875], "answer_idx": 3}
+{"id": "val-00919-b15ffa8357cf", "family": "mmlu", "qtype": "choice", "logits": [23.0, 29.25, 21.625, 24.0], "answer_idx": 1}
+{"id": "val-00920-860cc481487d", "family": "mmlu", "qtype": "choice", "logits": [24.875, 21.25, 24.625, 22.5], "answer_idx": 2}
+{"id": "val-00921-05c4640f02be", "family": "mmlu", "qtype": "choice", "logits": [22.5, 25.5, 20.875, 22.875], "answer_idx": 0}
+{"id": "val-00922-13a592d85a39", "family": "mmlu", "qtype": "choice", "logits": [21.125, 22.5, 24.375, 21.25], "answer_idx": 2}
+{"id": "val-00923-1ee02c648267", "family": "mmlu", "qtype": "choice", "logits": [21.625, 25.875, 22.0, 24.375], "answer_idx": 3}
+{"id": "val-00924-1c960893bada", "family": "mmlu", "qtype": "choice", "logits": [18.875, 28.125, 18.875, 18.625], "answer_idx": 2}
+{"id": "val-00925-ddd2c17b6074", "family": "mmlu", "qtype": "choice", "logits": [20.875, 21.0, 22.75, 24.125], "answer_idx": 2}
+{"id": "val-00926-974adfce30b3", "family": "mmlu", "qtype": "choice", "logits": [25.875, 24.0, 24.0, 24.125], "answer_idx": 0}
+{"id": "val-00927-115eb918df38", "family": "mmlu", "qtype": "choice", "logits": [16.625, 27.125, 16.625, 18.0], "answer_idx": 1}
+{"id": "val-00928-2db044ba85db", "family": "mmlu", "qtype": "choice", "logits": [15.0, 15.1875, 23.625, 15.3125], "answer_idx": 2}
+{"id": "val-00929-6f45d03b62ff", "family": "mmlu", "qtype": "choice", "logits": [21.125, 26.75, 21.875, 21.875], "answer_idx": 1}
+{"id": "val-00930-3d1ded65db35", "family": "mmlu", "qtype": "choice", "logits": [28.25, 20.125, 20.375, 19.25], "answer_idx": 0}
+{"id": "val-00931-1af46d47c002", "family": "mmlu", "qtype": "choice", "logits": [15.6875, 24.875, 14.5625, 16.75], "answer_idx": 1}
+{"id": "val-00932-49f5e75945dd", "family": "mmlu", "qtype": "choice", "logits": [22.375, 21.5, 23.5, 24.25], "answer_idx": 3}
+{"id": "val-00933-93246946218c", "family": "mmlu", "qtype": "choice", "logits": [22.75, 20.625, 18.375, 26.5], "answer_idx": 3}
+{"id": "val-00934-06fc47d83bfa", "family": "mmlu", "qtype": "choice", "logits": [28.25, 18.75, 18.25, 19.125], "answer_idx": 0}
+{"id": "val-00935-3a31a7561e5e", "family": "mmlu", "qtype": "choice", "logits": [23.375, 22.375, 25.875, 23.75], "answer_idx": 1}
+{"id": "val-00936-e8a17ae6c672", "family": "mmlu", "qtype": "choice", "logits": [21.625, 24.5, 20.625, 21.75], "answer_idx": 1}
+{"id": "val-00937-47e7cc445cb5", "family": "mmlu", "qtype": "choice", "logits": [22.375, 21.375, 23.0, 22.75], "answer_idx": 0}
+{"id": "val-00938-a15a3b69a0f3", "family": "mmlu", "qtype": "choice", "logits": [21.25, 24.75, 23.5, 23.875], "answer_idx": 1}
+{"id": "val-00939-355ba36484ec", "family": "mmlu", "qtype": "choice", "logits": [21.25, 20.625, 21.125, 24.625], "answer_idx": 3}
+{"id": "val-00940-f6f0cfbb0571", "family": "mmlu", "qtype": "choice", "logits": [26.5, 19.375, 19.125, 20.75], "answer_idx": 0}
+{"id": "val-00941-27b0c59a748c", "family": "mmlu", "qtype": "choice", "logits": [26.625, 19.875, 20.875, 21.375], "answer_idx": 0}
+{"id": "val-00942-8213c61cacf4", "family": "mmlu", "qtype": "choice", "logits": [26.625, 19.875, 19.375, 20.625], "answer_idx": 0}
+{"id": "val-00943-9cf3a2ce5728", "family": "mmlu", "qtype": "choice", "logits": [26.875, 25.125, 24.5, 23.75], "answer_idx": 0}
+{"id": "val-00944-3bd8e7e44c57", "family": "mmlu", "qtype": "choice", "logits": [22.625, 23.75, 21.75, 23.5], "answer_idx": 1}
+{"id": "val-00945-ac9a37afdda3", "family": "mmlu", "qtype": "choice", "logits": [24.0, 28.25, 21.125, 19.0], "answer_idx": 1}
+{"id": "val-00946-be545f4fb3ec", "family": "mmlu", "qtype": "choice", "logits": [20.375, 20.0, 27.75, 19.0], "answer_idx": 2}
+{"id": "val-00947-74cd280aa741", "family": "mmlu", "qtype": "choice", "logits": [21.0, 17.625, 25.375, 21.0], "answer_idx": 2}
+{"id": "val-00948-13850dbde848", "family": "mmlu", "qtype": "choice", "logits": [24.5, 23.625, 22.75, 21.875], "answer_idx": 0}
+{"id": "val-00949-3b7392e0f647", "family": "mmlu", "qtype": "choice", "logits": [25.0, 23.375, 23.625, 22.75], "answer_idx": 2}
+{"id": "val-00950-425b0c80980e", "family": "mmlu", "qtype": "choice", "logits": [21.875, 22.875, 25.875, 23.375], "answer_idx": 2}
+{"id": "val-00951-437ac1db7634", "family": "mmlu", "qtype": "choice", "logits": [22.375, 26.125, 19.125, 21.875], "answer_idx": 1}
+{"id": "val-00952-b0dec667dca9", "family": "mmlu", "qtype": "choice", "logits": [27.0, 20.375, 20.0, 20.25], "answer_idx": 0}
+{"id": "val-00953-cec8e1b5b184", "family": "mmlu", "qtype": "choice", "logits": [21.5, 24.625, 22.875, 23.5], "answer_idx": 1}
+{"id": "val-00954-a40297aaa8dc", "family": "mmlu", "qtype": "choice", "logits": [20.75, 18.375, 18.75, 26.75], "answer_idx": 3}
+{"id": "val-00955-ddc969286a58", "family": "mmlu", "qtype": "choice", "logits": [19.125, 20.625, 27.875, 18.875], "answer_idx": 2}
+{"id": "val-00956-db68a3967418", "family": "mmlu", "qtype": "choice", "logits": [22.75, 22.5, 25.0, 23.5], "answer_idx": 2}
+{"id": "val-00957-6c47bfa60362", "family": "mmlu", "qtype": "choice", "logits": [17.875, 27.0, 17.125, 19.25], "answer_idx": 1}
+{"id": "val-00958-5541192939d1", "family": "mmlu", "qtype": "choice", "logits": [20.625, 26.625, 17.75, 20.25], "answer_idx": 1}
+{"id": "val-00959-84aa8d94ef40", "family": "mmlu", "qtype": "choice", "logits": [23.75, 21.875, 21.0, 21.0], "answer_idx": 1}
+{"id": "val-00960-ec791b8542ce", "family": "mmlu", "qtype": "choice", "logits": [22.5, 23.0, 24.5, 22.75], "answer_idx": 2}
+{"id": "val-00961-46bc7a9a0dcf", "family": "mmlu", "qtype": "choice", "logits": [26.0, 19.5, 19.25, 19.375], "answer_idx": 0}
+{"id": "val-00962-76288a407ff7", "family": "mmlu", "qtype": "choice", "logits": [23.625, 23.875, 24.125, 23.625], "answer_idx": 2}
+{"id": "val-00963-a494e6b8ee70", "family": "mmlu", "qtype": "choice", "logits": [21.875, 23.375, 22.875, 19.75], "answer_idx": 1}
+{"id": "val-00964-9dd34f91fd54", "family": "mmlu", "qtype": "choice", "logits": [22.875, 23.0, 17.0, 18.375], "answer_idx": 1}
+{"id": "val-00965-6b6c9066acfd", "family": "mmlu", "qtype": "choice", "logits": [22.25, 28.5, 21.625, 22.0], "answer_idx": 1}
+{"id": "val-00966-10452d527ec1", "family": "mmlu", "qtype": "choice", "logits": [21.625, 28.5, 20.625, 22.25], "answer_idx": 1}
+{"id": "val-00967-bff3185de67f", "family": "mmlu", "qtype": "choice", "logits": [26.875, 21.5, 22.375, 22.375], "answer_idx": 0}
+{"id": "val-00968-b4ca9a43113e", "family": "mmlu", "qtype": "choice", "logits": [26.25, 21.5, 20.625, 20.125], "answer_idx": 0}
+{"id": "val-00969-4a71787f5d62", "family": "mmlu", "qtype": "choice", "logits": [20.5, 22.0, 22.25, 26.5], "answer_idx": 2}
+{"id": "val-00970-9dacc9d88d82", "family": "mmlu", "qtype": "choice", "logits": [23.0, 22.25, 23.75, 24.625], "answer_idx": 3}
+{"id": "val-00971-991cf6b140b8", "family": "mmlu", "qtype": "choice", "logits": [24.625, 23.125, 26.125, 20.0], "answer_idx": 2}
+{"id": "val-00972-0e6562192663", "family": "mmlu", "qtype": "choice", "logits": [16.125, 15.125, 13.625, 23.625], "answer_idx": 3}
+{"id": "val-00973-41dae0d63681", "family": "mmlu", "qtype": "choice", "logits": [19.25, 24.875, 22.5, 21.875], "answer_idx": 1}
+{"id": "val-00974-1e4f45fe2b1b", "family": "mmlu", "qtype": "choice", "logits": [20.875, 24.875, 22.375, 24.375], "answer_idx": 1}
+{"id": "val-00975-856fdd70d5a5", "family": "mmlu", "qtype": "choice", "logits": [24.25, 24.25, 21.875, 23.625], "answer_idx": 0}
+{"id": "val-00976-c3e704e708fe", "family": "mmlu", "qtype": "choice", "logits": [16.875, 27.375, 16.875, 19.375], "answer_idx": 1}
+{"id": "val-00977-d198c7c8536b", "family": "mmlu", "qtype": "choice", "logits": [22.75, 23.625, 24.0, 24.0], "answer_idx": 1}
+{"id": "val-00978-3f6e196acefb", "family": "mmlu", "qtype": "choice", "logits": [22.0, 20.0, 27.375, 21.375], "answer_idx": 2}
+{"id": "val-00979-d515aedeaece", "family": "mmlu", "qtype": "choice", "logits": [24.125, 22.875, 24.625, 24.625], "answer_idx": 3}
+{"id": "val-00980-12dc2e453bf1", "family": "mmlu", "qtype": "choice", "logits": [19.0, 17.5, 17.5, 26.875], "answer_idx": 3}
+{"id": "val-00981-d913ae272b01", "family": "mmlu", "qtype": "choice", "logits": [23.875, 24.0, 25.0, 24.375], "answer_idx": 2}
+{"id": "val-00982-fcf16024ab55", "family": "mmlu", "qtype": "choice", "logits": [23.0, 23.75, 21.875, 20.0], "answer_idx": 0}
+{"id": "val-00983-2f9b449753a3", "family": "mmlu", "qtype": "choice", "logits": [16.5, 26.625, 15.75, 17.875], "answer_idx": 1}
+{"id": "val-00984-6fba5d7b23f0", "family": "mmlu", "qtype": "choice", "logits": [23.375, 23.375, 22.625, 23.5], "answer_idx": 1}
+{"id": "val-00985-5e80c3ff8c1a", "family": "mmlu", "qtype": "choice", "logits": [23.625, 25.375, 21.625, 23.875], "answer_idx": 1}
+{"id": "val-00986-c0aaafc4c097", "family": "mmlu", "qtype": "choice", "logits": [19.875, 16.75, 26.625, 19.125], "answer_idx": 2}
+{"id": "val-00987-60c317c8a68f", "family": "mmlu", "qtype": "choice", "logits": [23.875, 21.75, 23.5, 22.0], "answer_idx": 1}
+{"id": "val-00988-c7e347a45c01", "family": "mmlu", "qtype": "choice", "logits": [19.0, 26.125, 16.875, 20.375], "answer_idx": 1}
+{"id": "val-00989-ac13d9697ffb", "family": "mmlu", "qtype": "choice", "logits": [19.0, 30.875, 18.75, 21.25], "answer_idx": 1}
+{"id": "val-00990-d793c11ef64d", "family": "mmlu", "qtype": "choice", "logits": [21.5, 20.0, 22.75, 26.375], "answer_idx": 3}
+{"id": "val-00991-a132d41036b5", "family": "mmlu", "qtype": "choice", "logits": [22.25, 24.125, 18.25, 22.0], "answer_idx": 1}
+{"id": "val-00992-16c1804d5326", "family": "mmlu", "qtype": "choice", "logits": [21.75, 21.125, 24.5, 24.625], "answer_idx": 3}
+{"id": "val-00993-612d553af756", "family": "mmlu", "qtype": "choice", "logits": [24.0, 25.0, 21.0, 22.875], "answer_idx": 1}
+{"id": "val-00994-34dd09a6e4a6", "family": "mmlu", "qtype": "choice", "logits": [21.375, 19.875, 22.625, 23.125], "answer_idx": 2}
+{"id": "val-00995-4a7f753ce9bd", "family": "mmlu", "qtype": "choice", "logits": [22.375, 23.125, 25.5, 21.875], "answer_idx": 2}
+{"id": "val-00996-0746845bf3bb", "family": "mmlu", "qtype": "choice", "logits": [27.0, 18.625, 18.125, 17.875], "answer_idx": 0}
+{"id": "val-00997-5755413f48f8", "family": "mmlu", "qtype": "choice", "logits": [24.0, 22.625, 24.625, 24.0], "answer_idx": 1}
+{"id": "val-00998-913ac56d567e", "family": "mmlu", "qtype": "choice", "logits": [24.125, 23.75, 21.0, 23.0], "answer_idx": 3}
+{"id": "val-00999-e00ae98f1d47", "family": "mmlu", "qtype": "choice", "logits": [17.125, 26.875, 16.625, 18.5], "answer_idx": 1}
+{"id": "val-01000-f766f7759e19", "family": "mmlu", "qtype": "choice", "logits": [22.625, 24.625, 21.5, 24.375], "answer_idx": 2}
+{"id": "val-01001-75949c603351", "family": "mmlu", "qtype": "choice", "logits": [20.75, 20.125, 29.0, 18.625], "answer_idx": 2}
+{"id": "val-01002-253f9c4987c6", "family": "mmlu", "qtype": "choice", "logits": [25.0, 20.875, 22.0, 25.25], "answer_idx": 0}
+{"id": "val-01003-7c7428993fe6", "family": "mmlu", "qtype": "choice", "logits": [22.0, 22.625, 21.875, 23.25], "answer_idx": 1}
+{"id": "val-01004-8577e9f27f18", "family": "mmlu", "qtype": "choice", "logits": [24.625, 22.75, 24.0, 23.375], "answer_idx": 0}
+{"id": "val-01005-e2b533ec4bf7", "family": "mmlu", "qtype": "choice", "logits": [25.375, 23.75, 24.0, 23.75], "answer_idx": 3}
+{"id": "val-01006-acd502c0f323", "family": "mmlu", "qtype": "choice", "logits": [22.0, 24.375, 22.875, 24.0], "answer_idx": 1}
+{"id": "val-01007-10fec037175f", "family": "mmlu", "qtype": "choice", "logits": [20.5, 20.375, 24.125, 21.75], "answer_idx": 2}
+{"id": "val-01008-1d92e4cbf6c9", "family": "mmlu", "qtype": "choice", "logits": [23.0, 27.25, 23.0, 24.625], "answer_idx": 0}
+{"id": "val-01009-90acbc8cc0c3", "family": "mmlu", "qtype": "choice", "logits": [21.75, 29.25, 19.625, 21.25], "answer_idx": 1}
+{"id": "val-01010-93861ac5ca23", "family": "mmlu", "qtype": "choice", "logits": [19.75, 17.125, 16.625, 25.375], "answer_idx": 3}
+{"id": "val-01011-7e7ac3a9da5e", "family": "mmlu", "qtype": "choice", "logits": [22.125, 22.375, 27.25, 22.75], "answer_idx": 2}
+{"id": "val-01012-aeed1cf3514b", "family": "mmlu", "qtype": "choice", "logits": [17.0, 15.5625, 15.4375, 25.375], "answer_idx": 3}
+{"id": "val-01013-292f76ef5423", "family": "mmlu", "qtype": "choice", "logits": [16.625, 15.125, 24.875, 15.1875], "answer_idx": 2}
+{"id": "val-01014-781eb50d7f25", "family": "mmlu", "qtype": "choice", "logits": [20.0, 19.75, 21.375, 24.625], "answer_idx": 3}
+{"id": "val-01015-48d5181ccfd7", "family": "mmlu", "qtype": "choice", "logits": [22.125, 20.875, 20.625, 25.625], "answer_idx": 3}
+{"id": "val-01016-1b13a5468845", "family": "mmlu", "qtype": "choice", "logits": [19.5, 17.25, 27.0, 20.0], "answer_idx": 2}
+{"id": "val-01017-248bbf5ea7a7", "family": "mmlu", "qtype": "choice", "logits": [18.0, 17.0, 19.25, 26.0], "answer_idx": 3}
+{"id": "val-01018-c01ee4824e73", "family": "mmlu", "qtype": "choice", "logits": [21.375, 19.25, 16.625, 26.25], "answer_idx": 3}
+{"id": "val-01019-87cd0fa65096", "family": "mmlu", "qtype": "choice", "logits": [19.125, 29.0, 19.375, 21.25], "answer_idx": 1}
+{"id": "val-01020-0c7fa2072f18", "family": "mmlu", "qtype": "choice", "logits": [21.125, 22.5, 22.875, 22.625], "answer_idx": 3}
+{"id": "val-01021-360485ed512c", "family": "mmlu", "qtype": "choice", "logits": [21.625, 28.75, 21.375, 23.875], "answer_idx": 1}
+{"id": "val-01022-beb1e2a3d8d3", "family": "mmlu", "qtype": "choice", "logits": [24.125, 23.0, 21.25, 19.875], "answer_idx": 1}
+{"id": "val-01023-a4b25e3ac9c2", "family": "mmlu", "qtype": "choice", "logits": [23.5, 20.5, 19.875, 27.25], "answer_idx": 3}
+{"id": "val-01024-4d14367801a3", "family": "mmlu", "qtype": "choice", "logits": [23.5, 20.5, 21.5, 23.875], "answer_idx": 3}
+{"id": "val-01025-1d82cde84f0c", "family": "mmlu", "qtype": "choice", "logits": [22.5, 25.75, 23.5, 24.25], "answer_idx": 1}
+{"id": "val-01026-eb0359e0cca4", "family": "mmlu", "qtype": "choice", "logits": [20.0, 23.25, 18.25, 24.25], "answer_idx": 3}
+{"id": "val-01027-5a17c2408572", "family": "mmlu", "qtype": "choice", "logits": [18.625, 18.5, 16.75, 26.25], "answer_idx": 3}
+{"id": "val-01028-736e20bcb33a", "family": "mmlu", "qtype": "choice", "logits": [22.625, 22.125, 19.75, 26.0], "answer_idx": 3}
+{"id": "val-01029-16ed877e5f44", "family": "mmlu", "qtype": "choice", "logits": [21.875, 22.375, 25.125, 22.5], "answer_idx": 0}
+{"id": "val-01030-f54f5d82ab79", "family": "mmlu", "qtype": "choice", "logits": [21.375, 22.625, 22.125, 25.625], "answer_idx": 3}
+{"id": "val-01031-b468b4d1d24d", "family": "mmlu", "qtype": "choice", "logits": [17.5, 25.375, 18.0, 17.875], "answer_idx": 1}
+{"id": "val-01032-b601796c4976", "family": "mmlu", "qtype": "choice", "logits": [23.0, 23.875, 24.0, 22.0], "answer_idx": 1}
+{"id": "val-01033-30ed46be4675", "family": "mmlu", "qtype": "choice", "logits": [26.5, 21.0, 20.5, 20.625], "answer_idx": 0}
+{"id": "val-01034-d3d8065e63fd", "family": "mmlu", "qtype": "choice", "logits": [22.625, 22.375, 22.5, 23.875], "answer_idx": 1}
+{"id": "val-01035-e2c1b183a302", "family": "mmlu", "qtype": "choice", "logits": [25.0, 17.25, 15.5625, 17.0], "answer_idx": 0}
+{"id": "val-01036-94d3c4b6cdd5", "family": "mmlu", "qtype": "choice", "logits": [22.25, 23.5, 26.125, 21.0], "answer_idx": 1}
+{"id": "val-01037-cb46576a884b", "family": "mmlu", "qtype": "choice", "logits": [28.125, 22.25, 23.75, 20.375], "answer_idx": 0}
+{"id": "val-01038-646137abd0a7", "family": "mmlu", "qtype": "choice", "logits": [23.25, 24.375, 20.75, 20.875], "answer_idx": 1}
+{"id": "val-01039-cf618b50f82f", "family": "mmlu", "qtype": "choice", "logits": [22.0, 24.75, 19.25, 22.375], "answer_idx": 1}
+{"id": "val-01040-403718cb9a70", "family": "mmlu", "qtype": "choice", "logits": [24.0, 23.5, 23.0, 20.0], "answer_idx": 1}
+{"id": "val-01041-939ba910656a", "family": "mmlu", "qtype": "choice", "logits": [27.5, 21.125, 22.5, 21.625], "answer_idx": 0}
+{"id": "val-01042-e39c7412c7ec", "family": "mmlu", "qtype": "choice", "logits": [19.875, 18.625, 17.125, 26.625], "answer_idx": 3}
+{"id": "val-01043-18b19d8c21d3", "family": "mmlu", "qtype": "choice", "logits": [19.5, 17.0, 16.125, 25.5], "answer_idx": 3}
+{"id": "val-01044-bc478062634f", "family": "mmlu", "qtype": "choice", "logits": [17.125, 16.125, 16.75, 24.5], "answer_idx": 3}
+{"id": "val-01045-851332511b55", "family": "mmlu", "qtype": "choice", "logits": [24.125, 20.875, 21.75, 20.375], "answer_idx": 0}
+{"id": "val-01046-bf8df773b5c2", "family": "mmlu", "qtype": "choice", "logits": [20.625, 22.75, 19.5, 23.375], "answer_idx": 3}
+{"id": "val-01047-9b520d88484c", "family": "mmlu", "qtype": "choice", "logits": [15.9375, 15.375, 25.5, 15.75], "answer_idx": 2}
+{"id": "val-01048-60e253ed4dd3", "family": "mmlu", "qtype": "choice", "logits": [21.375, 23.125, 27.25, 20.375], "answer_idx": 2}
+{"id": "val-01049-912d7fdd90fd", "family": "mmlu", "qtype": "choice", "logits": [26.25, 24.25, 26.0, 25.25], "answer_idx": 3}
+{"id": "val-01050-88537371e454", "family": "mmlu", "qtype": "choice", "logits": [25.625, 26.5, 21.0, 23.125], "answer_idx": 1}
+{"id": "val-01051-52ccdf3488a5", "family": "mmlu", "qtype": "choice", "logits": [25.125, 22.75, 21.625, 21.5], "answer_idx": 0}
+{"id": "val-01052-14bca6f750ed", "family": "mmlu", "qtype": "choice", "logits": [21.75, 21.625, 23.625, 22.375], "answer_idx": 1}
+{"id": "val-01053-b3affaa3534d", "family": "mmlu", "qtype": "choice", "logits": [24.625, 22.875, 25.0, 23.875], "answer_idx": 2}
+{"id": "val-01054-35b31e4c5d97", "family": "mmlu", "qtype": "choice", "logits": [23.375, 22.25, 22.25, 22.875], "answer_idx": 0}
+{"id": "val-01055-6e8ba082c0d6", "family": "mmlu", "qtype": "choice", "logits": [25.0, 24.5, 21.625, 22.0], "answer_idx": 1}
+{"id": "val-01056-39a9bbc2bc8e", "family": "mmlu", "qtype": "choice", "logits": [21.75, 21.0, 28.875, 23.875], "answer_idx": 2}
+{"id": "val-01057-c0a5380d0b9a", "family": "mmlu", "qtype": "choice", "logits": [17.875, 17.5, 26.375, 18.375], "answer_idx": 2}
+{"id": "val-01058-e1a6f310404f", "family": "mmlu", "qtype": "choice", "logits": [15.75, 15.125, 24.5, 15.375], "answer_idx": 2}
+{"id": "val-01059-fcddb0f6dc09", "family": "mmlu", "qtype": "choice", "logits": [18.375, 18.0, 26.75, 17.5], "answer_idx": 2}
+{"id": "val-01060-218d4740f978", "family": "mmlu", "qtype": "choice", "logits": [20.375, 19.125, 26.75, 22.75], "answer_idx": 2}
+{"id": "val-01061-c0d535384345", "family": "mmlu", "qtype": "choice", "logits": [24.25, 20.75, 19.25, 24.0], "answer_idx": 0}
+{"id": "val-01062-2472e43512a8", "family": "mmlu", "qtype": "choice", "logits": [24.25, 22.5, 22.75, 23.375], "answer_idx": 3}
+{"id": "val-01063-79edf284f3c2", "family": "mmlu", "qtype": "choice", "logits": [21.875, 23.625, 20.875, 24.125], "answer_idx": 3}
+{"id": "val-01064-7f009a31cd0b", "family": "mmlu", "qtype": "choice", "logits": [20.0, 17.75, 27.75, 17.5], "answer_idx": 2}
+{"id": "val-01065-2b657a5c864a", "family": "mmlu", "qtype": "choice", "logits": [24.375, 21.0, 21.625, 24.0], "answer_idx": 2}
+{"id": "val-01066-85173866731d", "family": "mmlu", "qtype": "choice", "logits": [25.5, 20.375, 26.625, 21.375], "answer_idx": 2}
+{"id": "val-01067-331031547fc5", "family": "mmlu", "qtype": "choice", "logits": [19.625, 25.875, 18.375, 19.5], "answer_idx": 1}
+{"id": "val-01068-74aaee076b0b", "family": "mmlu", "qtype": "choice", "logits": [25.875, 17.625, 16.625, 17.125], "answer_idx": 0}
+{"id": "val-01069-6fe1c5ba68ed", "family": "mmlu", "qtype": "choice", "logits": [18.25, 17.5, 25.75, 18.75], "answer_idx": 2}
+{"id": "val-01070-a6f6e551ff80", "family": "mmlu", "qtype": "choice", "logits": [23.625, 24.375, 24.125, 23.375], "answer_idx": 1}
+{"id": "val-01071-d7d4e7f9ea97", "family": "mmlu", "qtype": "choice", "logits": [17.75, 25.625, 15.6875, 18.375], "answer_idx": 1}
+{"id": "val-01072-a0242e457113", "family": "mmlu", "qtype": "choice", "logits": [24.875, 23.875, 23.875, 23.5], "answer_idx": 0}
+{"id": "val-01073-2f9e126f9fa1", "family": "mmlu", "qtype": "choice", "logits": [23.5, 26.375, 23.5, 22.75], "answer_idx": 1}
+{"id": "val-01074-6c52429aae24", "family": "mmlu", "qtype": "choice", "logits": [20.375, 17.875, 26.5, 20.375], "answer_idx": 2}
+{"id": "val-01075-af22c09e545a", "family": "mmlu", "qtype": "choice", "logits": [20.625, 21.0, 22.0, 25.75], "answer_idx": 3}
+{"id": "val-01076-df1d75f3e93a", "family": "mmlu", "qtype": "choice", "logits": [25.5, 25.25, 22.25, 22.5], "answer_idx": 1}
+{"id": "val-01077-28da7a739719", "family": "mmlu", "qtype": "choice", "logits": [17.375, 24.0, 14.9375, 17.0], "answer_idx": 1}
+{"id": "val-01078-10b00c57523b", "family": "mmlu", "qtype": "choice", "logits": [18.0, 15.9375, 25.625, 17.75], "answer_idx": 2}
+{"id": "val-01079-5cf8c62a9f7c", "family": "mmlu", "qtype": "choice", "logits": [23.875, 22.0, 25.5, 22.25], "answer_idx": 1}
+{"id": "val-01080-59678a161fa5", "family": "mmlu", "qtype": "choice", "logits": [20.0, 21.75, 21.75, 25.625], "answer_idx": 3}
+{"id": "val-01081-3fd832bb0a7a", "family": "mmlu", "qtype": "choice", "logits": [27.875, 23.125, 19.875, 21.5], "answer_idx": 0}
+{"id": "val-01082-303bc7c327bd", "family": "mmlu", "qtype": "choice", "logits": [26.125, 21.625, 24.125, 19.625], "answer_idx": 0}
+{"id": "val-01083-560731d719d6", "family": "mmlu", "qtype": "choice", "logits": [22.625, 19.5, 27.5, 21.125], "answer_idx": 2}
+{"id": "val-01084-431e06825131", "family": "mmlu", "qtype": "choice", "logits": [23.375, 21.5, 24.25, 23.0], "answer_idx": 2}
+{"id": "val-01085-139caa9d9278", "family": "yelp_score", "qtype": "score", "logits": [27.0, 17.375, 15.0, 14.4375, 15.3125], "answer_idx": 0}
+{"id": "val-01086-75afcc28adea", "family": "yelp_score", "qtype": "score", "logits": [27.75, 23.25, 21.125, 19.375, 19.125], "answer_idx": 0}
+{"id": "val-01087-ce1429902dcf", "family": "yelp_score", "qtype": "score", "logits": [17.25, 18.625, 18.375, 24.25, 23.375], "answer_idx": 4}
+{"id": "val-01088-d33fd0c9bfda", "family": "yelp_score", "qtype": "score", "logits": [19.5, 21.125, 24.875, 24.25, 20.0], "answer_idx": 2}
+{"id": "val-01089-7d91fd28004d", "family": "yelp_score", "qtype": "score", "logits": [26.25, 24.25, 21.125, 19.25, 17.75], "answer_idx": 1}
+{"id": "val-01090-5b30bf37a7e1", "family": "yelp_score", "qtype": "score", "logits": [20.5, 19.375, 19.625, 22.25, 25.125], "answer_idx": 4}
+{"id": "val-01091-f484aea34b69", "family": "yelp_score", "qtype": "score", "logits": [18.25, 19.75, 22.875, 23.875, 19.25], "answer_idx": 3}
+{"id": "val-01092-862477732af2", "family": "yelp_score", "qtype": "score", "logits": [19.5, 20.75, 21.5, 24.0, 22.75], "answer_idx": 3}
+{"id": "val-01093-bb02787fbaa5", "family": "yelp_score", "qtype": "score", "logits": [26.25, 18.625, 16.125, 16.125, 17.5], "answer_idx": 0}
+{"id": "val-01094-3508dee30b2f", "family": "yelp_score", "qtype": "score", "logits": [20.875, 19.375, 20.625, 22.625, 24.625], "answer_idx": 3}
+{"id": "val-01095-6196507cfaf5", "family": "yelp_score", "qtype": "score", "logits": [21.375, 21.5, 22.375, 22.625, 22.875], "answer_idx": 2}
+{"id": "val-01096-3e7a2335de73", "family": "yelp_score", "qtype": "score", "logits": [23.0, 23.375, 24.25, 22.75, 21.375], "answer_idx": 2}
+{"id": "val-01097-66d4be059c6d", "family": "yelp_score", "qtype": "score", "logits": [22.5, 23.625, 25.875, 20.375, 17.125], "answer_idx": 1}
+{"id": "val-01098-f1ac46195995", "family": "yelp_score", "qtype": "score", "logits": [20.625, 20.0, 19.375, 23.125, 24.75], "answer_idx": 3}
+{"id": "val-01099-1feabd727c2c", "family": "yelp_score", "qtype": "score", "logits": [27.625, 22.75, 21.25, 20.375, 18.75], "answer_idx": 0}
+{"id": "val-01100-0bf3c03ecb0b", "family": "yelp_score", "qtype": "score", "logits": [27.5, 19.125, 16.0, 16.25, 18.0], "answer_idx": 0}
+{"id": "val-01101-97c296024439", "family": "yelp_score", "qtype": "score", "logits": [18.875, 17.25, 16.625, 19.5, 26.875], "answer_idx": 4}
+{"id": "val-01102-c63ffdda41dc", "family": "yelp_score", "qtype": "score", "logits": [19.25, 19.25, 19.375, 23.125, 23.875], "answer_idx": 2}
+{"id": "val-01103-2a875b5466d0", "family": "yelp_score", "qtype": "score", "logits": [19.875, 19.125, 18.125, 22.75, 25.0], "answer_idx": 3}
+{"id": "val-01104-fa773b36fb65", "family": "yelp_score", "qtype": "score", "logits": [19.25, 20.75, 23.625, 25.5, 19.875], "answer_idx": 2}
+{"id": "val-01105-362bfd72e3c1", "family": "yelp_score", "qtype": "score", "logits": [27.625, 23.0, 21.25, 20.375, 19.375], "answer_idx": 0}
+{"id": "val-01106-1a2d7509c8c1", "family": "yelp_score", "qtype": "score", "logits": [19.25, 20.875, 23.875, 25.0, 20.375], "answer_idx": 2}
+{"id": "val-01107-5e08bee51bbd", "family": "yelp_score", "qtype": "score", "logits": [27.5, 22.375, 19.625, 18.5, 19.75], "answer_idx": 0}
+{"id": "val-01108-a3abe6b6051b", "family": "yelp_score", "qtype": "score", "logits": [19.5, 18.5, 19.5, 21.875, 24.875], "answer_idx": 4}
+{"id": "val-01109-a68118fbab9c", "family": "yelp_score", "qtype": "score", "logits": [28.0, 19.875, 17.5, 18.0, 17.375], "answer_idx": 0}
+{"id": "val-01110-27bec9b63e8e", "family": "yelp_score", "qtype": "score", "logits": [26.875, 17.75, 15.625, 15.6875, 16.375], "answer_idx": 0}
+{"id": "val-01111-09d7a483669f", "family": "yelp_score", "qtype": "score", "logits": [25.0, 24.75, 23.875, 20.875, 17.625], "answer_idx": 1}
+{"id": "val-01112-2c5a54b6cb92", "family": "yelp_score", "qtype": "score", "logits": [22.0, 27.875, 20.375, 18.75, 17.0], "answer_idx": 1}
+{"id": "val-01113-7be38e73058d", "family": "yelp_score", "qtype": "score", "logits": [19.875, 19.875, 21.5, 23.375, 23.75], "answer_idx": 2}
+{"id": "val-01114-a489c2de79d3", "family": "yelp_score", "qtype": "score", "logits": [27.875, 23.0, 21.375, 18.625, 18.75], "answer_idx": 1}
+{"id": "val-01115-6f5ba226171a", "family": "yelp_score", "qtype": "score", "logits": [20.625, 19.125, 19.25, 21.0, 26.875], "answer_idx": 4}
+{"id": "val-01116-e277b41e4dfe", "family": "yelp_score", "qtype": "score", "logits": [20.5, 21.0, 22.0, 23.75, 23.5], "answer_idx": 3}
+{"id": "val-01117-eb82e7c6e151", "family": "yelp_score", "qtype": "score", "logits": [20.25, 20.875, 21.875, 24.875, 22.625], "answer_idx": 3}
+{"id": "val-01118-04ae2b76d5d5", "family": "yelp_score", "qtype": "score", "logits": [20.125, 19.0, 18.875, 22.375, 25.375], "answer_idx": 3}
+{"id": "val-01119-1b75d7cfc119", "family": "yelp_score", "qtype": "score", "logits": [26.625, 20.375, 18.25, 16.375, 16.625], "answer_idx": 0}
+{"id": "val-01120-4699fdb84d15", "family": "yelp_score", "qtype": "score", "logits": [27.5, 17.25, 14.625, 15.75, 16.0], "answer_idx": 0}
+{"id": "val-01121-23314a68eeca", "family": "yelp_score", "qtype": "score", "logits": [18.625, 20.0, 20.625, 24.625, 21.125], "answer_idx": 3}
+{"id": "val-01122-06e1f2f50c48", "family": "yelp_score", "qtype": "score", "logits": [21.0, 20.125, 19.75, 22.25, 27.125], "answer_idx": 4}
+{"id": "val-01123-444b4f1dcefb", "family": "yelp_score", "qtype": "score", "logits": [29.0, 19.5, 16.375, 16.75, 17.75], "answer_idx": 0}
+{"id": "val-01124-c0416081dbef", "family": "yelp_score", "qtype": "score", "logits": [26.375, 18.75, 16.375, 15.8125, 16.75], "answer_idx": 0}
+{"id": "val-01125-40f93afc21f4", "family": "yelp_score", "qtype": "score", "logits": [20.125, 21.5, 23.75, 24.875, 21.5], "answer_idx": 3}
+{"id": "val-01126-804418709f0a", "family": "yelp_score", "qtype": "score", "logits": [19.375, 20.5, 21.125, 24.75, 23.75], "answer_idx": 2}
+{"id": "val-01127-05064aadd18c", "family": "yelp_score", "qtype": "score", "logits": [26.875, 19.5, 16.5, 16.625, 16.875], "answer_idx": 1}
+{"id": "val-01128-5dc46c7d384c", "family": "yelp_score", "qtype": "score", "logits": [20.125, 21.75, 25.25, 24.875, 20.0], "answer_idx": 3}
+{"id": "val-01129-4d959a454510", "family": "yelp_score", "qtype": "score", "logits": [18.375, 19.25, 19.625, 23.5, 23.0], "answer_idx": 3}
+{"id": "val-01130-22d9295deede", "family": "yelp_score", "qtype": "score", "logits": [19.125, 20.25, 22.25, 24.75, 18.625], "answer_idx": 2}
+{"id": "val-01131-a6003762b5c7", "family": "yelp_score", "qtype": "score", "logits": [21.75, 21.5, 25.75, 21.0, 18.625], "answer_idx": 2}
+{"id": "val-01132-73d0a4573bbc", "family": "yelp_score", "qtype": "score", "logits": [18.375, 19.75, 20.25, 26.125, 20.875], "answer_idx": 3}
+{"id": "val-01133-6ff89ffdaf8e", "family": "yelp_score", "qtype": "score", "logits": [19.25, 18.125, 17.875, 21.125, 26.625], "answer_idx": 4}
+{"id": "val-01134-ef7c2d16723e", "family": "yelp_score", "qtype": "score", "logits": [27.625, 21.375, 19.875, 18.375, 17.75], "answer_idx": 0}
+{"id": "val-01135-92d385e17d04", "family": "yelp_score", "qtype": "score", "logits": [28.875, 17.25, 15.375, 14.3125, 16.375], "answer_idx": 0}
+{"id": "val-01136-bf229b85b4e5", "family": "yelp_score", "qtype": "score", "logits": [20.125, 21.875, 23.5, 24.125, 21.5], "answer_idx": 3}
+{"id": "val-01137-ec4142dedb5a", "family": "yelp_score", "qtype": "score", "logits": [19.5, 19.125, 18.75, 22.75, 24.375], "answer_idx": 3}
+{"id": "val-01138-df23425a65a1", "family": "yelp_score", "qtype": "score", "logits": [19.5, 18.125, 17.875, 20.625, 26.25], "answer_idx": 4}
+{"id": "val-01139-4119e76db360", "family": "yelp_score", "qtype": "score", "logits": [21.75, 27.0, 21.0, 20.125, 17.125], "answer_idx": 1}
+{"id": "val-01140-c54d518b6c41", "family": "yelp_score", "qtype": "score", "logits": [20.625, 20.875, 22.0, 22.875, 23.375], "answer_idx": 2}
+{"id": "val-01141-68d3ea9696b3", "family": "yelp_score", "qtype": "score", "logits": [20.875, 19.125, 19.5, 22.5, 25.625], "answer_idx": 3}
+{"id": "val-01142-9ff660e9bc4d", "family": "yelp_score", "qtype": "score", "logits": [21.25, 23.625, 26.125, 22.0, 17.125], "answer_idx": 2}
+{"id": "val-01143-9e9ac76f6be5", "family": "yelp_score", "qtype": "score", "logits": [20.375, 19.375, 19.75, 22.625, 25.5], "answer_idx": 4}
+{"id": "val-01144-a6d3c6d997ac", "family": "yelp_score", "qtype": "score", "logits": [19.875, 27.875, 21.5, 19.625, 17.125], "answer_idx": 1}
+{"id": "val-01145-59c25a4a0fcc", "family": "yelp_score", "qtype": "score", "logits": [26.75, 24.625, 22.25, 19.5, 18.125], "answer_idx": 1}
+{"id": "val-01146-5e9061d58524", "family": "yelp_score", "qtype": "score", "logits": [18.75, 18.625, 18.875, 22.0, 27.625], "answer_idx": 4}
+{"id": "val-01147-0213c36bdb2c", "family": "yelp_score", "qtype": "score", "logits": [22.0, 21.25, 24.625, 22.75, 19.75], "answer_idx": 2}
+{"id": "val-01148-03c4b6e2fade", "family": "yelp_score", "qtype": "score", "logits": [20.375, 20.25, 20.25, 23.0, 25.75], "answer_idx": 4}
+{"id": "val-01149-69f1a4e970f0", "family": "yelp_score", "qtype": "score", "logits": [26.75, 22.875, 21.25, 17.875, 17.0], "answer_idx": 0}
+{"id": "val-01150-b5192e271b99", "family": "yelp_score", "qtype": "score", "logits": [26.625, 22.25, 21.125, 19.75, 19.0], "answer_idx": 0}
+{"id": "val-01151-ad3ad1a1501c", "family": "yelp_score", "qtype": "score", "logits": [21.375, 22.375, 24.5, 23.375, 19.125], "answer_idx": 2}
+{"id": "val-01152-897e7f1f327c", "family": "yelp_score", "qtype": "score", "logits": [19.875, 20.0, 20.875, 23.25, 24.25], "answer_idx": 2}
+{"id": "val-01153-7e99caa74d27", "family": "yelp_score", "qtype": "score", "logits": [19.875, 21.5, 22.375, 24.125, 21.625], "answer_idx": 3}
+{"id": "val-01154-e851b4667bcb", "family": "yelp_score", "qtype": "score", "logits": [26.5, 21.25, 19.375, 18.625, 19.5], "answer_idx": 0}
+{"id": "val-01155-749f8b0b1716", "family": "yelp_score", "qtype": "score", "logits": [19.375, 19.75, 20.0, 23.75, 23.875], "answer_idx": 3}
+{"id": "val-01156-46f546926014", "family": "yelp_score", "qtype": "score", "logits": [24.375, 22.75, 22.5, 22.0, 22.25], "answer_idx": 1}
+{"id": "val-01157-177c4cd9fc03", "family": "yelp_score", "qtype": "score", "logits": [20.25, 20.25, 20.875, 23.25, 24.125], "answer_idx": 4}
+{"id": "val-01158-1f090d72d31d", "family": "yelp_score", "qtype": "score", "logits": [23.5, 24.5, 24.75, 21.875, 18.0], "answer_idx": 1}
+{"id": "val-01159-f00c0ca93b4a", "family": "yelp_score", "qtype": "score", "logits": [20.375, 22.25, 24.125, 24.375, 21.0], "answer_idx": 2}
+{"id": "val-01160-d8abced8757b", "family": "yelp_score", "qtype": "score", "logits": [22.25, 23.625, 24.875, 22.5, 18.75], "answer_idx": 1}
+{"id": "val-01161-3b43e41f33aa", "family": "yelp_score", "qtype": "score", "logits": [20.375, 21.875, 24.875, 23.75, 19.625], "answer_idx": 3}
+{"id": "val-01162-352cb0263ad2", "family": "yelp_score", "qtype": "score", "logits": [20.75, 20.0, 19.0, 23.0, 26.0], "answer_idx": 4}
+{"id": "val-01163-5d9c13206c63", "family": "yelp_score", "qtype": "score", "logits": [20.625, 23.375, 26.125, 21.0, 16.75], "answer_idx": 2}
+{"id": "val-01164-46f92d7b9700", "family": "yelp_score", "qtype": "score", "logits": [21.375, 23.875, 26.0, 21.875, 16.875], "answer_idx": 2}
+{"id": "val-01165-b3987d194aeb", "family": "yelp_score", "qtype": "score", "logits": [24.125, 23.75, 23.25, 21.5, 19.875], "answer_idx": 0}
+{"id": "val-01166-c534bd89c4ee", "family": "yelp_score", "qtype": "score", "logits": [19.875, 19.5, 19.75, 22.75, 24.125], "answer_idx": 4}
+{"id": "val-01167-71e87a516a68", "family": "yelp_score", "qtype": "score", "logits": [21.0, 19.75, 20.5, 22.375, 25.0], "answer_idx": 4}
+{"id": "val-01168-80883900cd0c", "family": "yelp_score", "qtype": "score", "logits": [19.375, 19.5, 19.0, 23.875, 23.625], "answer_idx": 3}
+{"id": "val-01169-f6a4243ea817", "family": "yelp_score", "qtype": "score", "logits": [19.0, 19.5, 18.0, 23.5, 23.875], "answer_idx": 3}
+{"id": "val-01170-9682df3adf10", "family": "yelp_score", "qtype": "score", "logits": [20.5, 19.0, 19.625, 22.125, 25.625], "answer_idx": 4}
+{"id": "val-01171-d1d0bcecfe67", "family": "yelp_score", "qtype": "score", "logits": [22.625, 22.875, 24.0, 22.875, 21.0], "answer_idx": 3}
+{"id": "val-01172-451cd2b2bc9b", "family": "yelp_score", "qtype": "score", "logits": [20.125, 19.625, 19.125, 23.5, 24.25], "answer_idx": 3}
+{"id": "val-01173-4c04665ba73f", "family": "yelp_score", "qtype": "score", "logits": [21.75, 22.625, 24.0, 21.375, 17.75], "answer_idx": 2}
+{"id": "val-01174-7b7a9ad38603", "family": "yelp_score", "qtype": "score", "logits": [19.75, 20.375, 20.125, 23.75, 24.75], "answer_idx": 3}
+{"id": "val-01175-9d559b751abd", "family": "yelp_score", "qtype": "score", "logits": [19.125, 18.125, 17.875, 20.625, 26.375], "answer_idx": 4}
+{"id": "val-01176-ab7ff6212a41", "family": "yelp_score", "qtype": "score", "logits": [21.125, 21.375, 22.375, 24.625, 23.875], "answer_idx": 3}
+{"id": "val-01177-de65bd033310", "family": "yelp_score", "qtype": "score", "logits": [19.125, 20.75, 22.5, 24.5, 20.625], "answer_idx": 2}
+{"id": "val-01178-302357586c63", "family": "yelp_score", "qtype": "score", "logits": [17.875, 19.25, 20.125, 25.75, 20.75], "answer_idx": 4}
+{"id": "val-01179-b83865e41bed", "family": "yelp_score", "qtype": "score", "logits": [20.375, 18.625, 18.75, 21.25, 26.25], "answer_idx": 3}
+{"id": "val-01180-f34bc3a031bc", "family": "yelp_score", "qtype": "score", "logits": [20.0, 19.375, 20.625, 22.25, 26.625], "answer_idx": 4}
+{"id": "val-01181-072c1adc2246", "family": "yelp_score", "qtype": "score", "logits": [19.375, 18.625, 18.5, 21.25, 26.875], "answer_idx": 4}
+{"id": "val-01182-a65d5b81da9f", "family": "yelp_score", "qtype": "score", "logits": [19.75, 19.0, 19.125, 22.125, 26.875], "answer_idx": 4}
+{"id": "val-01183-c2c204d45bf0", "family": "yelp_score", "qtype": "score", "logits": [19.25, 18.25, 18.25, 21.375, 26.375], "answer_idx": 4}
+{"id": "val-01184-92c19a24d6f0", "family": "yelp_score", "qtype": "score", "logits": [23.5, 25.0, 25.125, 22.125, 19.25], "answer_idx": 1}
+{"id": "val-01185-b458577b622a", "family": "yelp_score", "qtype": "score", "logits": [25.5, 17.0, 14.8125, 14.3125, 15.5625], "answer_idx": 0}
+{"id": "val-01186-fe0cc77830df", "family": "yelp_score", "qtype": "score", "logits": [25.75, 18.5, 15.75, 14.75, 16.125], "answer_idx": 0}
+{"id": "val-01187-b810ac634a11", "family": "yelp_score", "qtype": "score", "logits": [21.125, 20.5, 21.0, 22.875, 25.0], "answer_idx": 3}
+{"id": "val-01188-236b171044c7", "family": "yelp_score", "qtype": "score", "logits": [26.625, 19.875, 18.375, 17.75, 17.25], "answer_idx": 1}
+{"id": "val-01189-42f6110dd3df", "family": "yelp_score", "qtype": "score", "logits": [17.75, 19.5, 21.125, 24.625, 19.875], "answer_idx": 3}
+{"id": "val-01190-12fb106862d2", "family": "yelp_score", "qtype": "score", "logits": [27.875, 23.25, 20.875, 21.125, 20.5], "answer_idx": 0}
+{"id": "val-01191-97abb6d373c5", "family": "yelp_score", "qtype": "score", "logits": [20.125, 20.375, 21.25, 22.375, 22.75], "answer_idx": 4}
+{"id": "val-01192-e85e918a8495", "family": "yelp_score", "qtype": "score", "logits": [26.875, 18.125, 15.6875, 15.375, 16.375], "answer_idx": 0}
+{"id": "val-01193-3ba3a5c3a20a", "family": "yelp_score", "qtype": "score", "logits": [19.875, 19.375, 18.875, 23.0, 25.0], "answer_idx": 3}
+{"id": "val-01194-f9d46f208fa0", "family": "yelp_score", "qtype": "score", "logits": [19.625, 22.0, 26.625, 21.875, 17.75], "answer_idx": 2}
+{"id": "val-01195-86ccedc1d047", "family": "yelp_score", "qtype": "score", "logits": [25.375, 17.0, 14.75, 14.5625, 14.9375], "answer_idx": 0}
+{"id": "val-01196-756c09e3be50", "family": "yelp_score", "qtype": "score", "logits": [20.375, 21.625, 25.375, 24.125, 19.625], "answer_idx": 3}
+{"id": "val-01197-3b2b64eef035", "family": "yelp_score", "qtype": "score", "logits": [19.75, 20.5, 21.0, 23.75, 24.0], "answer_idx": 3}
+{"id": "val-01198-f283242b0f5a", "family": "yelp_score", "qtype": "score", "logits": [21.25, 21.5, 21.375, 23.125, 23.75], "answer_idx": 2}
+{"id": "val-01199-6ca6ef591a5f", "family": "yelp_score", "qtype": "score", "logits": [27.375, 17.375, 14.9375, 15.0, 16.0], "answer_idx": 0}
+{"id": "val-01200-e96fe13d10cb", "family": "yelp_score", "qtype": "score", "logits": [27.75, 22.375, 20.625, 20.25, 19.375], "answer_idx": 0}
+{"id": "val-01201-2acd21175e86", "family": "yelp_score", "qtype": "score", "logits": [20.25, 19.375, 19.0, 22.0, 25.25], "answer_idx": 3}
+{"id": "val-01202-426c04f3c07b", "family": "yelp_score", "qtype": "score", "logits": [26.375, 23.75, 21.5, 18.125, 18.0], "answer_idx": 1}
+{"id": "val-01203-a969cf52c1aa", "family": "yelp_score", "qtype": "score", "logits": [19.75, 20.75, 23.75, 24.875, 20.375], "answer_idx": 3}
+{"id": "val-01204-17ebda9e77b8", "family": "yelp_score", "qtype": "score", "logits": [23.0, 24.75, 24.875, 20.5, 16.875], "answer_idx": 1}
+{"id": "val-01205-33bedf7c5666", "family": "yelp_score", "qtype": "score", "logits": [16.625, 18.25, 19.625, 26.125, 20.75], "answer_idx": 3}
+{"id": "val-01206-b3dcfd0a830e", "family": "yelp_score", "qtype": "score", "logits": [26.75, 23.0, 21.125, 20.25, 19.375], "answer_idx": 0}
+{"id": "val-01207-094d53b18cc3", "family": "yelp_score", "qtype": "score", "logits": [27.25, 24.5, 22.75, 19.875, 17.875], "answer_idx": 1}
+{"id": "val-01208-5b0a0ad40b87", "family": "yelp_score", "qtype": "score", "logits": [18.75, 20.375, 20.625, 25.75, 22.875], "answer_idx": 3}
+{"id": "val-01209-494f0c24f378", "family": "yelp_score", "qtype": "score", "logits": [20.5, 19.875, 21.5, 24.375, 22.625], "answer_idx": 3}
+{"id": "val-01210-b2db500a6483", "family": "yelp_score", "qtype": "score", "logits": [24.125, 24.875, 24.125, 19.75, 16.625], "answer_idx": 1}
+{"id": "val-01211-fc0b4fe36355", "family": "yelp_score", "qtype": "score", "logits": [26.0, 24.125, 22.75, 20.25, 18.125], "answer_idx": 0}
+{"id": "val-01212-7da1a70d1f95", "family": "yelp_score", "qtype": "score", "logits": [26.75, 23.5, 21.375, 18.5, 17.5], "answer_idx": 0}
+{"id": "val-01213-702632b8fa67", "family": "yelp_score", "qtype": "score", "logits": [20.125, 19.25, 18.625, 22.375, 26.125], "answer_idx": 4}
+{"id": "val-01214-fb1fa70d0bae", "family": "yelp_score", "qtype": "score", "logits": [26.5, 24.125, 21.5, 19.0, 17.25], "answer_idx": 1}
+{"id": "val-01215-b137344f4eb3", "family": "yelp_score", "qtype": "score", "logits": [27.875, 19.5, 16.5, 16.625, 17.0], "answer_idx": 0}
+{"id": "val-01216-f64e3e1867cc", "family": "yelp_score", "qtype": "score", "logits": [20.25, 20.375, 21.25, 23.875, 23.375], "answer_idx": 3}
+{"id": "val-01217-c9692c897989", "family": "yelp_score", "qtype": "score", "logits": [18.0, 18.75, 18.875, 22.75, 22.5], "answer_idx": 4}
+{"id": "val-01218-c117403603c3", "family": "yelp_score", "qtype": "score", "logits": [17.125, 15.625, 15.1875, 18.0, 26.25], "answer_idx": 4}
+{"id": "val-01219-24c84a108492", "family": "yelp_score", "qtype": "score", "logits": [21.625, 23.25, 26.625, 22.125, 17.625], "answer_idx": 1}
+{"id": "val-01220-6861a54615c0", "family": "yelp_score", "qtype": "score", "logits": [18.5, 18.125, 17.625, 21.375, 26.625], "answer_idx": 3}
+{"id": "val-01221-cf21bc0b4c30", "family": "yelp_score", "qtype": "score", "logits": [20.625, 19.25, 19.5, 22.375, 25.125], "answer_idx": 3}
+{"id": "val-01222-48c1b6976fe9", "family": "yelp_score", "qtype": "score", "logits": [24.875, 25.0, 23.875, 19.5, 17.125], "answer_idx": 1}
+{"id": "val-01223-267830a4fcdf", "family": "yelp_score", "qtype": "score", "logits": [27.5, 23.875, 20.625, 18.75, 17.875], "answer_idx": 1}
+{"id": "val-01224-950d577f5aea", "family": "yelp_score", "qtype": "score", "logits": [27.375, 18.25, 16.125, 16.0, 16.0], "answer_idx": 0}
+{"id": "val-01225-4a4c8092ce21", "family": "yelp_score", "qtype": "score", "logits": [20.375, 19.0, 19.25, 22.125, 25.0], "answer_idx": 3}
+{"id": "val-01226-c00b67289826", "family": "yelp_score", "qtype": "score", "logits": [20.875, 21.625, 25.375, 24.375, 20.125], "answer_idx": 2}
+{"id": "val-01227-d8ff1d81ac08", "family": "yelp_score", "qtype": "score", "logits": [19.875, 19.5, 19.0, 23.125, 24.75], "answer_idx": 3}
+{"id": "val-01228-c9414151f270", "family": "yelp_score", "qtype": "score", "logits": [19.75, 19.75, 20.125, 23.625, 24.375], "answer_idx": 4}
+{"id": "val-01229-f8d4712552db", "family": "yelp_score", "qtype": "score", "logits": [27.375, 19.0, 16.375, 15.6875, 16.375], "answer_idx": 0}
+{"id": "val-01230-eb5561a3ef21", "family": "yelp_score", "qtype": "score", "logits": [18.375, 18.5, 17.0, 21.0, 27.5], "answer_idx": 4}
+{"id": "val-01231-329a345ed41e", "family": "yelp_score", "qtype": "score", "logits": [26.25, 23.5, 21.875, 18.5, 17.625], "answer_idx": 1}
+{"id": "val-01232-fa8dfc245f5d", "family": "yelp_score", "qtype": "score", "logits": [18.5, 20.125, 20.75, 25.875, 20.75], "answer_idx": 3}
+{"id": "val-01233-ce243b143f84", "family": "yelp_score", "qtype": "score", "logits": [27.125, 16.75, 14.375, 14.0, 16.5], "answer_idx": 0}
+{"id": "val-01234-4adf42eb2df7", "family": "yelp_score", "qtype": "score", "logits": [19.25, 21.125, 26.875, 22.625, 18.125], "answer_idx": 2}
+{"id": "val-01236-cceb53033771", "family": "tickets_priority", "qtype": "score", "logits": [20.375, 22.0, 24.5, 23.25, 19.375], "answer_idx": 2}
+{"id": "val-01237-004bd2e9ef62", "family": "tickets_type", "qtype": "choice", "logits": [24.5, 22.875, 24.0, 21.0], "answer_idx": 2}
+{"id": "val-01238-538d3d3a52ca", "family": "tickets_language", "qtype": "noul", "logits": [28.5, 21.375], "answer_idx": 0}
+{"id": "val-01240-fd1138559d9f", "family": "tickets_priority", "qtype": "score", "logits": [22.875, 23.5, 24.875, 21.375, 18.75], "answer_idx": 3}
+{"id": "val-01241-1b4781c36578", "family": "tickets_type", "qtype": "choice", "logits": [22.375, 26.0, 20.875, 21.375], "answer_idx": 3}
+{"id": "val-01242-a1e774212547", "family": "tickets_language", "qtype": "noul", "logits": [20.5, 27.0], "answer_idx": 1}
+{"id": "val-01244-5c99931bbba3", "family": "tickets_priority", "qtype": "score", "logits": [21.0, 21.375, 22.0, 23.0, 21.375], "answer_idx": 3}
+{"id": "val-01245-0f488b646aa1", "family": "tickets_type", "qtype": "choice", "logits": [23.0, 26.0, 19.75, 19.375], "answer_idx": 1}
+{"id": "val-01246-c28418a95c46", "family": "tickets_language", "qtype": "noul", "logits": [21.25, 28.0], "answer_idx": 1}
+{"id": "val-01248-98e2f4cdd509", "family": "tickets_priority", "qtype": "score", "logits": [20.5, 21.625, 23.625, 23.375, 19.75], "answer_idx": 2}
+{"id": "val-01249-d1507e461833", "family": "tickets_type", "qtype": "choice", "logits": [25.125, 23.75, 24.25, 21.0], "answer_idx": 2}
+{"id": "val-01250-d18cc0fb3703", "family": "tickets_language", "qtype": "noul", "logits": [21.5, 28.625], "answer_idx": 1}
+{"id": "val-01252-b5cb2a15b05d", "family": "tickets_priority", "qtype": "score", "logits": [20.5, 21.25, 23.375, 23.0, 19.75], "answer_idx": 3}
+{"id": "val-01253-1e8421b0e11b", "family": "tickets_type", "qtype": "choice", "logits": [22.0, 24.625, 20.5, 21.875], "answer_idx": 3}
+{"id": "val-01254-00e338f8f2ca", "family": "tickets_language", "qtype": "noul", "logits": [20.75, 26.875], "answer_idx": 1}
+{"id": "val-01256-1396e0ac63df", "family": "tickets_priority", "qtype": "score", "logits": [18.625, 18.0, 19.25, 21.25, 24.25], "answer_idx": 3}
+{"id": "val-01257-5e4cfb42cb53", "family": "tickets_type", "qtype": "choice", "logits": [24.875, 22.375, 23.5, 18.5], "answer_idx": 2}
+{"id": "val-01258-a79e9abfc53d", "family": "tickets_language", "qtype": "noul", "logits": [28.5, 19.375], "answer_idx": 0}
+{"id": "val-01260-13ea360a3ed5", "family": "tickets_priority", "qtype": "score", "logits": [21.75, 22.125, 23.625, 22.0, 20.875], "answer_idx": 2}
+{"id": "val-01261-aa9641aed24d", "family": "tickets_type", "qtype": "choice", "logits": [20.5, 24.75, 18.875, 19.125], "answer_idx": 1}
+{"id": "val-01262-5d28b0955854", "family": "tickets_language", "qtype": "noul", "logits": [27.25, 20.75], "answer_idx": 0}
+{"id": "val-01264-1551a7b96f88", "family": "tickets_priority", "qtype": "score", "logits": [23.875, 24.375, 25.75, 22.75, 20.375], "answer_idx": 3}
+{"id": "val-01265-97d1f975a6bd", "family": "tickets_type", "qtype": "choice", "logits": [21.625, 26.0, 20.375, 20.625], "answer_idx": 1}
+{"id": "val-01266-06e871200362", "family": "tickets_language", "qtype": "noul", "logits": [20.875, 25.5], "answer_idx": 1}
+{"id": "val-01268-513174777eaa", "family": "tickets_priority", "qtype": "score", "logits": [20.75, 20.25, 20.0, 23.625, 23.875], "answer_idx": 3}
+{"id": "val-01269-be693311a6d0", "family": "tickets_type", "qtype": "choice", "logits": [27.0, 22.5, 23.0, 20.75], "answer_idx": 0}
+{"id": "val-01270-b486a06db9fb", "family": "tickets_language", "qtype": "noul", "logits": [21.375, 27.375], "answer_idx": 1}
+{"id": "val-01272-1f7bbfc5d4fb", "family": "tickets_priority", "qtype": "score", "logits": [19.5, 18.125, 18.375, 20.25, 26.125], "answer_idx": 3}
+{"id": "val-01273-3955e21ea728", "family": "tickets_language", "qtype": "noul", "logits": [26.875, 20.625], "answer_idx": 0}
+{"id": "val-01275-ac151ec05eae", "family": "tickets_priority", "qtype": "score", "logits": [22.25, 22.5, 24.5, 24.25, 21.5], "answer_idx": 2}
+{"id": "val-01276-f13869109c2f", "family": "tickets_type", "qtype": "choice", "logits": [22.25, 21.5, 25.75, 20.875], "answer_idx": 2}
+{"id": "val-01277-4271795456eb", "family": "tickets_language", "qtype": "noul", "logits": [21.25, 25.75], "answer_idx": 1}
+{"id": "val-01279-6936cf70670a", "family": "tickets_priority", "qtype": "score", "logits": [23.25, 24.125, 25.0, 20.875, 18.5], "answer_idx": 1}
+{"id": "val-01280-7083b152c7c7", "family": "tickets_type", "qtype": "choice", "logits": [19.25, 26.25, 17.625, 18.25], "answer_idx": 1}
+{"id": "val-01281-8ba54dfb6dd0", "family": "tickets_language", "qtype": "noul", "logits": [27.5, 19.25], "answer_idx": 0}
+{"id": "val-01283-f9556654ef96", "family": "tickets_priority", "qtype": "score", "logits": [17.5, 17.75, 18.875, 22.0, 21.625], "answer_idx": 3}
+{"id": "val-01284-21b2a9c4e20e", "family": "tickets_language", "qtype": "noul", "logits": [28.0, 19.125], "answer_idx": 0}
+{"id": "val-01286-14957da1fd09", "family": "tickets_priority", "qtype": "score", "logits": [20.125, 20.75, 22.875, 23.125, 21.0], "answer_idx": 1}
+{"id": "val-01287-776d867a18ab", "family": "tickets_type", "qtype": "choice", "logits": [26.75, 23.75, 24.5, 20.125], "answer_idx": 0}
+{"id": "val-01288-5576a3b1ae06", "family": "tickets_language", "qtype": "noul", "logits": [20.75, 27.875], "answer_idx": 1}
+{"id": "val-01290-5f1e6c47d123", "family": "tickets_priority", "qtype": "score", "logits": [22.125, 21.75, 22.125, 24.25, 23.875], "answer_idx": 2}
+{"id": "val-01291-e6a47c349536", "family": "tickets_type", "qtype": "choice", "logits": [27.5, 21.125, 23.5, 20.0], "answer_idx": 2}
+{"id": "val-01292-493f51f07a88", "family": "tickets_language", "qtype": "noul", "logits": [22.125, 29.125], "answer_idx": 1}
+{"id": "val-01294-165976e9c6a9", "family": "tickets_priority", "qtype": "score", "logits": [21.25, 21.75, 24.5, 22.0, 19.75], "answer_idx": 2}
+{"id": "val-01295-21726b960431", "family": "tickets_type", "qtype": "choice", "logits": [21.75, 23.375, 23.0, 20.125], "answer_idx": 0}
+{"id": "val-01296-432a6fbb5036", "family": "tickets_language", "qtype": "noul", "logits": [26.375, 18.0], "answer_idx": 0}
+{"id": "val-01298-14eabd62243b", "family": "tickets_priority", "qtype": "score", "logits": [18.625, 17.375, 17.875, 20.5, 26.25], "answer_idx": 3}
+{"id": "val-01299-382d99d3fad2", "family": "tickets_language", "qtype": "noul", "logits": [27.625, 19.5], "answer_idx": 0}
+{"id": "val-01301-772631687b07", "family": "tickets_priority", "qtype": "score", "logits": [21.0, 21.875, 23.375, 22.5, 20.5], "answer_idx": 2}
+{"id": "val-01302-e4c5d9fd1c85", "family": "tickets_language", "qtype": "noul", "logits": [28.0, 20.75], "answer_idx": 0}
+{"id": "val-01304-4a4abc6818bc", "family": "tickets_priority", "qtype": "score", "logits": [19.125, 18.125, 19.0, 22.5, 25.125], "answer_idx": 3}
+{"id": "val-01305-f37e6981afcb", "family": "tickets_type", "qtype": "choice", "logits": [25.875, 23.625, 24.5, 19.75], "answer_idx": 0}
+{"id": "val-01306-f4da309c16d6", "family": "tickets_language", "qtype": "noul", "logits": [21.25, 28.125], "answer_idx": 1}
+{"id": "val-01308-e61e321a6ce4", "family": "tickets_priority", "qtype": "score", "logits": [17.625, 17.75, 19.25, 21.75, 23.125], "answer_idx": 3}
+{"id": "val-01309-0e256e651b45", "family": "tickets_language", "qtype": "noul", "logits": [27.75, 20.375], "answer_idx": 0}
+{"id": "val-01311-b23bba8a0d11", "family": "tickets_priority", "qtype": "score", "logits": [18.625, 17.0, 17.25, 19.75, 25.625], "answer_idx": 4}
+{"id": "val-01312-3c2398358fa2", "family": "tickets_language", "qtype": "noul", "logits": [27.5, 20.125], "answer_idx": 0}
+{"id": "val-01314-849fb0b1d845", "family": "tickets_priority", "qtype": "score", "logits": [21.0, 21.875, 23.875, 21.875, 19.25], "answer_idx": 2}
+{"id": "val-01315-b6a0d4462875", "family": "tickets_type", "qtype": "choice", "logits": [20.5, 23.375, 19.25, 22.875], "answer_idx": 3}
+{"id": "val-01316-b92ae5ffc561", "family": "tickets_language", "qtype": "noul", "logits": [27.0, 18.75], "answer_idx": 0}
+{"id": "val-01318-7964c6eb040a", "family": "tickets_priority", "qtype": "score", "logits": [22.125, 22.875, 24.625, 22.375, 19.0], "answer_idx": 2}
+{"id": "val-01319-abfda2d0ccae", "family": "tickets_type", "qtype": "choice", "logits": [24.5, 21.75, 25.375, 20.5], "answer_idx": 2}
+{"id": "val-01320-094f678eeaeb", "family": "tickets_language", "qtype": "noul", "logits": [21.125, 28.25], "answer_idx": 1}
+{"id": "val-01322-0e838731fe3e", "family": "tickets_priority", "qtype": "score", "logits": [20.5, 22.0, 24.875, 23.125, 19.0], "answer_idx": 2}
+{"id": "val-01323-51d515fa5e4f", "family": "tickets_type", "qtype": "choice", "logits": [23.625, 22.625, 26.25, 20.25], "answer_idx": 0}
+{"id": "val-01324-4b17f2cade41", "family": "tickets_language", "qtype": "noul", "logits": [20.875, 27.875], "answer_idx": 1}
+{"id": "val-01326-86c747e368e4", "family": "tickets_priority", "qtype": "score", "logits": [18.375, 17.75, 19.375, 22.375, 23.0], "answer_idx": 3}
+{"id": "val-01327-08a136a78a6c", "family": "tickets_language", "qtype": "noul", "logits": [26.875, 20.375], "answer_idx": 0}
+{"id": "val-01329-6265860d8c19", "family": "tickets_priority", "qtype": "score", "logits": [21.0, 21.625, 23.75, 24.0, 20.75], "answer_idx": 1}
+{"id": "val-01330-a6adbbab8cee", "family": "tickets_type", "qtype": "choice", "logits": [24.375, 21.875, 25.625, 20.125], "answer_idx": 0}
+{"id": "val-01331-348e5b6c25b0", "family": "tickets_language", "qtype": "noul", "logits": [22.375, 28.375], "answer_idx": 1}
+{"id": "val-01333-2c8881e6c236", "family": "tickets_priority", "qtype": "score", "logits": [19.375, 20.75, 22.875, 22.375, 19.25], "answer_idx": 2}
+{"id": "val-01334-4a4a903c1708", "family": "tickets_language", "qtype": "noul", "logits": [27.25, 21.125], "answer_idx": 0}
+{"id": "val-01336-e7a7544aa33a", "family": "tickets_priority", "qtype": "score", "logits": [23.375, 23.625, 25.25, 22.375, 20.5], "answer_idx": 3}
+{"id": "val-01337-e1408b79f270", "family": "tickets_type", "qtype": "choice", "logits": [23.375, 25.625, 22.0, 22.0], "answer_idx": 3}
+{"id": "val-01338-30737cc450e8", "family": "tickets_language", "qtype": "noul", "logits": [21.375, 28.5], "answer_idx": 1}
+{"id": "val-01340-a0611d822acd", "family": "tickets_priority", "qtype": "score", "logits": [20.75, 21.25, 22.75, 23.0, 21.25], "answer_idx": 1}
+{"id": "val-01341-a61a86fb383e", "family": "tickets_type", "qtype": "choice", "logits": [24.5, 22.625, 24.375, 19.875], "answer_idx": 2}
+{"id": "val-01342-988c23690977", "family": "tickets_language", "qtype": "noul", "logits": [21.0, 26.0], "answer_idx": 0}
+{"id": "val-01344-97dde43340ed", "family": "tickets_priority", "qtype": "score", "logits": [23.375, 24.375, 25.0, 20.75, 18.0], "answer_idx": 1}
+{"id": "val-01345-7fe66104313b", "family": "tickets_language", "qtype": "noul", "logits": [28.375, 18.5], "answer_idx": 0}
+{"id": "val-01347-447d0b18f147", "family": "tickets_priority", "qtype": "score", "logits": [19.25, 20.375, 22.5, 23.125, 19.625], "answer_idx": 1}
+{"id": "val-01348-bacd4a237df1", "family": "tickets_language", "qtype": "noul", "logits": [27.125, 19.125], "answer_idx": 0}
+{"id": "val-01350-514b454064e0", "family": "tickets_priority", "qtype": "score", "logits": [21.125, 22.625, 24.375, 22.25, 19.125], "answer_idx": 1}
+{"id": "val-01351-d07a3ffbf2ea", "family": "tickets_language", "qtype": "noul", "logits": [27.25, 19.625], "answer_idx": 0}
+{"id": "val-01353-7e6fbc0da945", "family": "tickets_priority", "qtype": "score", "logits": [21.25, 22.375, 24.5, 22.875, 20.0], "answer_idx": 1}
+{"id": "val-01354-34f967bbc989", "family": "tickets_language", "qtype": "noul", "logits": [28.75, 21.0], "answer_idx": 0}
+{"id": "val-01356-1074e846ea0b", "family": "tickets_priority", "qtype": "score", "logits": [20.0, 19.875, 20.875, 23.25, 22.375], "answer_idx": 1}
+{"id": "val-01357-b21a52eb9bf8", "family": "tickets_type", "qtype": "choice", "logits": [27.125, 21.625, 23.75, 20.75], "answer_idx": 0}
+{"id": "val-01358-0ae053b9e503", "family": "tickets_language", "qtype": "noul", "logits": [21.625, 28.0], "answer_idx": 1}
+{"id": "val-01360-4f4173ec3b18", "family": "tickets_priority", "qtype": "score", "logits": [20.375, 20.625, 22.75, 23.5, 21.125], "answer_idx": 2}
+{"id": "val-01361-49b39cd89291", "family": "tickets_type", "qtype": "choice", "logits": [25.375, 20.875, 23.75, 18.75], "answer_idx": 0}
+{"id": "val-01362-2f94d3fa6976", "family": "tickets_language", "qtype": "noul", "logits": [27.25, 20.25], "answer_idx": 0}
+{"id": "val-01364-23245d09e494", "family": "tickets_priority", "qtype": "score", "logits": [20.375, 21.5, 24.0, 22.875, 19.75], "answer_idx": 2}
+{"id": "val-01365-4e740703a0b4", "family": "tickets_type", "qtype": "choice", "logits": [25.75, 22.625, 24.5, 19.625], "answer_idx": 0}
+{"id": "val-01366-b96142f61aba", "family": "tickets_language", "qtype": "noul", "logits": [20.5, 26.625], "answer_idx": 1}
+{"id": "val-01368-1fba03abf739", "family": "tickets_priority", "qtype": "score", "logits": [22.125, 23.875, 25.0, 20.125, 17.25], "answer_idx": 1}
+{"id": "val-01369-edc259d623e3", "family": "tickets_language", "qtype": "noul", "logits": [28.75, 20.5], "answer_idx": 0}
+{"id": "val-01371-a87bb5f669c9", "family": "tickets_priority", "qtype": "score", "logits": [18.0, 16.25, 16.125, 18.75, 25.75], "answer_idx": 3}
+{"id": "val-01372-34c31cb7c357", "family": "tickets_type", "qtype": "choice", "logits": [27.125, 20.625, 21.25, 18.375], "answer_idx": 0}
+{"id": "val-01373-1c14fa568c98", "family": "tickets_language", "qtype": "noul", "logits": [21.375, 28.625], "answer_idx": 1}
+{"id": "val-01375-eb1d68672879", "family": "tickets_priority", "qtype": "score", "logits": [19.625, 21.25, 23.75, 23.0, 18.625], "answer_idx": 3}
+{"id": "val-01376-e25bc003de58", "family": "tickets_type", "qtype": "choice", "logits": [25.125, 24.625, 24.75, 21.5], "answer_idx": 2}
+{"id": "val-01377-619b969c2a23", "family": "tickets_language", "qtype": "noul", "logits": [20.125, 26.875], "answer_idx": 0}
+{"id": "val-01379-8c1f4b9bb11d", "family": "tickets_priority", "qtype": "score", "logits": [18.375, 17.75, 19.0, 20.875, 25.25], "answer_idx": 4}
+{"id": "val-01380-b75076f9a5e2", "family": "tickets_language", "qtype": "noul", "logits": [27.5, 19.625], "answer_idx": 0}
+{"id": "val-01382-8c00185f877e", "family": "tickets_priority", "qtype": "score", "logits": [21.125, 21.75, 23.875, 23.375, 20.75], "answer_idx": 3}
+{"id": "val-01383-dff1e3dfe8c9", "family": "tickets_type", "qtype": "choice", "logits": [23.625, 21.625, 25.125, 19.0], "answer_idx": 2}
+{"id": "val-01384-f256e80cef4b", "family": "tickets_language", "qtype": "noul", "logits": [21.5, 27.875], "answer_idx": 1}
+{"id": "val-01386-b518129f1a00", "family": "tickets_priority", "qtype": "score", "logits": [19.625, 21.25, 23.25, 21.25, 18.25], "answer_idx": 2}
+{"id": "val-01387-7493c8c0e212", "family": "tickets_language", "qtype": "noul", "logits": [28.625, 20.25], "answer_idx": 0}
+{"id": "val-01389-31811a13c1f1", "family": "tickets_priority", "qtype": "score", "logits": [22.0, 23.0, 24.75, 20.875, 18.0], "answer_idx": 3}
+{"id": "val-01390-f522d478fc2c", "family": "tickets_type", "qtype": "choice", "logits": [20.875, 25.875, 18.125, 18.375], "answer_idx": 1}
+{"id": "val-01391-c498799b4aac", "family": "tickets_language", "qtype": "noul", "logits": [20.75, 28.375], "answer_idx": 0}
+{"id": "val-01393-4573790102c8", "family": "tickets_priority", "qtype": "score", "logits": [21.75, 23.0, 25.25, 22.5, 19.625], "answer_idx": 3}
+{"id": "val-01394-d294db83d15e", "family": "tickets_type", "qtype": "choice", "logits": [26.75, 22.625, 25.125, 20.5], "answer_idx": 0}
+{"id": "val-01395-787eef9116a4", "family": "tickets_language", "qtype": "noul", "logits": [20.125, 26.625], "answer_idx": 0}
+{"id": "val-01397-2bb1ef8f9108", "family": "tickets_priority", "qtype": "score", "logits": [24.125, 24.0, 25.125, 20.625, 18.0], "answer_idx": 1}
+{"id": "val-01398-37df59eb2a83", "family": "tickets_type", "qtype": "choice", "logits": [21.375, 26.25, 18.75, 19.5], "answer_idx": 1}
+{"id": "val-01399-51f73fea425e", "family": "tickets_language", "qtype": "noul", "logits": [20.25, 27.625], "answer_idx": 1}
+{"id": "val-01401-45117e35ffe6", "family": "tickets_priority", "qtype": "score", "logits": [19.625, 21.625, 24.5, 22.0, 18.625], "answer_idx": 1}
+{"id": "val-01402-fbdbab413423", "family": "tickets_language", "qtype": "noul", "logits": [30.0, 20.375], "answer_idx": 0}
+{"id": "val-01404-39b8bfb9ebd6", "family": "tickets_priority", "qtype": "score", "logits": [20.75, 21.625, 22.875, 24.625, 22.0], "answer_idx": 2}
+{"id": "val-01405-954b99fb4b32", "family": "tickets_type", "qtype": "choice", "logits": [23.375, 22.5, 25.625, 19.75], "answer_idx": 2}
+{"id": "val-01406-55fd28a16bf1", "family": "tickets_language", "qtype": "noul", "logits": [21.875, 29.625], "answer_idx": 0}
+{"id": "val-01408-081683af61cf", "family": "tickets_priority", "qtype": "score", "logits": [21.0, 22.5, 24.375, 21.5, 18.25], "answer_idx": 2}
+{"id": "val-01409-b396c74290d9", "family": "tickets_language", "qtype": "noul", "logits": [29.125, 20.875], "answer_idx": 0}
+{"id": "val-01411-e07601b1001d", "family": "tickets_priority", "qtype": "score", "logits": [19.25, 20.5, 22.875, 23.0, 20.0], "answer_idx": 3}
+{"id": "val-01412-290cca9206e9", "family": "tickets_type", "qtype": "choice", "logits": [25.5, 22.0, 23.625, 18.875], "answer_idx": 0}
+{"id": "val-01413-10fb7e2eb5a1", "family": "tickets_language", "qtype": "noul", "logits": [26.625, 18.5], "answer_idx": 0}
+{"id": "val-01415-44af268fb9d9", "family": "tickets_priority", "qtype": "score", "logits": [20.875, 27.625, 20.375, 18.375, 15.375], "answer_idx": 1}
+{"id": "val-01416-5960e44ee00c", "family": "tickets_language", "qtype": "noul", "logits": [28.875, 19.0], "answer_idx": 0}
+{"id": "val-01418-fcabd7432233", "family": "tickets_priority", "qtype": "score", "logits": [20.875, 22.5, 24.375, 21.625, 18.875], "answer_idx": 0}
+{"id": "val-01419-cc7575853a70", "family": "tickets_language", "qtype": "noul", "logits": [28.125, 19.625], "answer_idx": 0}
+{"id": "val-01421-8850b693185c", "family": "tickets_priority", "qtype": "score", "logits": [20.375, 20.25, 21.5, 23.375, 22.25], "answer_idx": 2}
+{"id": "val-01422-d79b2f7d7add", "family": "tickets_type", "qtype": "choice", "logits": [26.5, 21.875, 24.375, 19.875], "answer_idx": 0}
+{"id": "val-01423-54d0a60bdf0a", "family": "tickets_language", "qtype": "noul", "logits": [21.625, 28.125], "answer_idx": 1}
+{"id": "val-01425-b8ef26bea3e2", "family": "tickets_priority", "qtype": "score", "logits": [22.625, 23.5, 24.75, 21.125, 18.125], "answer_idx": 2}
+{"id": "val-01426-20743ae0cb86", "family": "tickets_type", "qtype": "choice", "logits": [21.25, 26.75, 18.75, 19.5], "answer_idx": 1}
+{"id": "val-01427-3fc418d9cfdf", "family": "tickets_language", "qtype": "noul", "logits": [20.875, 27.125], "answer_idx": 0}
+{"id": "val-01429-c35831692433", "family": "tickets_priority", "qtype": "score", "logits": [19.375, 20.75, 23.0, 23.0, 20.125], "answer_idx": 2}
+{"id": "val-01430-8ea67e98e188", "family": "tickets_language", "qtype": "noul", "logits": [28.375, 20.375], "answer_idx": 0}
+{"id": "val-01432-eb9ecff97ca6", "family": "tickets_priority", "qtype": "score", "logits": [22.5, 23.25, 24.75, 22.375, 20.125], "answer_idx": 1}
+{"id": "val-01433-514e50f7b7ec", "family": "tickets_language", "qtype": "noul", "logits": [27.5, 20.125], "answer_idx": 0}
+{"id": "val-01435-600899b09c4c", "family": "tickets_priority", "qtype": "score", "logits": [23.5, 24.25, 26.125, 23.0, 20.625], "answer_idx": 1}
+{"id": "val-01436-f1544fc56454", "family": "tickets_type", "qtype": "choice", "logits": [21.5, 23.875, 19.625, 24.375], "answer_idx": 3}
+{"id": "val-01437-08b1e358d1d0", "family": "tickets_language", "qtype": "noul", "logits": [21.625, 26.375], "answer_idx": 1}
+{"id": "val-01439-a884664ab46a", "family": "tickets_priority", "qtype": "score", "logits": [17.625, 17.25, 18.5, 21.75, 23.0], "answer_idx": 4}
+{"id": "val-01440-0b2be56491fa", "family": "tickets_language", "qtype": "noul", "logits": [27.25, 19.0], "answer_idx": 0}
+{"id": "val-01442-01df67128db4", "family": "tickets_priority", "qtype": "score", "logits": [23.125, 23.875, 25.125, 20.75, 17.625], "answer_idx": 1}
+{"id": "val-01443-1e4cd2c3c961", "family": "tickets_type", "qtype": "choice", "logits": [21.0, 26.375, 18.25, 18.625], "answer_idx": 1}
+{"id": "val-01444-461f67ae598b", "family": "tickets_language", "qtype": "noul", "logits": [20.5, 27.125], "answer_idx": 1}
+{"id": "val-01446-e95118655cb1", "family": "tickets_priority", "qtype": "score", "logits": [20.5, 21.125, 23.25, 23.25, 20.125], "answer_idx": 2}
+{"id": "val-01447-7d035159cc40", "family": "tickets_type", "qtype": "choice", "logits": [22.125, 24.0, 18.875, 24.25], "answer_idx": 3}
+{"id": "val-01448-cea94e971c79", "family": "tickets_language", "qtype": "noul", "logits": [21.5, 28.75], "answer_idx": 1}
+{"id": "val-01450-b3278bb1d5ca", "family": "tickets_priority", "qtype": "score", "logits": [17.5, 17.5, 18.25, 21.25, 23.875], "answer_idx": 4}
+{"id": "val-01451-3ce43ea03788", "family": "tickets_language", "qtype": "noul", "logits": [26.75, 18.5], "answer_idx": 0}

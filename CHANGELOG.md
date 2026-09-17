@@ -47,6 +47,16 @@ this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   broadcast batch from real free VRAM, and runs `lm_head` only at the answer positions.
   First 64-vs-1 question ratio at a 1.6k-token state: 3.81x — Step 6 work.
 
+- Phase 0 Step 5: evaluation harness and calibration. `eval/metrics.py` (accuracy, ECE on 15
+  equal-mass bins, MCE, multiclass and top-label Brier, NLL, rank-based AUROC, uniform and
+  base-rate negative controls, per option-count / family / primitive breakdowns),
+  `eval/data.py` (loads `pngwn/system-one-decisions`, remaps noul indices, reports coverage),
+  `eval/run_eval.py` (`uv run task eval`, stores logits so `--rescore` recomputes everything
+  without a GPU), `eval/plots.py` (reliability diagrams), and
+  `src/s1decide/calibrate.py` (per-option-count-bucket temperature scaling, golden-section fit
+  on the inverse temperature, `calibration.json` that refuses a quantization mismatch).
+- `docs/dataset-card.md`: sources, licences and the coverage limit.
+
 ### Notes
 
 - vLLM is deliberately **not** a project extra: uv's universal lock cannot satisfy

@@ -1,0 +1,31 @@
+{
+  "version": "0.1",
+  "quantization": "nf4-bf16",
+  "default": 1.0,
+  "temperatures": {
+    "2": 3.3965952212385195,
+    "3-5": 2.0115975145647367
+  },
+  "meta": {
+    "run_id": "20260917-112259-qwen38-27b-unsloth-bnb-4bit-nf4-bf16-test-zeroshot",
+    "fit_split": "val",
+    "model": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+    "fitted_at": "2026-09-17T11:36:22+00:00",
+    "n_predictions": 1292,
+    "min_count": 30,
+    "buckets": {
+      "2": {
+        "n": 695,
+        "temperature": 3.3965952212385195,
+        "nll_before": 0.8364910915781619,
+        "nll_after": 0.49338845787910834
+      },
+      "3-5": {
+        "n": 597,
+        "temperature": 2.0115975145647367,
+        "nll_before": 0.9110150175150148,
+        "nll_after": 0.7466151383390535
+      }
+    }
+  }
+}

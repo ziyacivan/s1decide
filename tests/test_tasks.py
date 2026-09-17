@@ -23,7 +23,7 @@ REQUIRED_TASKS = {
 }
 
 # Tasks that must fail loudly until the work behind them exists.
-NOT_IMPLEMENTED_TASKS = {"data", "smoke", "train", "eval", "bench", "serve", "gguf"}
+NOT_IMPLEMENTED_TASKS = {"data", "smoke", "train", "bench", "serve", "gguf"}
 
 
 def test_every_documented_task_is_registered() -> None:

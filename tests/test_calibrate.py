@@ -1,0 +1,211 @@
+"""Temperature scaling: does it find the right temperature, and does it refuse the wrong one?"""
+
+from __future__ import annotations
+
+import json
+import math
+
+import numpy as np
+import pytest
+from eval.metrics import Prediction, ece, summarize
+
+from s1decide.calibrate import (
+    CALIBRATION_VERSION,
+    Calibration,
+    fit_calibration,
+    fit_temperature,
+    nll_at_temperature,
+    option_count_bucket,
+)
+
+
+def synthetic(n: int, k: int, true_temperature: float, seed: int = 0) -> list[Prediction]:
+    """Logits whose softmax at ``true_temperature`` generated the labels.
+
+    So the recoverable optimum really is ``true_temperature``: sampling labels from the
+    tempered distribution is exactly the model temperature scaling assumes.
+    """
+    rng = np.random.default_rng(seed)
+    out = []
+    for i in range(n):
+        logits = rng.normal(scale=3.0, size=k)
+        z = logits / true_temperature
+        p = np.exp(z - z.max())
+        p /= p.sum()
+        out.append(
+            Prediction(
+                id=f"s{i}",
+                family="synthetic",
+                qtype="choice",
+                logits=tuple(logits),
+                answer_idx=int(rng.choice(k, p=p)),
+            )
+        )
+    return out
+
+
+# --- fit_temperature ----------------------------------------------------------
+
+
+@pytest.mark.parametrize("true_temperature", [0.5, 1.0, 2.0, 4.0])
+def test_fit_temperature_recovers_the_generating_temperature(true_temperature: float) -> None:
+    preds = synthetic(4000, 5, true_temperature, seed=int(true_temperature * 10))
+    fitted = fit_temperature([p.logits for p in preds], [p.answer_idx for p in preds])
+    assert fitted == pytest.approx(true_temperature, rel=0.15)
+
+
+def test_fit_temperature_finds_a_minimum_not_just_a_point() -> None:
+    preds = synthetic(2000, 4, 2.5, seed=3)
+    logits = [p.logits for p in preds]
+    labels = [p.answer_idx for p in preds]
+    best = fit_temperature(logits, labels)
+    at_best = nll_at_temperature(logits, labels, best)
+    for other in (best * 0.8, best * 1.25, 1.0):
+        assert nll_at_temperature(logits, labels, other) >= at_best - 1e-9
+
+
+def test_fit_temperature_reduces_ece_on_an_overconfident_model() -> None:
+    preds = synthetic(3000, 4, 3.0, seed=11)
+    labels = [p.answer_idx for p in preds]
+    before = ece([p.probabilities(1.0) for p in preds], labels)
+    t = fit_temperature([p.logits for p in preds], labels)
+    after = ece([p.probabilities(t) for p in preds], labels)
+    assert after < before / 2
+
+
+def test_fit_temperature_never_changes_accuracy() -> None:
+    preds = synthetic(500, 6, 3.0, seed=5)
+    labels = [p.answer_idx for p in preds]
+    t = fit_temperature([p.logits for p in preds], labels)
+    assert summarize([p.probabilities(t) for p in preds], labels)["accuracy"] == pytest.approx(
+        summarize([p.probabilities(1.0) for p in preds], labels)["accuracy"]
+    )
+
+
+def test_fit_temperature_is_deterministic() -> None:
+    preds = synthetic(300, 3, 1.7, seed=9)
+    args = ([p.logits for p in preds], [p.answer_idx for p in preds])
+    assert fit_temperature(*args) == fit_temperature(*args)
+
+
+@pytest.mark.parametrize(
+    ("logits", "labels", "message"),
+    [([], [], "no data"), ([[0.0, 1.0]], [], "1 logit rows but 0 labels")],
+)
+def test_fit_temperature_rejects_bad_input(logits, labels, message) -> None:
+    with pytest.raises(ValueError, match=message):
+        fit_temperature(logits, labels)
+
+
+def test_fit_temperature_rejects_invalid_bounds() -> None:
+    with pytest.raises(ValueError, match="invalid bounds"):
+        fit_temperature([[0.0, 1.0]], [0], bounds=(2.0, 1.0))
+
+
+def test_nll_at_temperature_rejects_non_positive() -> None:
+    with pytest.raises(ValueError, match="temperature"):
+        nll_at_temperature([[0.0, 1.0]], [0], 0.0)
+
+
+# --- Calibration --------------------------------------------------------------
+
+
+def test_calibration_applies_the_bucket_temperature() -> None:
+    cal = Calibration(temperatures={"2": 2.0, "3-5": 4.0}, quantization="nf4-bf16")
+    assert cal.temperature_for(2) == 2.0
+    assert cal.temperature_for(4) == 4.0
+    assert cal.temperature_for(10) == 1.0  # unfitted bucket falls back to the default
+    two = cal.apply([0.0, 4.0])
+    assert two == pytest.approx(np.exp([0.0, 2.0]) / np.exp([0.0, 2.0]).sum())
+
+
+def test_identity_calibration_is_a_plain_softmax() -> None:
+    cal = Calibration.identity("bf16")
+    assert cal.apply([0.0, math.log(3.0)]) == pytest.approx([0.25, 0.75])
+
+
+def test_calibration_rejects_non_positive_temperatures() -> None:
+    with pytest.raises(ValueError, match="positive"):
+        Calibration(temperatures={"2": 0.0})
+    with pytest.raises(ValueError, match="positive"):
+        Calibration(temperatures={}, default=-1.0)
+
+
+def test_calibration_round_trips_through_disk(tmp_path) -> None:
+    cal = Calibration(
+        temperatures={"2": 1.25, "3-5": 2.5},
+        quantization="nf4-bf16",
+        meta={"run_id": "r1"},
+    )
+    path = cal.save(tmp_path / "calibration.json")
+    assert json.loads(path.read_text(encoding="utf-8"))["version"] == CALIBRATION_VERSION
+    assert Calibration.load(path) == cal
+
+
+def test_loading_a_future_version_fails_loudly(tmp_path) -> None:
+    path = tmp_path / "calibration.json"
+    path.write_text(json.dumps({"version": "9.9", "temperatures": {}}), encoding="utf-8")
+    with pytest.raises(ValueError, match="version"):
+        Calibration.load(path)
+
+
+def test_calibration_refuses_a_quantization_mismatch() -> None:
+    """Fitting in BF16 and shipping Q4 is a named anti-pattern; it must fail, not warn."""
+    cal = Calibration(temperatures={"2": 2.0}, quantization="bf16")
+    cal.check_matches("bf16")
+    with pytest.raises(ValueError, match="re-fit at the deployment quantization"):
+        cal.check_matches("q4_k_m")
+
+
+# --- fit_calibration ----------------------------------------------------------
+
+
+def test_fit_calibration_fits_each_bucket_separately() -> None:
+    """Two buckets generated at different temperatures must get different fits."""
+    preds = [
+        Prediction(id=f"a{i}", family="f", qtype="noul", logits=p.logits, answer_idx=p.answer_idx)
+        for i, p in enumerate(synthetic(1500, 2, 1.0, seed=1))
+    ] + [
+        Prediction(id=f"b{i}", family="f", qtype="choice", logits=p.logits, answer_idx=p.answer_idx)
+        for i, p in enumerate(synthetic(1500, 4, 4.0, seed=2))
+    ]
+    cal = fit_calibration(preds, quantization="nf4-bf16")
+    assert set(cal.temperatures) == {"2", "3-5"}
+    assert cal.temperatures["2"] == pytest.approx(1.0, rel=0.2)
+    assert cal.temperatures["3-5"] == pytest.approx(4.0, rel=0.25)
+    assert cal.temperatures["3-5"] > cal.temperatures["2"]
+
+
+def test_fit_calibration_skips_buckets_that_are_too_small() -> None:
+    preds = [
+        *synthetic(40, 4, 2.0, seed=4),
+        Prediction(id="lonely", family="f", qtype="noul", logits=(0.0, 1.0), answer_idx=0),
+    ]
+    cal = fit_calibration(preds, quantization="q", min_count=30)
+    assert "3-5" in cal.temperatures
+    assert "2" not in cal.temperatures
+    assert "fewer than 30" in cal.meta["buckets"]["2"]["skipped"]
+    assert cal.temperature_for(2) == 1.0
+
+
+def test_fit_calibration_records_the_nll_it_improved() -> None:
+    cal = fit_calibration(synthetic(600, 4, 3.0, seed=6), quantization="nf4-bf16")
+    info = cal.meta["buckets"]["3-5"]
+    assert info["nll_after"] < info["nll_before"]
+    assert info["n"] == 600
+    assert cal.meta["n_predictions"] == 600
+    assert cal.quantization == "nf4-bf16"
+
+
+def test_fit_calibration_carries_caller_metadata() -> None:
+    cal = fit_calibration(
+        synthetic(50, 4, 1.0), quantization="q", min_count=10, meta={"run_id": "z"}
+    )
+    assert cal.meta["run_id"] == "z"
+
+
+def test_option_count_bucket_is_shared_with_the_eval() -> None:
+    """The library owns the bucket definition so a calibration file and a report agree."""
+    from eval.metrics import option_count_bucket as eval_bucket
+
+    assert eval_bucket is option_count_bucket

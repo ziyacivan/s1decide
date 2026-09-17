@@ -68,6 +68,10 @@ dev = [
     "pytest>=8.3",
     "pytest-cov>=5.0",
     "ruff>=0.8",
+    # Reliability diagrams are a committed deliverable, so the plotting stack belongs in the
+    # dev environment. It stays out of `[project.dependencies]`: nobody installing the
+    # inference library needs matplotlib.
+    "matplotlib>=3.9",
 ]
 
 # --- torch index -------------------------------------------------------------
@@ -120,6 +124,8 @@ line-ending = "lf"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# `eval/` and `scripts/` are repository-level, not part of the installed wheel.
+pythonpath = ["."]
 addopts = "-q --strict-markers"
 markers = [
     "gpu: requires a CUDA GPU (run with `uv run task test-gpu`)",

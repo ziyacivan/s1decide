@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 
-__all__ = ["TASKS", "Task", "main", "run_task"]
+__all__ = ["TASKS", "Task", "ensure_repo_on_path", "main", "run_task"]
 
 # The CUDA runtime the pinned torch wheel carries. The reference machine has no
 # standalone CUDA toolkit and no nvcc, so this — not nvcc — is the toolkit we match.
@@ -118,6 +118,22 @@ def repo_root() -> Path:
         if (candidate / "pyproject.toml").is_file():
             return candidate
     return Path.cwd()
+
+
+def ensure_repo_on_path() -> Path:
+    """Put the repository root on ``sys.path`` so repo-level packages are importable.
+
+    ``eval/``, ``train/`` and ``scripts/`` are part of the repository but not of the installed
+    wheel, so the ``task`` console script cannot import them by default. pytest gets this from
+    the ``pythonpath`` ini option; this is the same thing for the command line.
+
+    Returns:
+        The repository root.
+    """
+    root = repo_root()
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+    return root
 
 
 def _run(cmd: Sequence[str], cwd: Path | None = None) -> int:
@@ -652,11 +668,17 @@ register_not_implemented(
     "Stage-1 QLoRA SFT from a train/configs/*.yaml config",
     "Phase 1 training-engineer work; needs train/sft_lora.py",
 )
-register_not_implemented(
-    "eval",
-    "Run an evaluation and write results/<run_id>/metrics.json",
-    "Phase 0 step 5; needs eval/run_eval.py and an engine",
-)
+
+
+@register("eval", "Run an evaluation and write results/<run_id>/metrics.json")
+def task_eval(argv: list[str]) -> int:
+    """Run `eval/run_eval.py`. Arguments are passed straight through."""
+    ensure_repo_on_path()
+    from eval.run_eval import main as run_eval_main
+
+    return run_eval_main(argv)
+
+
 register_not_implemented(
     "bench",
     "Latency vs number of questions on the current engine",
