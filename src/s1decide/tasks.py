@@ -247,17 +247,24 @@ def check_gpu_processes() -> CheckResult:
             "gpu-processes", Status.WARN, f"could not parse nvidia-smi output: {used!r}"
         )
 
-    # On a desktop Windows box this list is dominated by the compositor, the browser and
-    # tray apps. Show the basenames of a handful and count the rest.
-    names = sorted(
-        {Path(line.split(",", 1)[-1].strip()).name for line in apps.splitlines() if line.strip()}
-    )
-    if not names:
-        suffix = ""
-    elif len(names) <= 4:
-        suffix = f" | {', '.join(names)}"
+    # Per-process MiB, which nvidia-smi cannot give on Windows — see s1decide.gpu.
+    from s1decide.gpu import gpu_processes
+
+    holders = gpu_processes()
+    if holders:
+        shown = "; ".join(h.describe() for h in holders[:5])
+        extra = f" and {len(holders) - 5} more" if len(holders) > 5 else ""
+        suffix = f" | {shown}{extra}"
     else:
-        suffix = f" | {', '.join(names[:4])} and {len(names) - 4} more"
+        # Fall back to bare process names from nvidia-smi rather than claiming nothing is there.
+        names = sorted(
+            {
+                Path(line.split(",", 1)[-1].strip()).name
+                for line in apps.splitlines()
+                if line.strip()
+            }
+        )
+        suffix = f" | {', '.join(names[:4])}" if names else ""
     if used_mib > VRAM_WARN_MIB:
         return CheckResult(
             "gpu-processes",
@@ -518,6 +525,35 @@ def check_utf8() -> CheckResult:
     )
 
 
+def check_sysmem_fallback() -> CheckResult:
+    """Check that the driver refuses to page device memory to host RAM.
+
+    On Windows the NVIDIA driver will, by default, satisfy an over-budget CUDA allocation out
+    of host RAM instead of raising. Nothing fails; the run just gets several times slower. That
+    is how a 22.3 GiB peak on this 24 GiB card turned a 5.8 s call into 16 s, and a 22.8 GiB
+    peak into 37 s, with no error anywhere (ADR 0003). Required setting, in NVIDIA Control
+    Panel: **Manage 3D settings -> CUDA - Sysmem Fallback Policy -> Prefer No Sysmem Fallback**.
+    See `docs/windows-setup.md`.
+
+    The check probes the behaviour rather than reading the setting, because the setting lives
+    in the driver's binary profile database and cannot be read back reliably.
+    """
+    from s1decide.gpu import probe_sysmem_fallback
+
+    result = probe_sysmem_fallback()
+    if result.disabled is None:
+        return CheckResult("sysmem-fallback", Status.SKIP, result.detail)
+    if result.disabled:
+        return CheckResult("sysmem-fallback", Status.OK, result.detail)
+    return CheckResult(
+        "sysmem-fallback",
+        Status.WARN,
+        f"{result.detail}. Set NVIDIA Control Panel -> Manage 3D settings -> "
+        "'CUDA - Sysmem Fallback Policy' to 'Prefer No Sysmem Fallback' "
+        "(docs/windows-setup.md); until then an over-budget run fails silently and slowly.",
+    )
+
+
 def check_long_paths() -> CheckResult:
     """Check that git long-path support is enabled (Windows only).
 
@@ -567,6 +603,8 @@ DOCTOR_CHECKS: tuple[Callable[[], CheckResult], ...] = (
     check_hf_cache,
     check_utf8,
     check_long_paths,
+    # Last: it allocates on the GPU, so it must not pollute the readings above.
+    check_sysmem_fallback,
 )
 
 
@@ -611,6 +649,45 @@ def task_doctor(_argv: list[str]) -> int:
 # --------------------------------------------------------------------------- #
 
 
+@register("gpu-kill", "Kill the process tree of any s1decide run still holding VRAM")
+def task_gpu_kill(argv: list[str]) -> int:
+    """Free the GPU after an interrupted run.
+
+    Interrupting a run from outside kills the shell, not the Python process that holds ~20 GB
+    of VRAM — and a surviving loop shell will happily start the next iteration alongside it.
+    Two benches competing for one card produced a 14-second single-question call before anyone
+    noticed, and every measurement taken meanwhile was void. This kills whole trees, ours only.
+
+    Args:
+        argv: ``--dry-run`` to list without killing.
+
+    Returns:
+        0 always: finding nothing to kill is the normal case, not a failure.
+    """
+    from s1decide.gpu import gpu_processes, kill_s1decide_gpu_processes
+
+    dry_run = "--dry-run" in argv or "-n" in argv
+    ours, killed = kill_s1decide_gpu_processes(dry_run=dry_run)
+
+    if not ours:
+        others = gpu_processes()
+        print("no s1decide process is holding GPU memory")
+        for process in others[:5]:
+            print(f"  (not ours, left alone) {process.describe()}")
+        return 0
+
+    for process in ours:
+        print(f"{'would kill' if dry_run else 'killing'} {process.describe()}")
+    if dry_run:
+        print(f"\n--dry-run: {len(ours)} process(es) matched, nothing killed")
+        return 0
+    print(f"\nkilled {len(killed)} process(es) across {len(ours)} tree(s): {killed}")
+    for process in gpu_processes():
+        if not process.is_ours:
+            print(f"  (not ours, left alone) {process.describe()}")
+    return 0
+
+
 @register("setup", "uv sync the project environment")
 def task_setup(argv: list[str]) -> int:
     """Sync the environment with ``uv``. Extra arguments are passed to ``uv sync``."""
@@ -627,10 +704,42 @@ def task_test(argv: list[str]) -> int:
     return _run([sys.executable, "-m", "pytest", "-m", "not gpu", *argv])
 
 
-@register("test-gpu", "Run the GPU test suite (pytest -m gpu)")
+#: GPU test files that each load their own model, run one process at a time.
+GPU_TEST_FILES: tuple[str, ...] = (
+    "tests/test_gpu_hygiene.py",
+    "tests/test_engine_gpu.py",
+    "tests/test_engine_gpu_27b.py",
+)
+
+
+@register("test-gpu", "Run the GPU test suite (pytest -m gpu), one file per process")
 def task_test_gpu(argv: list[str]) -> int:
-    """Run pytest, only GPU-marked tests."""
-    return _run([sys.executable, "-m", "pytest", "-m", "gpu", *argv])
+    """Run the GPU-marked tests, one file per process so the card is never shared.
+
+    Each of these files loads a model in a module-scoped fixture and holds it for the whole
+    session. Run in one process they need two models resident at once, which does not fit on a
+    24 GiB card — and until the driver's sysmem fallback was turned off it did not fail, it
+    just ran slowly out of host memory while `test_engine_gpu_27b` measured VRAM and reported
+    the numbers as if they meant something.
+
+    Args:
+        argv: Passed to pytest. Naming files explicitly runs exactly those, in one process.
+
+    Returns:
+        The worst exit code of the runs.
+    """
+    if any(not arg.startswith("-") for arg in argv):
+        return _run([sys.executable, "-m", "pytest", "-m", "gpu", *argv])
+
+    root = repo_root()
+    worst = 0
+    for name in GPU_TEST_FILES:
+        path = root / name
+        if not path.is_file():
+            continue
+        print(f"\n=== {name} ===", flush=True)
+        worst = max(worst, _run([sys.executable, "-m", "pytest", "-m", "gpu", str(path), *argv]))
+    return worst
 
 
 @register("lint", "Run ruff check and ruff format --check")

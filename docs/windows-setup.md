@@ -64,6 +64,63 @@ Both layers are already enabled — no action needed.
 > on another machine must set it again, or set it globally. `doctor` checks this;
 > it does not auto-fix it.
 
+## 3b. CUDA sysmem fallback — **required setting**
+
+**NVIDIA Control Panel → Manage 3D settings → CUDA - Sysmem Fallback Policy →
+"Prefer No Sysmem Fallback".** Set globally, or at minimum for the project's `python.exe`.
+
+This is not a tuning preference; without it the card does not report being full.
+
+By default the Windows NVIDIA driver satisfies a CUDA allocation that no longer fits in VRAM
+out of host RAM over PCIe, instead of raising `OutOfMemoryError`. Nothing fails. The run simply
+gets several times slower, and every number it produces is wrong in a way that looks like a
+real result. Measured on this machine, 64-question calls at a 1,617-token prefix:
+
+| peak VRAM | 64-question call | |
+|---|---|---|
+| 21.90 GiB | 5,806 ms | normal |
+| 22.34 GiB | 15,990 ms | 2.8x slower, no error |
+| 22.78 GiB | 37,289 ms | 6.4x slower, no error |
+
+Prefill inflates along with everything else (1.42 s → 5.34 s → 11.88 s), which is the
+signature: it is not a compute effect, it is memory traffic crossing the bus. The first time
+this happened it was mistaken for a real regression.
+
+`uv run task doctor` reports it as the `sysmem-fallback` check. The check **probes the
+behaviour rather than reading the setting** — it asks for 2 GiB more than the card has free and
+expects that to raise — because the setting itself lives in the driver's binary profile
+database and cannot be read back reliably. A healthy machine reads:
+
+```
+[OK  ] sysmem-fallback   requested 24.79 GiB with 22.79 GiB free of 24.00 GiB: raised
+                         OutOfMemoryError, as it should
+```
+
+The probe deliberately overshoots by 2 GiB. A smaller margin lands inside the variation of what
+`mem_get_info` calls "free" (the driver holds back a reserve that changes), and at 512 MiB the
+probe contradicted itself between consecutive runs.
+
+**The engine does not rely on this setting.** `HFEngine` budgets rows per pass against a
+predicted peak held under a per-hardware ceiling — 0.92 of total VRAM for `rtx3090_windows`, in
+`src/s1decide/hardware.py` — so it stays below the cliff whether or not the fallback is on. The
+setting is belt and braces: it turns a silent slowdown into a loud failure if the budget is ever
+wrong.
+
+## 3c. Freeing the GPU after an interrupted run
+
+`uv run task gpu-kill` — kills the whole process tree of any s1decide run still holding VRAM,
+and lists (never kills) anything that is not ours. `--dry-run` to look first.
+
+Needed because a `uv run task bench` is a shell, then a launcher, then the Python process that
+actually holds ~20 GB. Killing the outermost one from a task manager or an editor leaves the
+model resident; worse, a surviving loop shell will start the next iteration alongside it. Two
+benchmarks competing for one card produced a 14-second single-question call — 10x the true
+figure — and every measurement taken in that window was void.
+
+`doctor`'s `gpu-processes` line lists holders by name and MiB. On Windows `nvidia-smi` reports
+per-process memory as `N/A` under the WDDM driver model, so the number comes from the
+`GPU Process Memory` performance counter set instead (see `src/s1decide/gpu.py`).
+
 ## 4. Unsloth Studio installation (read-only inspection)
 
 Root: `%USERPROFILE%\.unsloth\` — **never modified, never installed into.**

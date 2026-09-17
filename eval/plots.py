@@ -11,7 +11,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-__all__ = ["plot_bucket_grid", "plot_reliability", "plot_run"]
+__all__ = ["plot_bucket_grid", "plot_reliability", "plot_risk_coverage", "plot_run"]
 
 _OK = "#2a6f97"
 _GAP = "#c1666b"
@@ -86,6 +86,61 @@ def plot_reliability(
     ax_hist.set_xlabel("confidence (equal-mass bins)")
     ax_hist.set_ylabel("count")
     ax_hist.grid(alpha=0.15)
+
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(target, dpi=150)
+    plt.close(fig)
+    return target
+
+
+def plot_risk_coverage(
+    curves: Mapping[str, Mapping[str, Any]],
+    path: str | Path,
+    *,
+    title: str,
+    subtitle: str = "",
+) -> Path:
+    """Draw accuracy against coverage for one or more prediction sets.
+
+    The reliability diagram answers "are the stated probabilities honest?"; this answers "if I
+    act on the confident ones and route the rest to a human, what do I get?". They are
+    different questions, which is why a run reports both. The base-rate control is drawn
+    alongside because a control that beats the model on ECE is nearly flat here: its
+    confidences barely rank anything, so abstaining on its least confident questions buys
+    little.
+
+    Args:
+        curves: Label to a :func:`eval.metrics.risk_coverage` result.
+        path: Where to write the PNG.
+        title: Plot title.
+        subtitle: Optional second line.
+
+    Returns:
+        The path written.
+    """
+    plt = _require_matplotlib()
+    fig, ax = plt.subplots(figsize=(6.2, 4.6), constrained_layout=True)
+
+    colours = [_OK, _GAP, _GREY, "#8d99ae"]
+    for (label, curve), colour in zip(curves.items(), colours):
+        points = curve.get("curve", [])
+        if not points:
+            continue
+        xs = [point["coverage"] for point in points]
+        ys = [point["accuracy"] for point in points]
+        selective = curve.get("selective_accuracy", {})
+        annotation = "  ".join(f"acc@{float(k):.0%}={v:.3f}" for k, v in sorted(selective.items()))
+        ax.plot(xs, ys, "o-", color=colour, lw=1.6, ms=4, label=f"{label}  {annotation}")
+        # Full coverage is plain accuracy: the point every selective claim is measured against.
+        ax.plot([1.0], [ys[-1]], "o", color=colour, ms=8, mfc="none", mew=1.6)
+
+    ax.set_xlabel("coverage — fraction of questions answered, most confident first")
+    ax.set_ylabel("accuracy on the answered set")
+    ax.set_xlim(0, 1.02)
+    ax.grid(alpha=0.15)
+    ax.legend(loc="lower left", frameon=False, fontsize=8)
+    ax.set_title(f"{title}\n{subtitle}" if subtitle else title, fontsize=10)
 
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -180,6 +235,37 @@ def plot_run(run_dir: str | Path) -> list[Path]:
                     title=f"Reliability by option count — {name} — {label}",
                 )
             )
+    curves = {
+        key: report[source]
+        for key, source in (
+            ("uncalibrated", "risk_coverage"),
+            ("calibrated", "risk_coverage_calibrated"),
+        )
+        if report.get(source)
+    }
+    for name in ("uniform", "base_rate"):
+        control = report.get("controls", {}).get(name)
+        # The control's own curve is not stored separately; its selective accuracies are, and
+        # a flat line through them is exactly the point being made.
+        if control and control.get("selective_accuracy"):
+            curves[f"control: {name}"] = {
+                "curve": [
+                    {"coverage": float(k), "accuracy": v}
+                    for k, v in sorted(control["selective_accuracy"].items())
+                ]
+                + [{"coverage": 1.0, "accuracy": control["accuracy"]}],
+                "selective_accuracy": control["selective_accuracy"],
+            }
+    if curves:
+        written.append(
+            plot_risk_coverage(
+                curves,
+                directory / "risk-coverage.png",
+                title="Risk-coverage — accuracy on the answered set",
+                subtitle=label,
+            )
+        )
+
     for name in ("uniform", "base_rate"):
         control = report.get("controls", {}).get(name)
         if control:

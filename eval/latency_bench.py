@@ -492,6 +492,12 @@ def run(config: BenchConfig, out_root: Path | None = None) -> Path:
             # `state_tokens` asked for; report what the model actually prefilled.
             "prefix_tokens": measurements[0].prefix_tokens,
             "state_tokens_actual": len(engine.encode(state)),
+            # Which per-hardware tuning produced these numbers, and whether it is itself
+            # measured on this class of machine or still an assumption.
+            "hardware": getattr(getattr(engine, "hardware", None), "name", None),
+            "hardware_profile": (
+                engine.hardware.to_json() if hasattr(engine, "hardware") else None
+            ),
         },
         "targets": evaluate_targets(points, overhead),
         "format_overhead": overhead,

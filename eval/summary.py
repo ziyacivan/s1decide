@@ -26,6 +26,9 @@ _COLUMNS = (
     ("mean_confidence", "conf", "{:.3f}"),
 )
 
+#: Selective-accuracy columns, pulled out of the nested `selective_accuracy` mapping.
+_SELECTIVE_COLUMNS = (("0.8", "acc@80%"), ("0.9", "acc@90%"))
+
 
 def _stale_format_banner(run_format: str | None) -> list[str]:
     """Warn, in the document itself, when a run predates the current prompt format.
@@ -58,13 +61,92 @@ def _row(label: str, summary: Mapping[str, Any]) -> str:
     for key, _title, fmt in _COLUMNS:
         value = summary.get(key)
         cells.append("n/a" if value is None else fmt.format(value))
+    selective = summary.get("selective_accuracy") or {}
+    for key, _title in _SELECTIVE_COLUMNS:
+        value = selective.get(key)
+        cells.append("n/a" if value is None else f"{value:.4f}")
     return f"| {label} | " + " | ".join(cells) + " |"
 
 
 def _table(rows: Sequence[tuple[str, Mapping[str, Any]]], first: str = "") -> list[str]:
-    head = f"| {first} | " + " | ".join(t for _k, t, _f in _COLUMNS) + " |"
-    rule = "|---" * (len(_COLUMNS) + 1) + "|"
+    titles = [t for _k, t, _f in _COLUMNS] + [t for _k, t in _SELECTIVE_COLUMNS]
+    head = f"| {first} | " + " | ".join(titles) + " |"
+    rule = "|---" * (len(titles) + 1) + "|"
     return [head, rule, *[_row(label, s) for label, s in rows]]
+
+
+def _skill_section(report: Mapping[str, Any]) -> list[str]:
+    """The headline calibration number: Brier skill against the negative controls."""
+    pairs = [
+        ("uncalibrated", report.get("skill", {})),
+        ("calibrated", report.get("skill_calibrated", {})),
+    ]
+    if not any(block for _label, block in pairs):
+        return []
+    out = [
+        "",
+        "## Skill against the controls",
+        "",
+        "`BSS = 1 - Brier / Brier_control`. 1.0 is perfect, 0.0 is no better than the control, "
+        "negative is worse. **This is the headline calibration number**, and ECE sits beside it "
+        "rather than above it, because ECE can be won by a predictor that never commits: the "
+        "base-rate control does exactly that on this set. A proper scoring rule cannot be won "
+        "that way, so stating the result as skill *against that control* puts the comparison in "
+        "the open.",
+        "",
+        "| model | control | BSS (multiclass) | BSS (top label) | accuracy gain |",
+        "|---|---|---|---|---|",
+    ]
+    for label, block in pairs:
+        for control, skill in block.items():
+
+            def fmt(value: float | None) -> str:
+                return "n/a" if value is None else f"{value:+.4f}"
+
+            out.append(
+                f"| {label} | {control} | {fmt(skill.get('brier_multiclass'))} | "
+                f"{fmt(skill.get('brier_top_label'))} | {fmt(skill.get('accuracy_gain'))} |"
+            )
+    return out
+
+
+def _risk_coverage_section(report: Mapping[str, Any]) -> list[str]:
+    """Accuracy as a function of how much of the set is answered."""
+    curves = [
+        ("uncalibrated", report.get("risk_coverage", {})),
+        ("calibrated", report.get("risk_coverage_calibrated", {})),
+    ]
+    curves = [(label, curve) for label, curve in curves if curve.get("curve")]
+    if not curves:
+        return []
+    out = [
+        "",
+        "## Risk-coverage",
+        "",
+        "Questions are answered most-confident-first; at coverage *c* the least confident "
+        "`1 - c` are abstained on. This is the deployment question — *if the least confident "
+        "20% go to a human, how good is what is left?* — and it depends only on the **order** "
+        "of the confidences, not on their values, which makes it a second opinion rather than a "
+        "restatement of the reliability diagram. Calibration still moves it, because our "
+        "temperatures are fitted per option-count bucket and therefore re-rank questions across "
+        "buckets; a single global temperature would leave these rows identical. "
+        "`AURC` is the area under the risk curve; lower is better.",
+        "",
+        "| model | " + " | ".join(f"acc@{c:.0%}" for c in (0.2, 0.4, 0.6, 0.8, 1.0)) + " | AURC |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for label, curve in curves:
+        by_coverage = {round(point["coverage"], 2): point["accuracy"] for point in curve["curve"]}
+        cells = [
+            f"{by_coverage[c]:.4f}" if c in by_coverage else "n/a"
+            for c in (0.2, 0.4, 0.6, 0.8, 1.0)
+        ]
+        aurc = curve.get("aurc")
+        out.append(
+            f"| {label} | " + " | ".join(cells) + f" | {'n/a' if aurc is None else f'{aurc:.4f}'} |"
+        )
+    out += ["", "Drawn in `risk-coverage.png`, with the negative controls on the same axes."]
+    return out
 
 
 def render_summary(report: Mapping[str, Any]) -> str:
@@ -120,7 +202,10 @@ def render_summary(report: Mapping[str, Any]) -> str:
         "Temperature scaling cannot change which option wins, so accuracy is identical in the "
         "first two rows by construction. Read the controls before the model: a predictor that "
         "ignores the state can post a competitive ECE, which is why ECE never appears here "
-        "without accuracy, Brier and AUROC beside it.",
+        "without accuracy, Brier and AUROC beside it — and why the section below reports skill "
+        "against those controls rather than ECE alone.",
+        *_skill_section(report),
+        *_risk_coverage_section(report),
         "",
         "## Calibration",
         "",
@@ -175,7 +260,7 @@ def render_summary(report: Mapping[str, Any]) -> str:
         "- `predictions-*.jsonl` — raw masked logits per question; re-score with "
         "`uv run task eval --rescore results/<run_id>` without a GPU.",
         "- `calibration.json` — fitted temperatures, tied to the quantization above.",
-        "- `reliability-*.png` — drawn from `metrics.json`.",
+        "- `reliability-*.png`, `risk-coverage.png` — drawn from `metrics.json`.",
         "",
     ]
     return "\n".join(out)

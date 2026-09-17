@@ -34,12 +34,14 @@ __all__ = [
     "auroc",
     "base_rate_probabilities",
     "brier_multiclass",
+    "brier_skill_score",
     "brier_top_label",
     "ece",
     "equal_mass_bins",
     "mce",
     "nll",
     "option_count_bucket",
+    "risk_coverage",
     "summarize",
     "summarize_by",
     "uniform_probabilities",
@@ -47,6 +49,15 @@ __all__ = [
 
 #: Number of equal-mass bins used for ECE and reliability diagrams.
 DEFAULT_BINS = 15
+
+#: Coverages at which selective accuracy is reported in every summary. A model that knows when
+#: it does not know should be markedly more accurate on the 80% of questions it is most
+#: confident about than on all of them.
+SELECTIVE_COVERAGES: tuple[float, ...] = (0.8, 0.9)
+
+#: Coverage grid for the risk-coverage curve. Starts at 0.05 because accuracy on the top 5% of
+#: a 1,500-question set is already noisy, and ends at 1.0, where it is plain accuracy.
+RISK_COVERAGE_GRID: tuple[float, ...] = tuple(round(0.05 * i, 2) for i in range(1, 21))
 
 _EPS = 1e-12
 
@@ -318,6 +329,95 @@ def auroc(scores: Sequence[float], positive: Sequence[float]) -> float | None:
     return float((ranks[y == 1].sum() - n_pos * (n_pos + 1) / 2) / (n_pos * n_neg))
 
 
+def brier_skill_score(brier: float, reference_brier: float) -> float | None:
+    """Skill of a Brier score against a reference: ``1 - brier / reference_brier``.
+
+    1.0 is perfect, 0.0 is no better than the reference, negative is worse.
+
+    This exists because ECE alone can be won by a model that never commits. The base-rate
+    control on our own eval set scores ECE 0.034 against the calibrated model's 0.045 while
+    being 33 accuracy points worse — it is "well calibrated" precisely by predicting the
+    training frequencies and nothing else. A proper scoring rule cannot be gamed that way, and
+    stating it as skill *against that control* makes the comparison the headline rather than a
+    footnote.
+
+    Args:
+        brier: The model's Brier score, lower is better.
+        reference_brier: The control's Brier score on the same predictions.
+
+    Returns:
+        The skill score, or ``None`` when the reference is 0 and skill is undefined.
+    """
+    if reference_brier <= 0:
+        return None
+    return float(1.0 - brier / reference_brier)
+
+
+def risk_coverage(
+    probabilities: Sequence[Sequence[float]],
+    labels: Sequence[int],
+    coverages: Sequence[float] = RISK_COVERAGE_GRID,
+) -> dict[str, Any]:
+    """Accuracy on the retained set as a function of how much of it is retained.
+
+    Questions are ranked by top-label confidence and the least confident are abstained on
+    first. At coverage ``c`` the most confident ``ceil(c * n)`` are kept and scored. This is
+    the quantity a caller actually deploys against: "if I route the least confident 20% to a
+    human, how good is what is left?".
+
+    It depends only on the *order* of the confidences, which makes it a complement to ECE
+    rather than a restatement of it. Note that our temperatures are fitted **per option-count
+    bucket**, so calibration does move this curve: a single global temperature is monotone and
+    would leave the ranking untouched, but different temperatures per bucket re-rank questions
+    *across* buckets. That is a real effect worth reading — if per-bucket scaling improves the
+    curve, the buckets were miscalibrated relative to each other. Ties break on the sort's
+    stable order.
+
+    Args:
+        probabilities: One row per question.
+        labels: Correct option index per question.
+        coverages: Coverage grid, each in ``(0, 1]``.
+
+    Returns:
+        ``{"curve": [{"coverage", "n_kept", "accuracy", "min_confidence"}, ...],
+        "selective_accuracy": {"0.8": ..., "0.9": ...}, "aurc": ...}`` where ``aurc`` is the
+        area under the *risk* (1 - accuracy) curve over the grid, lower being better.
+
+    Raises:
+        ValueError: If any coverage is outside ``(0, 1]``.
+    """
+    rows, y = _as_arrays(probabilities, labels)
+    confidence, correct = _confidence_and_correct(rows, y)
+    order = np.argsort(-confidence, kind="stable")
+    ranked_correct = correct[order]
+    ranked_confidence = confidence[order]
+    n = len(rows)
+
+    curve: list[dict[str, Any]] = []
+    for coverage in coverages:
+        if not 0 < coverage <= 1:
+            raise ValueError(f"coverage must be in (0, 1], got {coverage}")
+        keep = max(1, math.ceil(coverage * n))
+        curve.append(
+            {
+                "coverage": float(coverage),
+                "n_kept": keep,
+                "accuracy": float(ranked_correct[:keep].mean()),
+                "min_confidence": float(ranked_confidence[keep - 1]),
+            }
+        )
+
+    selective = {
+        f"{c:g}": float(ranked_correct[: max(1, math.ceil(c * n))].mean())
+        for c in SELECTIVE_COVERAGES
+    }
+    # Trapezoid over the grid; only comparable between runs scored on the same grid.
+    xs = [point["coverage"] for point in curve]
+    risks = [1.0 - point["accuracy"] for point in curve]
+    aurc = float(np.trapezoid(risks, xs) / (xs[-1] - xs[0])) if len(xs) > 1 else None
+    return {"curve": curve, "selective_accuracy": selective, "aurc": aurc}
+
+
 def summarize(
     probabilities: Sequence[Sequence[float]],
     labels: Sequence[int],
@@ -335,6 +435,7 @@ def summarize(
     confidence, correct = _confidence_and_correct(rows, y)
     bins = equal_mass_bins(probabilities, labels, n_bins)
     total = sum(b.count for b in bins)
+    coverage = risk_coverage(probabilities, labels)
     return {
         "n": len(rows),
         "accuracy": float(correct.mean()),
@@ -346,6 +447,8 @@ def summarize(
         "auroc_confidence": auroc(confidence, correct),
         "mean_confidence": float(confidence.mean()),
         "mean_options": float(np.mean([r.size for r in rows])),
+        "selective_accuracy": coverage["selective_accuracy"],
+        "aurc": coverage["aurc"],
         "n_bins": len(bins),
         "bins": [asdict(b) | {"gap": b.gap} for b in bins],
     }
@@ -446,6 +549,9 @@ class Report:
         by_family: Metrics per task family.
         by_qtype: Metrics per primitive.
         controls: Metrics for the uniform and base-rate negative controls.
+        skill: Brier skill against each control — the headline calibration number, because
+            unlike ECE it cannot be won by refusing to commit.
+        risk_coverage: The full risk-coverage curve over every prediction.
         meta: Provenance — run id, model, quantization, temperature, dataset, commit.
     """
 
@@ -454,6 +560,8 @@ class Report:
     by_family: dict[str, dict[str, Any]] = field(default_factory=dict)
     by_qtype: dict[str, dict[str, Any]] = field(default_factory=dict)
     controls: dict[str, dict[str, Any]] = field(default_factory=dict)
+    skill: dict[str, Any] = field(default_factory=dict)
+    risk_coverage: dict[str, Any] = field(default_factory=dict)
     meta: dict[str, Any] = field(default_factory=dict)
 
     def to_json(self) -> dict[str, Any]:
@@ -465,6 +573,8 @@ class Report:
             "by_family": self.by_family,
             "by_qtype": self.by_qtype,
             "controls": self.controls,
+            "skill": self.skill,
+            "risk_coverage": self.risk_coverage,
         }
 
 
@@ -511,13 +621,31 @@ def build_report(
             base_rate_probabilities(control_fit, predictions), labels, n_bins
         )
 
+    overall = summarize(probs, labels, n_bins)
+    # Skill against every control we computed. `base_rate` is the one that matters: it is the
+    # strategy that beats us on ECE, so beating it on a proper scoring rule is the claim.
+    skill = {
+        name: {
+            "brier_multiclass": brier_skill_score(
+                overall["brier_multiclass"], control["brier_multiclass"]
+            ),
+            "brier_top_label": brier_skill_score(
+                overall["brier_top_label"], control["brier_top_label"]
+            ),
+            "accuracy_gain": overall["accuracy"] - control["accuracy"],
+        }
+        for name, control in controls.items()
+    }
+
     return Report(
-        overall=summarize(probs, labels, n_bins),
+        overall=overall,
         by_option_count=summarize_by(
             probs, labels, [option_count_bucket(p.n_options) for p in predictions], n_bins
         ),
         by_family=summarize_by(probs, labels, [p.family for p in predictions], n_bins),
         by_qtype=summarize_by(probs, labels, [p.qtype for p in predictions], n_bins),
         controls=controls,
+        skill=skill,
+        risk_coverage=risk_coverage(probs, labels),
         meta=dict(meta or {}),
     )

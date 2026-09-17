@@ -242,12 +242,25 @@ targeting the measurement.
   row count its VRAM model allows rather than trying to find the optimum; the difference
   between 7 and 8 rows is 49 ms, inside the noise of the effect being chased.
 
+  **Root cause of the cliff, confirmed 2026-09-17: the Windows NVIDIA driver's CUDA sysmem
+  fallback.** Past the card's capacity the driver serves allocations out of host RAM over PCIe
+  instead of raising, so an over-budget run gets slower rather than failing. Setting
+  "CUDA - Sysmem Fallback Policy" to "Prefer No Sysmem Fallback" in NVIDIA Control Panel turns
+  it back into an `OutOfMemoryError`; it is now a required setting in `docs/windows-setup.md`
+  and `uv run task doctor` probes for it (by behaviour, not by reading the setting, which lives
+  in the driver's binary profile database). The ceiling below stays regardless — the engine must
+  not depend on a control-panel preference on a machine we do not own.
+
   **The budget was rewritten to match.** It used to spend a fraction of free VRAM, which says
   nothing about where the peak lands. It now predicts the peak and holds it under
-  `PEAK_CEILING_FRACTION` (0.92 of total, 22.08 GiB here — just under the measured cliff),
-  using a per-row cost of `PEAK_BYTES_PER_CACHE_BYTE` times the cache bytes a row actually
-  holds: **1.4x without reuse, 2.1x with it**, both derived from the peaks in the table rather
-  than estimated. Budgeting against a predicted peak is the point: the failure mode here is
+  a per-hardware ceiling, using a per-row cost of `peak_bytes_per_cache_byte` times the cache
+  bytes a row actually holds: **1.4x without reuse, 2.1x with it**, both derived from the peaks
+  in the table rather than estimated. These are **not constants**: they live in
+  `src/s1decide/hardware.py` keyed by the same `hardware:` names the training configs use
+  (`rtx3090_windows`: ceiling 0.92, reuse off, **measured**; `h100_linux`: ceiling 0.95, reuse
+  on, **assumed**; `unknown`: 0.90, reuse off, conservative). Every profile carries a `measured`
+  flag so an assumed constant can never be quoted as a finding, and the active profile is
+  recorded in each run's `meta`. Budgeting against a predicted peak is the point: the failure mode here is
   silent slowness, not an exception, so a budget that only avoids OOM avoids nothing.
 
   With that budget the engine picks **7 rows** with reuse off and 4 with it on, and the default
@@ -260,7 +273,11 @@ targeting the measurement.
   | peak VRAM | 21.63 GiB | 21.69 GiB |
 
   **14.3% faster at the same peak.** `BroadcastCache` stays in the tree and `--buffer-reuse`
-  turns it on, because it does win on a card with headroom to spare — but it loses on this one,
+  turns it on, because it does win on a card with headroom to spare — **and it is expected to
+  win on the H100, where 80 GiB means rows per pass is not VRAM-bound and reuse's ~1% costs
+  nothing in rows.** The `h100_linux` profile therefore defaults it **on**, marked `measured:
+  False`: that expectation is an assumption until someone re-runs this sweep on an H100, and
+  the flag exists so nobody mistakes it for a result. On this card it loses,
   and the honest summary of option C's first move is that it was a small win that bought a
   larger loss, and the measurement is what found that out.
 

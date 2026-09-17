@@ -37,6 +37,9 @@ dependencies = [
     "torchao==0.17.0",
     # Windows gets Triton from the triton-windows wheel; on Linux torch brings its own.
     "triton-windows==3.6.0.post26 ; sys_platform == 'win32'",
+    # Arrives transitively via unsloth, but `uv run task gpu-kill` and the doctor's per-process
+    # VRAM reporting import it directly, so it is declared rather than relied on by accident.
+    "psutil>=6,<9",
 ]
 
 [project.optional-dependencies]

@@ -228,10 +228,13 @@ def report_from_predictions(
         control_fit=val_predictions,
         n_bins=config.n_bins,
     )
+    # The controls are fitted on the same validation split for both reports: temperature
+    # scales the *model*, not the control, so the control is identical either way. Computing it
+    # twice is what lets the calibrated report carry its own Brier skill score.
     calibrated = build_report(
         test_predictions,
         temperature=temperatures,
-        control_fit=None,
+        control_fit=val_predictions,
         n_bins=config.n_bins,
     )
     val_uncalibrated = build_report(val_predictions, temperature=1.0, n_bins=config.n_bins)
@@ -263,6 +266,10 @@ def report_from_predictions(
         "by_qtype": uncalibrated.by_qtype,
         "by_qtype_calibrated": calibrated.by_qtype,
         "controls": uncalibrated.controls,
+        "skill": uncalibrated.skill,
+        "skill_calibrated": calibrated.skill,
+        "risk_coverage": uncalibrated.risk_coverage,
+        "risk_coverage_calibrated": calibrated.risk_coverage,
         "validation": {
             "overall": val_uncalibrated.overall,
             "overall_calibrated": val_calibrated.overall,
@@ -274,11 +281,11 @@ def _headline(report: dict[str, Any]) -> str:
     """One-line summary for the console. The file is the source of truth, not this."""
 
     def row(name: str, s: dict[str, Any]) -> str:
-        auroc = s.get("auroc_confidence")
+        sel = s.get("selective_accuracy", {})
         return (
             f"  {name:22} n={s['n']:5d}  acc={s['accuracy']:.4f}  ECE={s['ece']:.4f}  "
             f"Brier={s['brier_top_label']:.4f}  NLL={s['nll']:.4f}  "
-            f"AUROC={'n/a' if auroc is None else f'{auroc:.4f}'}"
+            f"acc@80={sel.get('0.8', float('nan')):.4f}  acc@90={sel.get('0.9', float('nan')):.4f}"
         )
 
     lines = [
@@ -287,6 +294,15 @@ def _headline(report: dict[str, Any]) -> str:
     ]
     for name, s in report.get("controls", {}).items():
         lines.append(row(f"control: {name}", s))
+    # The headline: a proper scoring rule against the control that beats us on ECE.
+    for label, key in (("uncalibrated", "skill"), ("calibrated", "skill_calibrated")):
+        skill = report.get(key, {}).get("base_rate")
+        if skill:
+            lines.append(
+                f"  BSS vs base rate ({label:12}) multiclass={skill['brier_multiclass']:+.4f}  "
+                f"top-label={skill['brier_top_label']:+.4f}  "
+                f"accuracy gain={skill['accuracy_gain']:+.4f}"
+            )
     return "\n".join(lines)
 
 
@@ -353,7 +369,13 @@ def run(config: RunConfig, out_root: Path | None = None) -> Path:
         val_predictions=val_predictions,
         calibration=calibration,
         coverage={resolved.val_split: val_coverage, resolved.split: test_coverage},
-        extra_meta={"timing": {resolved.val_split: val_timing, resolved.split: test_timing}},
+        extra_meta={
+            "timing": {resolved.val_split: val_timing, resolved.split: test_timing},
+            # Which per-hardware VRAM tuning the engine ran under. It does not change the
+            # numbers — rows per pass is an allocation choice, not a numerical one — but a
+            # result should record the configuration that produced it.
+            "hardware": getattr(getattr(engine, "hardware", None), "name", None),
+        },
     )
     (directory / "metrics.json").write_text(
         json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n"

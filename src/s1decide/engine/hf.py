@@ -16,12 +16,13 @@ import contextlib
 import copy
 import time
 from collections.abc import Sequence
-from typing import Any, ClassVar
+from typing import Any
 
 import torch
 
 from s1decide.engine.base import EngineOutput
 from s1decide.engine.qwen3_5_patch import patch_gated_deltanet
+from s1decide.hardware import HardwareProfile, detect_profile, get_profile
 from s1decide.tokens import allowed_token_ids
 
 __all__ = [
@@ -219,6 +220,9 @@ class HFEngine:
     Args:
         model: A loaded causal LM in eval mode (any device, any dtype, quantized or not).
         tokenizer: Its tokenizer. Only ``encode`` is used.
+        hardware: Hardware profile name (``rtx3090_windows``, ``h100_linux``) or profile,
+            supplying the VRAM ceiling, the per-row peak cost and the buffer-reuse default.
+            Detected from the CUDA device when omitted.
         rows_per_pass: Pin the rows per pass, bypassing the VRAM budget. ``None`` (the
             default) budgets from free VRAM. Only for deliberate measurement: too high a pin
             pages to host memory on Windows rather than raising OOM.
@@ -234,21 +238,6 @@ class HFEngine:
     #: matrix at a time (up to ~180 MB in bf16 on the 27B) and the pass needs activations.
     VRAM_RESERVE_BYTES = 768 * 2**20
 
-    #: The predicted peak may reach this fraction of total VRAM. Above it, this card does not
-    #: raise OOM — the Windows driver pages device memory to host and the call silently takes
-    #: 3-6x longer. Measured on the 27B at a 1,617-token prefix: 21.90 GiB was fine (5.8 s for
-    #: 64 questions), 22.34 GiB was not (16.0 s) and 22.78 GiB was far worse (37.3 s).
-    #: 0.92 of 24 GiB is 22.08 GiB, just below the observed cliff. See ADR 0003.
-    PEAK_CEILING_FRACTION = 0.92
-
-    #: Peak VRAM a pass costs per broadcast row, as a multiple of that row's cache bytes.
-    #: Without buffer reuse a pass costs ~1.4x the cache it holds: activations, the suffix
-    #: logits, and the batch-1 copy that `expand_cache` materialises from. With reuse it costs
-    #: ~2.1x, because the expanded buffer and the pristine batch-1 source it refills from both
-    #: stay resident for the whole call instead of being freed between passes. Both derived
-    #: from the measured peaks in ADR 0003's rows-per-pass sweep, not estimated.
-    PEAK_BYTES_PER_CACHE_BYTE: ClassVar[dict[bool, float]] = {False: 1.4, True: 2.1}
-
     def __init__(
         self,
         model: Any,
@@ -257,7 +246,8 @@ class HFEngine:
         max_rows_per_pass: int = 16,
         rows_per_pass: int | None = None,
         patch_gdn: bool = True,
-        reuse_buffer: bool = False,
+        reuse_buffer: bool | None = None,
+        hardware: str | HardwareProfile | None = None,
     ) -> None:
         if max_rows_per_pass < 1:
             raise ValueError("max_rows_per_pass must be >= 1")
@@ -267,12 +257,18 @@ class HFEngine:
         # answered by measuring the peak at N rows, rather than by tuning the budget's fudge
         # factor until it prints N — which would be fitting the estimate to the answer.
         self.rows_per_pass = rows_per_pass
-        # Off by default, and that is the measured answer rather than the obvious one: keeping
-        # one expanded buffer alive across passes saves ~1% of the call but holds ~2.1x its cache
-        # bytes instead of ~1.4x, which costs three rows per pass under the same VRAM ceiling.
-        # Three rows are worth far more than 1% (ADR 0003). True is kept so the two remain
-        # comparable, and because it wins on a card with headroom to spare.
-        self.reuse_buffer = reuse_buffer
+        # The VRAM ceiling and the per-row peak cost are properties of the machine, not the
+        # model, so they come from a hardware profile rather than a constant fitted on one card.
+        self.hardware = (
+            hardware
+            if isinstance(hardware, HardwareProfile)
+            else (get_profile(hardware) if hardware else detect_profile())
+        )
+        # Default from the profile: off on the 3090, where keeping one expanded buffer alive
+        # saves ~1% of the call but costs three rows per pass under the VRAM ceiling, and three
+        # rows are worth ~15%. Expected to flip on an 80 GiB card, where rows are not the
+        # constraint — and marked unmeasured there until someone runs the sweep (ADR 0003).
+        self.reuse_buffer = self.hardware.reuse_buffer if reuse_buffer is None else reuse_buffer
         self.model = model.eval()
         self.tokenizer = tokenizer
         self.max_rows_per_pass = max_rows_per_pass
@@ -303,7 +299,8 @@ class HFEngine:
         max_rows_per_pass: int = 16,
         rows_per_pass: int | None = None,
         prefer_fla: bool = True,
-        reuse_buffer: bool = False,
+        reuse_buffer: bool | None = None,
+        hardware: str | HardwareProfile | None = None,
         **kwargs: Any,
     ) -> HFEngine:
         """Load a causal LM text-only with SDPA attention and wrap it.
@@ -381,6 +378,7 @@ class HFEngine:
             max_rows_per_pass=max_rows_per_pass,
             rows_per_pass=rows_per_pass,
             reuse_buffer=reuse_buffer,
+            hardware=hardware,
         )
 
     def encode(self, text: str) -> list[int]:
@@ -458,6 +456,7 @@ class HFEngine:
                 "rows_per_pass": rows_per_pass,
                 "cache_bytes_per_row": cache_bytes_per_row,
                 "reuse_buffer": self.reuse_buffer,
+                "hardware": self.hardware.to_json(),
                 "cache_expanded": expanded,
                 "gdn_patched": self.gdn_patched,
                 "prefill_seconds": prefill_seconds,
@@ -499,10 +498,11 @@ class HFEngine:
         # reach if another process holds part of the card — `free` excludes blocks our allocator
         # has reserved but is not using, which we can reuse, so those are added back.
         ceiling = min(
-            int(total * self.PEAK_CEILING_FRACTION), free + reserved - self.VRAM_RESERVE_BYTES
+            int(total * self.hardware.peak_ceiling_fraction),
+            free + reserved - self.VRAM_RESERVE_BYTES,
         )
         headroom = ceiling - allocated
-        cost = per_row * self.PEAK_BYTES_PER_CACHE_BYTE[bool(self.reuse_buffer)]
+        cost = per_row * self.hardware.peak_bytes_per_cache_byte[bool(self.reuse_buffer)]
         affordable = max(1, int(headroom // cost))
         return min(self.max_rows_per_pass, affordable), per_row
 
