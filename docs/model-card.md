@@ -215,6 +215,12 @@ All in **4-bit on the 3090**, matching the deployment (ADR 0006).
 **TypeSafe public workflow evals**, strict common subset. Source:
 `results/<headtohead-run>/metrics.json`.
 
+The 4-bit-fairness argument above applies to the **local LLM baselines only** — there it makes
+the comparison fair, because every system runs at the same quantization on the same card. It
+does **not** apply here. Jev is a hosted API: we do not know or control what it runs on, so the
+difference between the two columns is a difference of **model and system, not of hardware**.
+Nothing in this table should be read as "the same model at different precisions".
+
 | | s1decide v0.1 | TypeSafe published |
 |---|---|---|
 | common subset size | TBD | TBD |
