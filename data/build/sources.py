@@ -41,6 +41,10 @@ class Source:
         config: Dataset config name, if any.
         split: Source split to read.
         revision: Dataset revision, for parquet-branch loads.
+        locale: Keep only rows with this ``locale``. MASSIVE ships all 51 languages in one
+            config, and each language is a separate family to us.
+        normaliser: Which normaliser to use, when several families share one. Defaults to
+            ``family``.
         max_rows: Cap, to keep the build quick and the families balanced.
         note: Anything a reader should know about the substitution or the mapping.
     """
@@ -53,6 +57,8 @@ class Source:
     config: str | None = None
     split: str = "train"
     revision: str | None = None
+    locale: str | None = None
+    normaliser: str | None = None
     max_rows: int | None = None
     canonical_repo: str | None = None
     note: str = ""
@@ -79,6 +85,87 @@ SOURCES: tuple[Source, ...] = (
         config="plus",
         max_rows=4000,
         note="151 intents including out-of-scope — the highest-cardinality source we have.",
+    ),
+    # MASSIVE: 60 intents in 51 languages, one `default` config, CC-BY-4.0 first-party.
+    #
+    # Capped at 3,000 rows per locale (9,000 trained on out of 34,542 available per language).
+    # The cap is a balance decision, not a size one: banking77 and clinc_oos contribute ~15.8k
+    # and ~16.1k training rows and go_emotions ~4.8k, so 3k per locale puts each MASSIVE
+    # language at roughly go_emotions' weight and well under either intent source. Uncapped,
+    # MASSIVE's three locales would be ~104k rows and would outweigh everything else combined,
+    # and the model would learn "predict an intent" rather than "answer the question asked".
+    #
+    # 60 intents is above the 26-label ceiling, so every row goes through two-stage expansion.
+    Source(
+        family="massive_en",
+        repo="AmazonScience/massive",
+        license="cc-by-4.0",
+        primitive="choice",
+        role="train",
+        revision="refs/convert/parquet",
+        locale="en-US",
+        normaliser="massive",
+        max_rows=3000,
+        note="English. The control locale: the other four are read against it.",
+    ),
+    Source(
+        family="massive_tr",
+        repo="AmazonScience/massive",
+        license="cc-by-4.0",
+        primitive="choice",
+        role="train",
+        revision="refs/convert/parquet",
+        locale="tr-TR",
+        normaliser="massive",
+        max_rows=3000,
+        note="Turkish. Agglutinative and Latin-script; the non-English language we most want "
+        "to work, and the reason MASSIVE is in the corpus at all.",
+    ),
+    Source(
+        family="massive_de",
+        repo="AmazonScience/massive",
+        license="cc-by-4.0",
+        primitive="choice",
+        role="train",
+        revision="refs/convert/parquet",
+        locale="de-DE",
+        normaliser="massive",
+        max_rows=3000,
+        note="German. A second Latin-script European language, so 'multilingual' is not one "
+        "language plus English.",
+    ),
+    # The unseen-language OOD pair. Never in train or val. Two points chosen to separate two
+    # different failures: fr-FR is close to the training languages (Latin script,
+    # Indo-European, shares vocabulary with English and German), ja-JP is far from all of them
+    # (non-Latin script, no shared script or family, and tokenises quite differently). If
+    # accuracy holds on French but collapses on Japanese, the failure is script and
+    # tokenisation rather than language transfer, and the two sets tell us which.
+    Source(
+        family="massive_fr",
+        repo="AmazonScience/massive",
+        license="cc-by-4.0",
+        primitive="choice",
+        role="ood",
+        revision="refs/convert/parquet",
+        locale="fr-FR",
+        normaliser="massive",
+        split="test",
+        max_rows=1000,
+        note="OOD, unseen language, NEAR: same script and family as the training locales.",
+    ),
+    Source(
+        family="massive_ja",
+        repo="AmazonScience/massive",
+        license="cc-by-4.0",
+        primitive="choice",
+        role="ood",
+        revision="refs/convert/parquet",
+        locale="ja-JP",
+        normaliser="massive",
+        split="test",
+        max_rows=1000,
+        note="OOD, unseen language, FAR: different script, no shared family, different "
+        "tokenisation behaviour.",
     ),
     Source(
         family="go_emotions",
@@ -191,6 +278,18 @@ def _clinc(dataset: Any) -> Iterator[dict[str, Any]]:
     return _intent_rows(dataset, "text", "intent", "Which intent does this request have?")
 
 
+def _massive(dataset: Any) -> Iterator[dict[str, Any]]:
+    """One Choice per utterance over MASSIVE's 60 intents.
+
+    The question is asked in English for every locale on purpose. The task is intent
+    classification, not translation, and holding the instruction fixed means a locale's score
+    measures how well the model reads *that language's* utterance rather than how well it
+    handles a differently-worded prompt. It also keeps the option labels identical across
+    locales, so the two-stage expansion produces comparable negatives everywhere.
+    """
+    return _intent_rows(dataset, "utt", "intent", "Which intent does this request have?")
+
+
 def _go_emotions(dataset: Any) -> Iterator[dict[str, Any]]:
     """One Noul per sampled emotion: the positives, plus a few negatives for balance."""
     names = _class_names(dataset, "labels")
@@ -287,6 +386,7 @@ def _sciq(dataset: Any) -> Iterator[dict[str, Any]]:
 _NORMALISERS: dict[str, Callable[[Any], Iterator[dict[str, Any]]]] = {
     "banking77": _banking77,
     "clinc_oos": _clinc,
+    "massive": _massive,
     "go_emotions": _go_emotions,
     "mmlu": _mmlu,
     "commonsense_qa": _commonsense_qa,
@@ -316,8 +416,19 @@ def load_source(source: Source) -> list[dict[str, Any]]:
         if source.config
         else load_dataset(source.repo, **kwargs)
     )
+    if source.locale is not None:
+        # MASSIVE ships every language in one split, so the locale filter is part of loading
+        # rather than of normalising — the normaliser stays a plain intent mapper.
+        before = len(dataset)
+        dataset = dataset.filter(lambda row: row["locale"] == source.locale)
+        if len(dataset) == 0:
+            raise ValueError(
+                f"{source.family}: locale {source.locale!r} matched no rows of "
+                f"{before} in {source.repo} ({source.split})"
+            )
+
     rows: list[dict[str, Any]] = []
-    for row in _NORMALISERS[source.family](dataset):
+    for row in _NORMALISERS[source.normaliser or source.family](dataset):
         rows.append(row)
         if source.max_rows is not None and len(rows) >= source.max_rows:
             break
