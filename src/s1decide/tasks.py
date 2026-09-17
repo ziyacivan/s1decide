@@ -679,11 +679,15 @@ def task_eval(argv: list[str]) -> int:
     return run_eval_main(argv)
 
 
-register_not_implemented(
-    "bench",
-    "Latency vs number of questions on the current engine",
-    "Phase 0 step 6; needs eval/latency_bench.py and an engine",
-)
+@register("bench", "Latency vs number of questions on the current engine")
+def task_bench(argv: list[str]) -> int:
+    """Run `eval/latency_bench.py`. Arguments are passed straight through."""
+    ensure_repo_on_path()
+    from eval.latency_bench import main as bench_main
+
+    return bench_main(argv)
+
+
 register_not_implemented(
     "serve",
     "Run the /decide FastAPI server",

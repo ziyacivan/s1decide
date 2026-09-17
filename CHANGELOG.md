@@ -56,6 +56,11 @@ this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `src/s1decide/calibrate.py` (per-option-count-bucket temperature scaling, golden-section fit
   on the inverse temperature, `calibration.json` that refuses a quantization mismatch).
 - `docs/dataset-card.md`: sources, licences and the coverage limit.
+- Phase 0 Step 6: `eval/latency_bench.py` (`uv run task bench`) — median latency at 1/4/16/64
+  questions over 20 repeats, the one-call-per-question comparison, and a least-squares
+  decomposition of the suffix phase into per-pass and per-token cost. `eval/summary.py` gains a
+  generated `LATENCY.md`. `docs/adr/0003-latency-target.md` records that the "64 questions
+  < 2x one question" target is missed (4.31x) and why, with options and a recommendation.
 
 ### Notes
 
