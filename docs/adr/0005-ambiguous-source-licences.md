@@ -98,8 +98,18 @@ requirements on `data/build/`, not guidance, and each gets a test.
 structured states. No text from a refused or eval-only source ever appears in a `Score` row.
 
 **(b) Labels from two independent open-weight teachers.** Both score a **defined, written
-rubric**; no closed APIs, per `CLAUDE.md`'s hard rules. Keep only rows where the two teachers
-**agree exactly or are within ±1 level**; drop the rest.
+rubric**; no closed-weight models and no hosted APIs, per `CLAUDE.md`'s hard rules — which since
+2026-09-17 permit any permissively licensed open-weight checkpoint run locally, whoever
+published it. Keep only rows where the two teachers **agree exactly or are within ±1 level**;
+drop the rest.
+
+**Teacher 2 is selected on tractability, never on agreement.** The criteria are: does it load
+cleanly on this machine, what throughput does it reach, and how often does it fail to produce a
+parseable label. **Agreement with teacher 1 is a finding, not a selection criterion**, and the
+distinction is the whole point of using two teachers. Picking the teacher that agrees most would
+manufacture the consensus the agreement rate is supposed to measure, and would bias the corpus
+toward exactly the rows where both models are confidently wrong together. The agreement rate is
+therefore measured and published for whichever teacher is chosen, after it is chosen.
 
 **The teachers run with reasoning ON, at low effort — not as single-token scorers.** This is
 deliberate and is the point of the exercise: we are distilling *deliberate, System-2* judgements

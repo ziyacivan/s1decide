@@ -688,6 +688,57 @@ def task_gpu_kill(argv: list[str]) -> int:
     return 0
 
 
+@register("teach-items", "Build the state/question pairs the teacher run labels")
+def task_teach_items(argv: list[str]) -> int:
+    """Emit ``data/processed/teach_items.jsonl`` from the training split.
+
+    Drawing the states from ``train.jsonl`` is what enforces ADR 0005 rule (a): the licence gate
+    has already refused anything that may not be trained on, so nothing else can get in.
+    """
+    import argparse
+    import json
+
+    ensure_repo_on_path()
+    from data.build.teach import build_teach_items
+
+    parser = argparse.ArgumentParser(prog="task teach-items")
+    parser.add_argument("--limit", type=int, default=8000)
+    parser.add_argument("--out", default="data/processed/teach_items.jsonl")
+    args = parser.parse_args(argv)
+
+    root = repo_root()
+    source = root / "data" / "processed" / "train.jsonl"
+    if not source.is_file():
+        print("no training split; run `uv run task data` first", file=sys.stderr)
+        return 1
+    rows = [
+        json.loads(line) for line in source.read_text(encoding="utf-8").split("\n") if line.strip()
+    ]
+    items = build_teach_items(rows, limit=args.limit)
+    out = root / args.out
+    out.write_text(
+        "".join(json.dumps(item, ensure_ascii=False, sort_keys=True) + "\n" for item in items),
+        encoding="utf-8",
+        newline="\n",
+    )
+    print(f"wrote {len(items)} items -> {out.relative_to(root)}")
+    return 0
+
+
+@register("teach", "Label Score rows with an open-weight teacher (detached, resumable)")
+def task_teach(argv: list[str]) -> int:
+    """Run or inspect a teacher-labelling job.
+
+    ``--detach`` starts it in its own process group so it outlives this session; ``--status
+    <run_id>`` reports rows done, throughput, ETA and heartbeat age from outside the process.
+    See `data/build/teach_run.py`.
+    """
+    ensure_repo_on_path()
+    from data.build.teach_run import main as teach_main
+
+    return teach_main(argv)
+
+
 @register("setup", "uv sync the project environment")
 def task_setup(argv: list[str]) -> int:
     """Sync the environment with ``uv``. Extra arguments are passed to ``uv sync``."""

@@ -77,9 +77,13 @@ Change these only with an ADR in `docs/adr/` and explicit human approval.
 
 - **No private/enterprise data in this repo, in training data, in tests, in
   fixtures, in examples.** Public or synthetic only. If unsure, it's private.
-- **No distillation from closed APIs** (OpenAI, Anthropic, Google, TypeSafe).
-  Teacher models for synthetic labels must be open-weight (Qwen, DeepSeek,
-  Gemma, etc.). Record teacher + license in the dataset card.
+- **No distillation from closed-weight models or hosted APIs.** Open-weight
+  models under permissive licences, run locally, are permitted **regardless of
+  publisher**; record model ID, licence and revision in the dataset card.
+  (Amended 2026-09-17. The earlier wording named OpenAI, Anthropic, Google and
+  TypeSafe — those were examples of *closed APIs*, not banned organisations. An
+  Apache-2.0 checkpoint downloaded and run on our own GPU is not an API call,
+  whoever released it.)
 - **No fabricated numbers.** Every number in a README, model card or report
   must be produced by a script in `eval/` and committed as JSON under
   `results/`. Never type a metric by hand.
