@@ -78,6 +78,70 @@ will now train on. Every row of the Tier-2 set whose **state hash appears in any
 splits is dropped**, and the number dropped is reported in `metrics.json`. This is enforced by a
 test, not by care.
 
+## Step 2c — MASSIVE, locale-filtered (data-engineer)
+
+Approved 2026-09-17. MASSIVE loads only from its parquet branch's single `default` config
+(1,784,670 rows, all 51 locales), so the loader filters by `locale` and `partition`.
+
+- **Train locales: `en-US`, `tr-TR`, `de-DE`**, capped per locale so MASSIVE cannot dominate.
+  Proposed cap: **3,000 rows per locale (9,000 total)**. Rationale from the committed manifest:
+  banking77 and clinc_oos contribute ~15.8k and ~16.1k training rows each, and go_emotions
+  ~4.8k; 3k per locale puts MASSIVE's three train locales at roughly go_emotions' weight and
+  well under either intent source, so it adds multilingual coverage without reshaping the mix.
+- **Held-out locales: `fr-FR` and `ja-JP`**, never in train or val, forming an **unseen-language
+  OOD set**. Chosen deliberately: `fr-FR` is close to the training languages (Latin script,
+  Indo-European) and `ja-JP` is far from all of them (non-Latin script, different family). Two
+  points on that axis say more than two similar languages would — if accuracy holds on French
+  but collapses on Japanese, the failure is script and tokenisation rather than language
+  transfer, and we can see which.
+- MASSIVE has 60 intents, so it is above the 26-label ceiling and goes through the same
+  two-stage expansion.
+
+## Step 2d — Stage-1 class balance (data-engineer) — **blocks S1**
+
+Added 2026-09-17 after the first full build. Stage-1 rows are **~83% of the corpus at roughly
+76:1 no:yes**, because expanding a 77- or 151-option question produces one positive and many
+negatives. Training on that unmodified teaches the model to answer "no".
+
+1. **Per-question negative subsampling, TRAIN ONLY.** Keep the positive plus `k` hard negatives,
+   `k` configurable, **default 6**. "Hard" means the highest zero-shot `P(yes)` from the
+   committed baseline run; fall back to uniform random when no baseline is available, and record
+   which was used. **`val` and `test` keep the full stage-1 fan-out**, so evaluation still sees
+   the real class balance and the real task.
+2. **Family-balanced sampling weights** in the training config, with the **effective mix printed
+   and saved next to the run**, not just the raw counts.
+3. **Manifest and `dataset-build.md` report raw rows and effective training mix separately.**
+
+Acceptance: a test asserting the train stage-1 `no:yes` ratio is **≤ 8:1** after subsampling.
+
+## Step 2e — Teacher-labelled `Score` (data-engineer) — approved, needs a final go
+
+Approved 2026-09-17 including the ~30 GB download and overnight GPU time, on these terms:
+
+- **Teachers run with reasoning ON at low effort, not single-token.** We are distilling
+  deliberate System-2 judgements into a System-1 student; a teacher answering in one token is
+  not doing the thing we want to copy. Recorded in ADR 0005 and the dataset card.
+- **Teacher 1: `Qwen/Qwen3.8-27B` at 4-bit** (already local).
+  **Teacher 2: a different family**, open-weight, permissive licence, fits the 3090 at 4-bit.
+  Shortlist to verify before downloading: `microsoft/phi-4-reasoning` (MIT),
+  Mistral's Apache-2.0 reasoning small model, `allenai/OLMo-2-32B-Instruct` (Apache-2.0).
+  **Licence and fit are verified and proposed for approval before any download.**
+- **Target 4,000–6,000 rows.** Keep exact-agreement and ±1-neighbour only; record agreement rate,
+  ±1 rate, drop rate, both teacher IDs and revisions, both prompt hashes, and the reasoning
+  setting.
+- **Run overnight**, logging VRAM peak and wall time. **Close Unsloth Studio first.**
+- Amendment B's leakage guard applies to every labelled state.
+
+## Step 2f — Tier-2 leakage drop (eval-scientist) — blocks any Tier-2 number
+
+Confirmed 2026-09-17. The first full build found **217 of 1,750** external rows sharing a state
+hash with our training data. Before any Tier-2 figure is reported:
+
+- drop the overlapping rows,
+- **print the dropped count in every summary**, and
+- state in the model card that `pngwn/system-one-decisions` is derived from sources we train on,
+  so Tier 2 is **"external" in labelling, not in distribution**.
+
 ## Step 3 — S1 QLoRA (training-engineer)
 
 `train/sft_lora.py`, `train/configs/sft_3090.yaml`, `uv run task smoke`.

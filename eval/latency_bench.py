@@ -110,6 +110,7 @@ class BenchConfig:
     separate_repeats: int = 2
     run_id: str = ""
     reuse_buffer: bool = True
+    rows_per_pass: int | None = None
 
     def to_json(self) -> dict[str, Any]:
         """Serialise for the output file."""
@@ -420,6 +421,7 @@ def run(config: BenchConfig, out_root: Path | None = None) -> Path:
         device_map="cuda",
         local_files_only=True,
         reuse_buffer=config.reuse_buffer,
+        rows_per_pass=config.rows_per_pass,
     )
     state = make_state(engine.encode, config.state_tokens)
     print(f"  engine {engine.name} | state {len(engine.encode(state))} tokens")
@@ -625,6 +627,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--separate-repeats", type=int, default=BenchConfig.separate_repeats)
     parser.add_argument("--run-id", default="")
     parser.add_argument(
+        "--rows-per-pass",
+        type=int,
+        default=None,
+        help="pin rows per pass instead of budgeting from free VRAM (measurement only)",
+    )
+    parser.add_argument(
         "--no-buffer-reuse",
         action="store_true",
         help="restore the per-pass deep-copy path, to A/B ADR 0003 option C",
@@ -650,6 +658,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             separate_repeats=args.separate_repeats,
             run_id=args.run_id,
             reuse_buffer=not args.no_buffer_reuse,
+            rows_per_pass=args.rows_per_pass,
         )
     )
     return 0

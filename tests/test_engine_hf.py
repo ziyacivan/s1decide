@@ -535,3 +535,25 @@ def test_both_cache_paths_give_the_same_logits(
     assert copied.meta["reuse_buffer"] is False
     for a, b in zip(reused.logits, copied.logits):
         assert torch.allclose(torch.tensor(a), torch.tensor(b), atol=1e-5)
+
+
+def test_pinned_rows_per_pass_overrides_the_budget(
+    tiny_model, tokenizer, ticket_state, questions
+) -> None:
+    """Pinning is how "does N rows fit?" gets answered by measurement rather than by estimate."""
+    rendered = render(ticket_state, questions)
+    out = HFEngine(tiny_model, tokenizer, max_rows_per_pass=16, rows_per_pass=2).score(
+        rendered.prefix, rendered.suffixes, rendered.labels
+    )
+    assert out.meta["rows_per_pass"] == 2
+    assert out.meta["passes"] == 3
+    reference = HFEngine(tiny_model, tokenizer, max_rows_per_pass=16).score(
+        rendered.prefix, rendered.suffixes, rendered.labels
+    )
+    for a, b in zip(out.logits, reference.logits):
+        assert torch.allclose(torch.tensor(a), torch.tensor(b), atol=1e-5)
+
+
+def test_pinned_rows_per_pass_must_be_positive(tiny_model, tokenizer) -> None:
+    with pytest.raises(ValueError, match="rows_per_pass"):
+        HFEngine(tiny_model, tokenizer, rows_per_pass=0)

@@ -219,6 +219,9 @@ class HFEngine:
     Args:
         model: A loaded causal LM in eval mode (any device, any dtype, quantized or not).
         tokenizer: Its tokenizer. Only ``encode`` is used.
+        rows_per_pass: Pin the rows per pass, bypassing the VRAM budget. ``None`` (the
+            default) budgets from free VRAM. Only for deliberate measurement: too high a pin
+            pages to host memory on Windows rather than raising OOM.
         max_rows_per_pass: Upper bound on suffixes per forward pass. The broadcast cache
             costs VRAM per row — on Qwen3.8-27B roughly 150 MB of fp32 recurrent state plus
             ~65 KB per prefix token of KV — so large question sets are processed in chunks
@@ -237,11 +240,18 @@ class HFEngine:
         tokenizer: Any,
         *,
         max_rows_per_pass: int = 16,
+        rows_per_pass: int | None = None,
         patch_gdn: bool = True,
         reuse_buffer: bool = True,
     ) -> None:
         if max_rows_per_pass < 1:
             raise ValueError("max_rows_per_pass must be >= 1")
+        if rows_per_pass is not None and rows_per_pass < 1:
+            raise ValueError("rows_per_pass must be >= 1 when pinned")
+        # Pinning bypasses the VRAM budget entirely. It exists so "does N rows fit?" can be
+        # answered by measuring the peak at N rows, rather than by tuning the budget's fudge
+        # factor until it prints N — which would be fitting the estimate to the answer.
+        self.rows_per_pass = rows_per_pass
         # False restores the pre-ADR-0003-option-C path: deep-copy and re-expand the prefix
         # cache every pass. Kept so the two can be benchmarked against each other rather than
         # the improvement being asserted.
@@ -274,6 +284,7 @@ class HFEngine:
         dtype: torch.dtype = torch.bfloat16,
         device_map: str | dict[str, Any] = "cuda",
         max_rows_per_pass: int = 16,
+        rows_per_pass: int | None = None,
         prefer_fla: bool = True,
         reuse_buffer: bool = True,
         **kwargs: Any,
@@ -347,7 +358,13 @@ class HFEngine:
             model_name,
             **{k: v for k, v in kwargs.items() if k in {"local_files_only", "revision", "token"}},
         )
-        return cls(model, tokenizer, max_rows_per_pass=max_rows_per_pass, reuse_buffer=reuse_buffer)
+        return cls(
+            model,
+            tokenizer,
+            max_rows_per_pass=max_rows_per_pass,
+            rows_per_pass=rows_per_pass,
+            reuse_buffer=reuse_buffer,
+        )
 
     def encode(self, text: str) -> list[int]:
         """Tokenize without special tokens — the chat template already supplies them."""
@@ -450,6 +467,8 @@ class HFEngine:
                 tensor = getattr(layer, attr, None)
                 if torch.is_tensor(tensor):
                     per_row += tensor.numel() * tensor.element_size()
+        if self.rows_per_pass is not None:
+            return self.rows_per_pass, per_row
         if self.device.type != "cuda" or per_row == 0:
             return self.max_rows_per_pass, per_row
         # Device-free memory plus what the caching allocator already holds but is not using;
@@ -464,7 +483,12 @@ class HFEngine:
         free, _total = torch.cuda.mem_get_info(self.device)
         cached = torch.cuda.memory_reserved(self.device) - torch.cuda.memory_allocated(self.device)
         available = free + max(0, cached) - self.VRAM_RESERVE_BYTES
-        affordable = max(1, int(available * 0.55 // per_row) - 1)
+        # Without buffer reuse the expanded cache is transient: the allocator frees each pass's
+        # copy before the next is built, so only one is live at a time and there is no pristine
+        # copy to hold alongside it. The spare fractions below are what that difference is
+        # worth; both are validated against measured peaks in ADR 0003, not guessed.
+        fraction, spare = (0.55, 1) if self.reuse_buffer else (0.70, 0)
+        affordable = max(1, int(available * fraction // per_row) - spare)
         return min(self.max_rows_per_pass, affordable), per_row
 
     def _score_chunk(
