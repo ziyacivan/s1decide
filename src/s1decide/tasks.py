@@ -757,6 +757,19 @@ def task_teach_items(argv: list[str]) -> int:
     return 0
 
 
+@register("teach-overnight", "Run both teachers back to back, unattended")
+def task_teach_overnight(argv: list[str]) -> int:
+    """Chain teacher 1 then teacher 2 in one detached process.
+
+    Each leg keeps its own run directory and resume state, so a failure in the second cannot
+    cost the first. See `data/build/teach_overnight.py`.
+    """
+    ensure_repo_on_path()
+    from data.build.teach_overnight import main as overnight_main
+
+    return overnight_main(argv)
+
+
 @register("teach", "Label Score rows with an open-weight teacher (detached, resumable)")
 def task_teach(argv: list[str]) -> int:
     """Run or inspect a teacher-labelling job.

@@ -103,6 +103,32 @@ rubric**; no closed-weight models and no hosted APIs, per `CLAUDE.md`'s hard rul
 published it. Keep only rows where the two teachers **agree exactly or are within ±1 level**;
 drop the rest.
 
+### DECIDED (2026-09-18): teacher 2 is `openai/gpt-oss-20b` at effort **medium**
+
+Apache-2.0, 21B MoE with 3.6B active, run locally at MXFP4 — permitted under the amended
+distillation rule, which bans closed-weight models and hosted APIs rather than publishers.
+
+**Medium rather than low, and the reason is trace depth, not agreement.** At low effort its
+reasoning averages 77 tokens; at medium, 220. The point of using teachers with reasoning on is
+to distil *deliberate* judgements into a one-forward-pass student, and a 77-token trace is
+barely deliberation — it is a single-token answer with a sentence in front of it, which ADR
+0005 rule (b) exists to avoid. Medium costs 2.6 hours against 1.0 for the whole 6,000-row run,
+which is nothing next to teacher 1's 27.6.
+
+It is worth being explicit that medium **also** agrees with teacher 1 more often — 55.0% exact
+against low's 47.0% — and that **this played no part in the choice**. Selecting the teacher that
+agrees most would manufacture the consensus the agreement rate is supposed to measure. Had the
+depth argument pointed at low, low would have been chosen on 47%.
+
+**Runtime for teacher 1: bitsandbytes nf4, not llama.cpp.** A time-boxed experiment ran the same
+100 rows through `llama-server` with Q4_K_M and continuous batching at `--parallel 16`. It was
+**5.18x faster** — 0.312 rows/s against 0.060 — and truncated nothing. It also **disagreed with
+the nf4 path on 22% of judgements**: 78.0% exact, 94.0% within one level. The pre-agreed rule
+required both a 2.5x speed-up and 90% exact match, so the speed-up is declined. Two
+quantizations of one model giving different answers on a fifth of an ordinal task is not a
+runtime detail; adopting it would silently change what the teacher said. The client is kept at
+`src/s1decide/engine/llamacpp_client.py` as the seed of the GGUF engine.
+
 **Teacher 2 is selected on tractability, never on agreement.** The criteria are: does it load
 cleanly on this machine, what throughput does it reach, and how often does it fail to produce a
 parseable label. **Agreement with teacher 1 is a finding, not a selection criterion**, and the

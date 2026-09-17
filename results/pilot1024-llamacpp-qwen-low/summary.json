@@ -1,0 +1,17 @@
+{
+  "runtime": "llama.cpp",
+  "quantization": "Q4_K_M",
+  "parallel": 16,
+  "elapsed_seconds": 320.1,
+  "rows": 100,
+  "committed": 100,
+  "hit_cap_rate": 0.0,
+  "trace_tokens": {
+    "n": 100,
+    "mean": 528.64,
+    "p90": 745.0,
+    "max": 851.0
+  },
+  "tokens_per_second": 165.17098209086046,
+  "rows_per_second": 0.31244510837405504
+}
