@@ -140,6 +140,49 @@ negatives. Training on that unmodified teaches the model to answer "no".
 
 Acceptance: a test asserting the train stage-1 `no:yes` ratio is **≤ 8:1** after subsampling.
 
+## Step 2g — Genuine `Noul` supply (data-engineer) — **blocks S1**
+
+Added 2026-09-17, after the per-primitive mix was measured for the first time.
+
+A `qtype` count reported `Noul` at **78.9% of training**. The primitive we actually publish was
+**9.0%**, all of it from go_emotions. The other 69.9% were stage-1 rows: expanding a 60- or
+151-option question emits one `noul`-shaped row per candidate — *"is `card arrival` the intent
+of this message?"* — which is option membership, not a claim about the state. The two are
+indistinguishable in a `qtype` count and are not the same task.
+
+The gap exists because every NLI source that would normally supply `Noul` — SNLI, BoolQ, FEVER,
+MultiNLI — is share-alike and eval-only under ADR 0005.
+
+**Done:**
+
+1. **`primitive_mix()` reports every split per primitive with `stage1` and `genuine` counted
+   separately**, plus a `genuine_by_family` breakdown so a primitive carried by one source is
+   visible. In `manifest.json` under `by_primitive`.
+2. **`mmlu_noul`**, a second genuine-`Noul` source: one true statement (the correct answer) and
+   two sampled distractors per MMLU question, MIT, first-party. Deliberately the `validation`
+   split — training on MMLU's `test` split would invalidate any later MMLU evaluation of these
+   weights, and `auxiliary_train` aggregates ARC and RACE, which are share-alike.
+   The same questions already appear as `mmlu` `Choice` rows, so one state teaches two
+   primitives and the state-hash split keeps them together.
+3. **go_emotions raised 6,000 → 8,000**, now that it is not the only source.
+4. **A floor: `MIN_GENUINE_NOUL_SHARE = 0.15`**, asserted against the built manifest, plus
+   `MIN_GENUINE_NOUL_FAMILIES = 2`. A floor rather than a target — below it the primitive is
+   carried by incidental data rather than trained deliberately.
+
+**Measured after the change:**
+
+| primitive | total | stage-1 | genuine | genuine share |
+|---|---|---|---|---|
+| `choice` | 10,406 | 0 | 10,406 | 17.9% |
+| `noul` | 46,886 | 36,976 | **9,910** | **17.1%** |
+| `score` | 727 | 0 | 727 | 1.3% |
+
+Genuine `Noul` now comes from go_emotions (6,340) and mmlu_noul (3,570), at 2.31:1 no:yes.
+`Score` stays at 1.3% until Step 2e's teacher run; it is the primitive with no natural corpus.
+
+When Step 2d lands, the floor moves from the raw manifest to the **effective** training mix,
+since that is what the model actually sees.
+
 ## Step 2e — Teacher-labelled `Score` (data-engineer) — approved, needs a final go
 
 Approved 2026-09-17 including the ~30 GB download and overnight GPU time, on these terms:

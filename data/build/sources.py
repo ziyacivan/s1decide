@@ -210,7 +210,7 @@ SOURCES: tuple[Source, ...] = (
         primitive="noul",
         role="train",
         config="simplified",
-        max_rows=6000,
+        max_rows=8000,
         note="Multi-label over 28 emotions, so one message yields several bundled Nouls.",
     ),
     Source(
@@ -223,6 +223,36 @@ SOURCES: tuple[Source, ...] = (
         split="validation",
         max_rows=1500,
         note="4-option knowledge questions; the question is the state.",
+    ),
+    # Genuine `Noul` rows, as opposed to the stage-1 intent-membership Nouls that the
+    # high-cardinality sources produce. Those two look identical in a qtype count and are not
+    # the same task at all: "is `card arrival` the intent of this message?" asks about
+    # membership in an option list, while "is this statement about the state true?" is the
+    # primitive we actually publish. Before this source, *every* non-stage-1 Noul row in the
+    # corpus came from go_emotions, because the NLI sources that would normally supply them
+    # (SNLI, BoolQ, FEVER, MultiNLI) are all share-alike and eval-only under ADR 0005.
+    #
+    # MMLU is MIT and first-party. One question yields one true statement (the correct answer)
+    # and two false ones (sampled distractors), so the same question that trains `Choice` also
+    # trains `Noul` — and because the pipeline splits by state hash, both land in the same
+    # split and cannot leak across.
+    #
+    # The `validation` split, deliberately, not `test`: nothing here needs MMLU's benchmark
+    # split, and training on it would quietly invalidate any later MMLU evaluation by anyone
+    # using these weights. `auxiliary_train` is bigger but aggregates ARC and RACE, which are
+    # share-alike, so it fails the ADR 0004 gate.
+    Source(
+        family="mmlu_noul",
+        repo="cais/mmlu",
+        license="mit",
+        primitive="noul",
+        role="train",
+        config="all",
+        split="validation",
+        normaliser="mmlu_noul",
+        max_rows=4600,
+        note="Is this answer correct? One true statement plus two sampled distractors per "
+        "question. Same questions as the `mmlu` Choice family, so a state teaches both.",
     ),
     Source(
         family="commonsense_qa",
@@ -358,6 +388,34 @@ def _mmlu(dataset: Any) -> Iterator[dict[str, Any]]:
         }
 
 
+def _mmlu_noul(dataset: Any, negatives: int = 2) -> Iterator[dict[str, Any]]:
+    """One true statement and ``negatives`` false ones per MMLU question.
+
+    Yields genuine `Noul` rows: a claim about the state that is true or false, rather than the
+    stage-1 "is this option the answer?" membership question. Distractors are sampled with a
+    fixed seed so a rebuild reproduces the same rows, and rows with duplicate or empty options
+    are skipped rather than producing a statement that is both true and false.
+    """
+    rng = random.Random(20260917)
+    for row in dataset:
+        options = [str(c).strip() for c in row["choices"]]
+        answer = int(row["answer"])
+        if len(set(options)) != len(options) or not all(options):
+            continue
+        if not 0 <= answer < len(options):
+            continue
+        question = str(row["question"]).strip()
+        wrong = [o for i, o in enumerate(options) if i != answer]
+        rng.shuffle(wrong)
+        for option, truth in [(options[answer], 1)] + [(o, 0) for o in wrong[:negatives]]:
+            yield {
+                "state": question,
+                "instructions": f'The correct answer to this question is "{option}".',
+                "options": ("no", "yes"),
+                "answer_idx": truth,
+            }
+
+
 def _commonsense_qa(dataset: Any) -> Iterator[dict[str, Any]]:
     for row in dataset:
         labels = list(row["choices"]["label"])
@@ -425,6 +483,7 @@ _NORMALISERS: dict[str, Callable[[Any], Iterator[dict[str, Any]]]] = {
     "massive": _massive,
     "go_emotions": _go_emotions,
     "mmlu": _mmlu,
+    "mmlu_noul": _mmlu_noul,
     "commonsense_qa": _commonsense_qa,
     "pubmedqa": _pubmedqa,
     "anli": _anli,

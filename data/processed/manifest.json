@@ -1,10 +1,10 @@
 {
   "seed": 20260917,
-  "rows": 80754,
+  "rows": 87338,
   "splits": {
-    "val": 6845,
-    "train": 52862,
-    "test": 6690,
+    "val": 7556,
+    "train": 58019,
+    "test": 7406,
     "eval": 14357
   },
   "by_family": {
@@ -25,9 +25,9 @@
       "eval": 1476
     },
     "go_emotions": {
-      "train": 4753,
-      "test": 669,
-      "val": 578
+      "train": 6340,
+      "test": 911,
+      "val": 749
     },
     "massive_de": {
       "train": 4815,
@@ -55,6 +55,11 @@
       "val": 178,
       "train": 1162
     },
+    "mmlu_noul": {
+      "test": 474,
+      "val": 540,
+      "train": 3570
+    },
     "ordinal_control": {
       "train": 727,
       "val": 84,
@@ -65,6 +70,137 @@
     },
     "sciq": {
       "eval": 991
+    }
+  },
+  "by_primitive": {
+    "eval": {
+      "choice": {
+        "total": 5467,
+        "stage1": 0,
+        "genuine": 5467,
+        "genuine_share": 0.38078985860555825,
+        "genuine_by_family": {
+          "anli": 1000,
+          "commonsense_qa": 1476,
+          "massive_fr": 1000,
+          "massive_ja": 1000,
+          "sciq": 991
+        }
+      },
+      "noul": {
+        "total": 8890,
+        "stage1": 8000,
+        "genuine": 890,
+        "genuine_share": 0.06199066657379675,
+        "genuine_by_family": {
+          "pubmedqa": 890
+        }
+      }
+    },
+    "test": {
+      "choice": {
+        "total": 1312,
+        "stage1": 0,
+        "genuine": 1312,
+        "genuine_share": 0.1771536591952471,
+        "genuine_by_family": {
+          "banking77": 421,
+          "clinc_oos": 391,
+          "massive_de": 104,
+          "massive_en": 118,
+          "massive_tr": 121,
+          "mmlu": 157
+        }
+      },
+      "noul": {
+        "total": 6005,
+        "stage1": 4620,
+        "genuine": 1385,
+        "genuine_share": 0.1870105320010802,
+        "genuine_by_family": {
+          "go_emotions": 911,
+          "mmlu_noul": 474
+        }
+      },
+      "score": {
+        "total": 89,
+        "stage1": 0,
+        "genuine": 89,
+        "genuine_share": 0.012017283283823926,
+        "genuine_by_family": {
+          "ordinal_control": 89
+        }
+      }
+    },
+    "train": {
+      "choice": {
+        "total": 10406,
+        "stage1": 0,
+        "genuine": 10406,
+        "genuine_share": 0.1793550388665782,
+        "genuine_by_family": {
+          "banking77": 3162,
+          "clinc_oos": 3215,
+          "massive_de": 963,
+          "massive_en": 950,
+          "massive_tr": 954,
+          "mmlu": 1162
+        }
+      },
+      "noul": {
+        "total": 46886,
+        "stage1": 36976,
+        "genuine": 9910,
+        "genuine_share": 0.17080611523811165,
+        "genuine_by_family": {
+          "go_emotions": 6340,
+          "mmlu_noul": 3570
+        }
+      },
+      "score": {
+        "total": 727,
+        "stage1": 0,
+        "genuine": 727,
+        "genuine_share": 0.012530377979627364,
+        "genuine_by_family": {
+          "ordinal_control": 727
+        }
+      }
+    },
+    "val": {
+      "choice": {
+        "total": 1379,
+        "stage1": 0,
+        "genuine": 1379,
+        "genuine_share": 0.18250397035468502,
+        "genuine_by_family": {
+          "banking77": 417,
+          "clinc_oos": 394,
+          "massive_de": 133,
+          "massive_en": 132,
+          "massive_tr": 125,
+          "mmlu": 178
+        }
+      },
+      "noul": {
+        "total": 6093,
+        "stage1": 4804,
+        "genuine": 1289,
+        "genuine_share": 0.17059290629962942,
+        "genuine_by_family": {
+          "go_emotions": 749,
+          "mmlu_noul": 540
+        }
+      },
+      "score": {
+        "total": 84,
+        "stage1": 0,
+        "genuine": 84,
+        "genuine_share": 0.01111699311805188,
+        "genuine_by_family": {
+          "ordinal_control": 84
+        }
+      }
     }
   },
   "sources": {
@@ -144,8 +280,8 @@
       "license": "apache-2.0",
       "role": "train",
       "primitive": "noul",
-      "rows_loaded": 6000,
-      "rows_kept": 6000,
+      "rows_loaded": 8000,
+      "rows_kept": 8000,
       "note": "Multi-label over 28 emotions, so one message yields several bundled Nouls."
     },
     "mmlu": {
@@ -157,6 +293,16 @@
       "rows_loaded": 1500,
       "rows_kept": 1497,
       "note": "4-option knowledge questions; the question is the state."
+    },
+    "mmlu_noul": {
+      "repo": "cais/mmlu",
+      "canonical_repo": "cais/mmlu",
+      "license": "mit",
+      "role": "train",
+      "primitive": "noul",
+      "rows_loaded": 4584,
+      "rows_kept": 4584,
+      "note": "Is this answer correct? One true statement plus two sampled distractors per question. Same questions as the `mmlu` Choice family, so a state teaches both."
     },
     "commonsense_qa": {
       "repo": "tau/commonsense_qa",
@@ -243,11 +389,11 @@
     "cais/mmlu": {
       "license": "MIT",
       "verdict": "train",
-      "rows": 1497,
+      "rows": 6081,
       "splits": {
-        "test": 157,
-        "val": 178,
-        "train": 1162
+        "test": 631,
+        "val": 718,
+        "train": 4732
       }
     },
     "clinc/clinc_oos": {
@@ -271,11 +417,11 @@
     "google-research-datasets/go_emotions": {
       "license": "Apache-2.0",
       "verdict": "train",
-      "rows": 6000,
+      "rows": 8000,
       "splits": {
-        "train": 4753,
-        "test": 669,
-        "val": 578
+        "train": 6340,
+        "test": 911,
+        "val": 749
       }
     },
     "qiaojin/PubMedQA": {
@@ -314,11 +460,11 @@
   "leakage": {
     "checked": true,
     "external_rows": 1750,
-    "leaked_rows": 217,
+    "leaked_rows": 226,
     "leaked_families": [
       "go_emotions",
       "mmlu"
     ],
-    "train_states": 13798
+    "train_states": 14250
   }
 }

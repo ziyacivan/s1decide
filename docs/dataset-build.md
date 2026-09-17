@@ -3,15 +3,15 @@
 <!-- GENERATED from data/processed/manifest.json by data/build/report.py.
      Rebuild with: uv run task data -->
 
-**80,754 rows**, seed `20260917`. Licence reasoning and the eval-only rules are in [dataset-card.md](dataset-card.md); this file is the counts.
+**87,338 rows**, seed `20260917`. Licence reasoning and the eval-only rules are in [dataset-card.md](dataset-card.md); this file is the counts.
 
 ## Splits
 
 | split | rows | purpose |
 |---|---|---|
-| `train` | 52,862 | S1 training |
-| `val` | 6,845 | calibration fitting and model selection |
-| `test` | 6,690 | Tier-1 in-distribution report |
+| `train` | 58,019 | S1 training |
+| `val` | 7,556 | calibration fitting and model selection |
+| `test` | 7,406 | Tier-1 in-distribution report |
 | `eval` | 14,357 | Tier-1 held-out families and OOD sets |
 
 ## Families
@@ -24,13 +24,14 @@ A family in `eval` only is either a **held-out family** (in-distribution, never 
 | banking77 | `cc-by-4.0` | train | choice | 15,810 | 2,085 | 2,105 | — |
 | clinc_oos | `cc-by-3.0` | train | choice | 16,075 | 1,970 | 1,955 | — |
 | commonsense_qa | `mit` | heldout | choice | — | — | — | 1,476 |
-| go_emotions | `apache-2.0` | train | noul | 4,753 | 578 | 669 | — |
+| go_emotions | `apache-2.0` | train | noul | 6,340 | 749 | 911 | — |
 | massive_de | `cc-by-4.0` | train | choice | 4,815 | 665 | 520 | — |
 | massive_en | `cc-by-4.0` | train | choice | 4,750 | 660 | 590 | — |
 | massive_fr | `cc-by-4.0` | ood | choice | — | — | — | 5,000 |
 | massive_ja | `cc-by-4.0` | ood | choice | — | — | — | 5,000 |
 | massive_tr | `cc-by-4.0` | train | choice | 4,770 | 625 | 605 | — |
 | mmlu | `mit` | train | choice | 1,162 | 178 | 157 | — |
+| mmlu_noul | `mit` | train | noul | 3,570 | 540 | 474 | — |
 | ordinal_control | `apache-2.0` | train | score | 727 | 84 | 89 | — |
 | pubmedqa | `mit` | heldout | noul | — | — | — | 890 |
 | sciq | `cc-by-nc-3.0` | ood | choice | — | — | — | 991 |
@@ -46,8 +47,9 @@ A family in `eval` only is either a **held-out family** (in-distribution, never 
 | massive_de | `AmazonScience/massive` | same | 1,200 | 1,200 | German. Utterances 2,400-3,599, disjoint from the other locales. A second Latin-script European language, so 'multilingual' is not one language plus English. |
 | massive_fr | `AmazonScience/massive` | same | 1,000 | 1,000 | OOD, unseen language, NEAR: same script and family as the training locales. Parallel to massive_ja on purpose — same utterances, so the near/far difference is language and script alone. |
 | massive_ja | `AmazonScience/massive` | same | 1,000 | 1,000 | OOD, unseen language, FAR: different script, no shared family, different tokenisation behaviour. Parallel to massive_fr, as above. |
-| go_emotions | `google-research-datasets/go_emotions` | same | 6,000 | 6,000 | Multi-label over 28 emotions, so one message yields several bundled Nouls. |
+| go_emotions | `google-research-datasets/go_emotions` | same | 8,000 | 8,000 | Multi-label over 28 emotions, so one message yields several bundled Nouls. |
 | mmlu | `cais/mmlu` | same | 1,500 | 1,497 | 4-option knowledge questions; the question is the state. |
+| mmlu_noul | `cais/mmlu` | same | 4,584 | 4,584 | Is this answer correct? One true statement plus two sampled distractors per question. Same questions as the `mmlu` Choice family, so a state teaches both. |
 | commonsense_qa | `tau/commonsense_qa` | same | 1,500 | 1,476 | Held-out family: 5-option commonsense, never trained on. |
 | pubmedqa | `qiaojin/PubMedQA` | same | 890 | 890 | Held-out family: biomedical yes/no over an abstract. 'maybe' rows are dropped. |
 | anli | `facebook/anli` | same | 1,000 | 1,000 | OOD. Non-commercial, so the licence gate makes training on it impossible. |
@@ -60,7 +62,7 @@ A family in `eval` only is either a **held-out family** (in-distribution, never 
 
 ## Tier-2 leakage guard
 
-`pngwn/system-one-decisions` is eval-only (ADR 0004) but is *derived from* sources we now train on, so overlap is possible even though the datasets differ. Comparing **state hashes** against our 13,798 training states finds **217 of 1,750** external rows (12.4%) that must be dropped before any Tier-2 number is reported.
+`pngwn/system-one-decisions` is eval-only (ADR 0004) but is *derived from* sources we now train on, so overlap is possible even though the datasets differ. Comparing **state hashes** against our 14,250 training states finds **226 of 1,750** external rows (12.9%) that must be dropped before any Tier-2 number is reported.
 
 Affected families: `go_emotions`, `mmlu`.
 
@@ -71,10 +73,10 @@ Affected families: `go_emotions`, `mmlu`.
 | `AmazonScience/massive` | `CC-BY-4.0` | train | 28,000 |
 | `PolyAI/banking77` | `CC-BY-4.0` | train | 20,000 |
 | `allenai/sciq` | `cc-by-nc-3.0` | eval-only | 991 |
-| `cais/mmlu` | `MIT` | train | 1,497 |
+| `cais/mmlu` | `MIT` | train | 6,081 |
 | `clinc/clinc_oos` | `CC-BY-3.0` | train | 20,000 |
 | `facebook/anli` | `CC-BY-NC-4.0` | eval-only | 1,000 |
-| `google-research-datasets/go_emotions` | `Apache-2.0` | train | 6,000 |
+| `google-research-datasets/go_emotions` | `Apache-2.0` | train | 8,000 |
 | `qiaojin/PubMedQA` | `MIT` | train | 890 |
 | `s1decide/ordinal_control` | `Apache-2.0` | train | 900 |
 | `tau/commonsense_qa` | `MIT` | train | 1,476 |

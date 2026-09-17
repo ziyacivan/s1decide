@@ -22,7 +22,7 @@ from __future__ import annotations
 import hashlib
 import json
 import random
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -319,6 +319,7 @@ def build(config: BuildConfig | None = None) -> dict[str, Any]:
         "rows": len(assigned),
         "splits": counts,
         "by_family": {k: by_family[k] for k in sorted(by_family)},
+        "by_primitive": primitive_mix(assigned),
         "sources": per_source,
         "two_stage_parents_expanded": two_stage_parents,
         "licences": summarise_licences(assigned),
@@ -329,6 +330,64 @@ def build(config: BuildConfig | None = None) -> dict[str, Any]:
         json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n"
     )
     return manifest
+
+
+#: Minimum share of the training mix that must be **genuine** `Noul` — statements about the
+#: state that are true or false — as opposed to stage-1 option-membership rows, which are
+#: `noul`-shaped but are a different task. 15% is a floor, not a target: below it the primitive
+#: is being carried by incidental data rather than trained deliberately. Asserted against the
+#: built manifest by `tests/test_noul_mix.py`, in the same spirit as the stage-1 no:yes ratio.
+#:
+#: The floor exists because the NLI sources that would normally supply `Noul` — SNLI, BoolQ,
+#: FEVER, MultiNLI — are all share-alike and eval-only under ADR 0005. Without it the corpus
+#: silently drifted to 9% genuine `Noul`, all of it from one source, while a `qtype` count
+#: cheerfully reported 79%.
+MIN_GENUINE_NOUL_SHARE = 0.15
+
+#: Genuine `Noul` must come from at least this many families. One source carrying a whole
+#: primitive means its quirks are indistinguishable from the primitive's behaviour.
+MIN_GENUINE_NOUL_FAMILIES = 2
+
+
+def primitive_mix(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """Rows per primitive and split, with stage-1 rows counted separately.
+
+    A plain ``qtype`` count is misleading here, and was. Expanding a 60- or 151-option question
+    produces a stage-1 row per candidate — "is `card arrival` the intent of this message?" —
+    which is a ``noul`` by shape and an option-membership question by nature. Counting them
+    together made `Noul` look like 79% of training when the primitive we actually publish was
+    9%, all of it from a single source.
+
+    So every count here is split into ``stage1`` and ``genuine``, and the share that matters —
+    the one the minimum-Noul test asserts on — is the genuine one.
+
+    Args:
+        rows: Every assigned row.
+
+    Returns:
+        ``{split: {qtype: {"total", "stage1", "genuine", "genuine_share"}}}`` plus a
+        ``genuine_by_family`` breakdown, so a primitive carried by one source is visible.
+    """
+    out: dict[str, Any] = {}
+    for split in sorted({row["split"] for row in rows}):
+        in_split = [row for row in rows if row["split"] == split]
+        per_qtype: dict[str, Any] = {}
+        for qtype in sorted({row["qtype"] for row in in_split}):
+            same = [row for row in in_split if row["qtype"] == qtype]
+            stage1 = [row for row in same if row.get("stage") == 1]
+            genuine = [row for row in same if row.get("stage") != 1]
+            families: dict[str, int] = {}
+            for row in genuine:
+                families[row["family"]] = families.get(row["family"], 0) + 1
+            per_qtype[qtype] = {
+                "total": len(same),
+                "stage1": len(stage1),
+                "genuine": len(genuine),
+                "genuine_share": len(genuine) / len(in_split) if in_split else 0.0,
+                "genuine_by_family": {k: families[k] for k in sorted(families)},
+            }
+        out[split] = per_qtype
+    return out
 
 
 def leakage_report(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:

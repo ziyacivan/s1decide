@@ -233,3 +233,110 @@ def test_a_locale_that_matches_nothing_is_an_error_not_an_empty_source() -> None
             load_source(source)
     except (DatasetNotFoundError, ConnectionError) as exc:
         pytest.skip(f"source unavailable: {type(exc).__name__}"[:150])
+
+
+# --- the split blind spot ------------------------------------------------------
+
+
+def _utterance_ids(source) -> set[str]:
+    """The MASSIVE ids one registered source actually consumes.
+
+    Mirrors ``load_source``'s locale filter, offset and cap. Kept here rather than exposed from
+    the loader because the normalised row schema has no field for an upstream id, and adding
+    one only to satisfy a test would be the wrong trade.
+    """
+    from datasets import load_dataset
+
+    dataset = load_dataset(source.repo, split=source.split, revision=source.revision)
+    dataset = dataset.filter(lambda row: row["locale"] == source.locale)
+    if source.row_offset:
+        dataset = dataset.select(range(source.row_offset, len(dataset)))
+    ids = list(dataset["id"])
+    return set(ids[: source.max_rows] if source.max_rows else ids)
+
+
+@pytest.fixture(scope="module")
+def ids_by_family() -> dict[str, set[str]]:
+    pytest.importorskip("datasets")
+    from datasets.exceptions import DatasetNotFoundError
+
+    try:
+        return {family: _utterance_ids(source) for family, source in _sources().items()}
+    except (DatasetNotFoundError, ConnectionError) as exc:
+        pytest.skip(f"source unavailable: {type(exc).__name__}: {exc}"[:150])
+
+
+def test_massive_partitions_by_utterance_id_identically_in_every_locale() -> None:
+    """The assumption the unseen-language hold-out rests on, checked rather than believed.
+
+    If MASSIVE partitioned by row instead of by utterance id, a French test utterance could be
+    the translation of an English training utterance. Our state-hash guard would never see it —
+    two translations are different strings — so this has to be verified upstream. Measured
+    2026-09-17: the id sets are identical across all five locales we use (11,514 train / 2,033
+    validation / 2,974 test) and no id appears in two partitions.
+    """
+    pytest.importorskip("datasets")
+    from datasets import load_dataset
+    from datasets.exceptions import DatasetNotFoundError
+
+    locales = [s.locale for s in _sources().values()]
+    try:
+        by_partition = {}
+        for split in ("train", "test"):
+            dataset = load_dataset(
+                "AmazonScience/massive", split=split, revision="refs/convert/parquet"
+            )
+            by_partition[split] = {
+                locale: set(dataset.filter(lambda r, L=locale: r["locale"] == L)["id"])
+                for locale in locales
+            }
+    except (DatasetNotFoundError, ConnectionError) as exc:
+        pytest.skip(f"source unavailable: {type(exc).__name__}"[:150])
+
+    for split, by_locale in by_partition.items():
+        reference = by_locale[locales[0]]
+        for locale, ids in by_locale.items():
+            assert ids == reference, (
+                f"{split}: {locale} has a different id set from {locales[0]}, so MASSIVE does "
+                "not partition by utterance id and the hold-out is not content-disjoint"
+            )
+
+    pooled_train = set().union(*by_partition["train"].values())
+    pooled_test = set().union(*by_partition["test"].values())
+    assert not (pooled_train & pooled_test)
+
+
+def test_the_training_locales_consume_disjoint_utterance_ids(ids_by_family) -> None:
+    """The invariant that makes our own train/val/test split safe.
+
+    Our pipeline splits by state hash, which cannot detect that two rows are translations of
+    one sentence. It never has to: the training slices consume pairwise-disjoint utterance ids,
+    so no translation pair exists among them, and a val or test row therefore cannot be a
+    translation of a training row.
+    """
+    for a, b in itertools.combinations(TRAIN_LOCALES, 2):
+        shared = ids_by_family[a] & ids_by_family[b]
+        assert not shared, f"{a} and {b} share {len(shared)} utterance ids: {sorted(shared)[:5]}"
+
+
+def test_no_held_out_utterance_id_appears_in_a_training_locale(ids_by_family) -> None:
+    """Content-level hold-out, not just a different language of the same sentences."""
+    trained = set().union(*(ids_by_family[f] for f in TRAIN_LOCALES))
+    for family in OOD_LOCALES:
+        shared = trained & ids_by_family[family]
+        assert not shared, f"{family} shares {len(shared)} utterance ids with training"
+
+
+def test_the_two_held_out_locales_deliberately_share_every_utterance(ids_by_family) -> None:
+    """The one place sharing ids is correct: fr and ja must be the *same* sentences.
+
+    Anything else and a near-vs-far accuracy gap could be explained by content rather than by
+    language, which is the whole reason the pair exists.
+    """
+    near, far = (ids_by_family[f] for f in OOD_LOCALES)
+    assert near == far
+
+
+def test_each_source_consumes_the_ids_it_claims(ids_by_family) -> None:
+    for family, ids in ids_by_family.items():
+        assert len(ids) == _sources()[family].max_rows, family
