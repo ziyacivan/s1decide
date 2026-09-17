@@ -40,6 +40,12 @@ this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   plus nf4 load, zero-shot state-sensitivity sanity checks and a timing report.
   `HFEngine.from_pretrained` now enforces the requested dtype (transformers 5.5 let the VLM
   `text_config.dtype` override it).
+- `tests/test_engine_gpu_27b.py`: the contract on the target model,
+  `unsloth/Qwen3.8-27B-unsloth-bnb-4bit` (20.8 GiB), on the 3090. Loader now handles
+  pre-quantized VLM checkpoints (text config + parent quant config), forces bf16 end to end
+  (`force_quantized_model_dtype`; the checkpoint's unquantized tensors are fp16), sizes the
+  broadcast batch from real free VRAM, and runs `lm_head` only at the answer positions.
+  First 64-vs-1 question ratio at a 1.6k-token state: 3.81x — Step 6 work.
 
 ### Notes
 

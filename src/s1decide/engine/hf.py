@@ -24,7 +24,13 @@ from s1decide.engine.base import EngineOutput
 from s1decide.engine.qwen3_5_patch import patch_gated_deltanet
 from s1decide.tokens import allowed_token_ids
 
-__all__ = ["CACHE_BATCH_TENSORS", "HFEngine", "expand_cache", "nf4_config"]
+__all__ = [
+    "CACHE_BATCH_TENSORS",
+    "HFEngine",
+    "expand_cache",
+    "force_quantized_model_dtype",
+    "nf4_config",
+]
 
 #: Every per-layer tensor a transformers cache may hold along the batch dimension. Attention
 #: layers (`DynamicLayer`) hold the first two; gated-deltanet layers (`LinearAttentionLayer`)
@@ -104,6 +110,54 @@ def nf4_config(compute_dtype: torch.dtype = torch.bfloat16) -> Any:
     )
 
 
+def force_quantized_model_dtype(model: Any, dtype: torch.dtype) -> dict[str, int]:
+    """Make a bitsandbytes 4-bit model compute in ``dtype`` end to end.
+
+    A pre-quantized checkpoint fixes more than its compute dtype: transformers keeps every
+    *unquantized* tensor in the dtype it was stored in, whatever ``dtype`` was requested.
+    ``unsloth/Qwen3.8-27B-unsloth-bnb-4bit`` stores its embeddings, norms, conv and the
+    gated-deltanet input projections in **fp16**, so without this the whole network runs in
+    fp16 — the dtype ADR 0002 rules out for these layers — and then trips over its own bf16
+    ``lm_head``. Casting fp16 -> bf16 drops three mantissa bits on exactly the tensors the
+    quantizer left in high precision; that trade is recorded, not hidden.
+
+    Args:
+        model: A model loaded with a bitsandbytes 4-bit quantization config.
+        dtype: The dtype to compute in (bf16 on this project).
+
+    Returns:
+        Counts of what was changed: ``linear4bit`` layers whose compute dtype was set,
+        ``quant_states`` whose recorded dtype was aligned, and ``params_cast`` non-4-bit
+        floating parameters converted. All zero if bitsandbytes is absent.
+    """
+    try:
+        import bitsandbytes as bnb
+    except ImportError:
+        return {"linear4bit": 0, "quant_states": 0, "params_cast": 0}
+
+    counts = {"linear4bit": 0, "quant_states": 0, "params_cast": 0}
+    for module in model.modules():
+        if isinstance(module, bnb.nn.Linear4bit):
+            module.compute_dtype = dtype
+            counts["linear4bit"] += 1
+            state = getattr(module.weight, "quant_state", None)
+            if state is not None and getattr(state, "dtype", None) != dtype:
+                state.dtype = dtype
+                counts["quant_states"] += 1
+    for param in model.parameters():
+        if (
+            not isinstance(param, bnb.nn.Params4bit)
+            and param.is_floating_point()
+            and param.dtype != dtype
+        ):
+            param.data = param.data.to(dtype)
+            counts["params_cast"] += 1
+    quant_cfg = getattr(getattr(model, "config", None), "quantization_config", None)
+    if quant_cfg is not None and hasattr(quant_cfg, "bnb_4bit_compute_dtype"):
+        quant_cfg.bnb_4bit_compute_dtype = dtype
+    return counts
+
+
 class HFEngine:
     """Score many suffixes over one prefix with a transformers causal LM.
 
@@ -118,6 +172,10 @@ class HFEngine:
 
     name = "hf"
 
+    #: Held back from the rows-per-pass budget on CUDA: bitsandbytes dequantises one weight
+    #: matrix at a time (up to ~180 MB in bf16 on the 27B) and the pass needs activations.
+    VRAM_RESERVE_BYTES = 768 * 2**20
+
     def __init__(
         self,
         model: Any,
@@ -131,7 +189,14 @@ class HFEngine:
         self.model = model.eval()
         self.tokenizer = tokenizer
         self.max_rows_per_pass = max_rows_per_pass
-        self.device = next(model.parameters()).device
+        # The input embeddings live where the text tower lives. `next(model.parameters())` would
+        # report the vision tower's device on a VLM class, and that tower may be parked on CPU.
+        embeddings = (
+            model.get_input_embeddings() if hasattr(model, "get_input_embeddings") else None
+        )
+        self.device = (
+            embeddings.weight.device if embeddings is not None else next(model.parameters()).device
+        )
         # transformers 5.5.0 ignores the cached GDN state on multi-token continuation — which is
         # every suffix we score. See engine/qwen3_5_patch.py. Off only for tests that demonstrate the bug.
         self.gdn_patched = patch_gated_deltanet(model) if patch_gdn else 0
@@ -175,17 +240,36 @@ class HFEngine:
             with contextlib.suppress(ImportError):
                 import unsloth  # noqa: F401 - imported for its side effect: fla kernel injection
 
-        from transformers import AutoModelForCausalLM, AutoTokenizer
+        from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
 
-        model = AutoModelForCausalLM.from_pretrained(
-            model_name,
-            dtype=dtype,
-            device_map=device_map,
-            attn_implementation="sdpa",
-            quantization_config=quantization_config,
-            **kwargs,
+        config_kwargs = {
+            k: v for k, v in kwargs.items() if k in {"local_files_only", "revision", "token"}
+        }
+        config = AutoConfig.from_pretrained(model_name, **config_kwargs)
+        prequantized_vlm = (
+            getattr(config, "quantization_config", None) is not None
+            and getattr(config, "vision_config", None) is not None
         )
-        if quantization_config is None:
+        common: dict[str, Any] = dict(
+            dtype=dtype, device_map=device_map, attn_implementation="sdpa", **kwargs
+        )
+        # Passing `quantization_config=None` explicitly makes transformers 5.5 overwrite a
+        # pre-quantized checkpoint's own config with None and then crash in the quantizer
+        # lookup; only pass the key when we have something to say.
+        if quantization_config is not None:
+            common["quantization_config"] = quantization_config
+        if prequantized_vlm:
+            # `AutoModelForCausalLM` builds the text tower from `text_config`, which does not
+            # carry the parent's `quantization_config`, so a pre-quantized VLM checkpoint such
+            # as unsloth/*-bnb-4bit would load as if it were bf16 and fail on packed weights.
+            # Hand it the text config with the quantization config copied over (the same
+            # trick Unsloth's loader uses); the `model.language_model.*` -> `model.*` key remap
+            # is transformers' own and covers the bitsandbytes aux tensors too.
+            text_config = copy.deepcopy(config.get_text_config())
+            text_config.quantization_config = config.quantization_config
+            common["config"] = text_config
+        model = AutoModelForCausalLM.from_pretrained(model_name, **common)
+        if quantization_config is None and not getattr(model, "is_quantized", False):
             # transformers 5.5 builds the text tower from the VLM's `text_config`, whose own
             # `dtype` (bf16 for Qwen3.5/3.8) silently overrides the `dtype` we asked for.
             # Measured: dtype=float32 came back as bf16 parameters and bf16 logits.
@@ -193,6 +277,11 @@ class HFEngine:
             got = {p.dtype for p in model.parameters()}
             if got != {dtype}:
                 raise RuntimeError(f"requested dtype {dtype} but model parameters are {got}")
+        else:
+            # A pre-quantized checkpoint carries its own dtypes — `unsloth/*-bnb-4bit` is fp16
+            # throughout its unquantized tensors, and fp16 NaNs in the gated-deltanet layers
+            # (ADR 0002, condition 3).
+            force_quantized_model_dtype(model, dtype)
         tokenizer = AutoTokenizer.from_pretrained(
             model_name,
             **{k: v for k, v in kwargs.items() if k in {"local_files_only", "revision", "token"}},
@@ -220,25 +309,32 @@ class HFEngine:
         label_ids = [allowed_token_ids(self.tokenizer, row) for row in labels]
 
         started = time.perf_counter()
+        # The prefill's logits are never read; keep one position instead of a full-vocab
+        # tensor for every prefix token (~750 MB at 1,500 tokens on a 248k vocabulary).
         prefill = self.model(
-            input_ids=torch.tensor([prefix_ids], device=self.device), use_cache=True
+            input_ids=torch.tensor([prefix_ids], device=self.device),
+            use_cache=True,
+            logits_to_keep=1,
         )
         prefix_cache = prefill.past_key_values
         if prefix_cache is None:
             raise RuntimeError("model returned no cache from the prefill; use_cache is required")
+        del prefill
         self._sync()
         prefill_seconds = time.perf_counter() - started
 
+        rows_per_pass, cache_bytes_per_row = self._rows_per_pass(prefix_cache)
         rows: list[tuple[float, ...]] = []
         passes = 0
         expanded: dict[str, list[str]] = {}
         started = time.perf_counter()
-        for start in range(0, len(suffix_ids), self.max_rows_per_pass):
-            chunk = suffix_ids[start : start + self.max_rows_per_pass]
-            chunk_labels = label_ids[start : start + self.max_rows_per_pass]
+        for start in range(0, len(suffix_ids), rows_per_pass):
+            chunk = suffix_ids[start : start + rows_per_pass]
+            chunk_labels = label_ids[start : start + rows_per_pass]
             cache = copy.deepcopy(prefix_cache)
             expanded = expand_cache(cache, len(chunk))
             rows.extend(self._score_chunk(cache, len(prefix_ids), chunk, chunk_labels))
+            del cache
             passes += 1
         self._sync()
         suffix_seconds = time.perf_counter() - started
@@ -252,6 +348,8 @@ class HFEngine:
                 "rows": len(rows),
                 "passes": passes,
                 "max_rows_per_pass": self.max_rows_per_pass,
+                "rows_per_pass": rows_per_pass,
+                "cache_bytes_per_row": cache_bytes_per_row,
                 "cache_expanded": expanded,
                 "gdn_patched": self.gdn_patched,
                 "prefill_seconds": prefill_seconds,
@@ -259,6 +357,35 @@ class HFEngine:
                 "device": str(self.device),
             },
         )
+
+    def _rows_per_pass(self, prefix_cache: Any) -> tuple[int, int]:
+        """Decide how many suffix rows one pass may carry, from the cache's real size.
+
+        Every row of the broadcast holds a full copy of the prefix cache — on the 27B roughly
+        150 MB of fp32 recurrent state plus the attention KV — and the pass also needs room
+        for activations and the suffix logits. On CUDA the count is capped so that the expanded
+        caches take at most half of the currently free memory; elsewhere the configured
+        maximum is used.
+
+        Returns:
+            ``(rows_per_pass, cache_bytes_per_row)``.
+        """
+        per_row = 0
+        for layer in getattr(prefix_cache, "layers", []):
+            for attr in CACHE_BATCH_TENSORS:
+                tensor = getattr(layer, attr, None)
+                if torch.is_tensor(tensor):
+                    per_row += tensor.numel() * tensor.element_size()
+        if self.device.type != "cuda" or per_row == 0:
+            return self.max_rows_per_pass, per_row
+        # Device-free memory plus what the caching allocator already holds but is not using;
+        # keep a fixed reserve for bitsandbytes' dequantisation temporaries and the pass's
+        # activations, then spend most of the rest on rows.
+        free, _total = torch.cuda.mem_get_info(self.device)
+        cached = torch.cuda.memory_reserved(self.device) - torch.cuda.memory_allocated(self.device)
+        available = free + max(0, cached) - self.VRAM_RESERVE_BYTES
+        affordable = max(1, int(available * 0.8 // per_row))
+        return min(self.max_rows_per_pass, affordable), per_row
 
     def _score_chunk(
         self,
@@ -285,13 +412,32 @@ class HFEngine:
             input_ids[i, : len(ids)] = torch.tensor(ids, device=self.device)
             attention_mask[i, prefix_len : prefix_len + len(ids)] = 1
 
-        out = self.model(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            past_key_values=cache,
-            use_cache=True,
+        row_index = torch.arange(rows, device=self.device)
+        base = getattr(self.model, "model", None)
+        head = (
+            self.model.get_output_embeddings()
+            if hasattr(self.model, "get_output_embeddings")
+            else None
         )
-        answer_logits = out.logits[torch.arange(rows, device=self.device), lengths - 1]
+        if base is not None and head is not None:
+            # Run the trunk, gather the one hidden state per row we need, then the head. The
+            # full-vocabulary logits for every suffix position would cost rows x width x 248k
+            # x 2 bytes (~550 MB at 16 rows on the 27B) for values that are never read.
+            hidden = base(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                past_key_values=cache,
+                use_cache=True,
+            ).last_hidden_state
+            answer_logits = head(hidden[row_index, lengths - 1])
+        else:
+            out = self.model(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                past_key_values=cache,
+                use_cache=True,
+            )
+            answer_logits = out.logits[row_index, lengths - 1]
         return [
             tuple(answer_logits[i, list(ids)].float().tolist())
             for i, ids in enumerate(chunk_labels)

@@ -366,3 +366,75 @@ prefill dominating.
 "English" for an English ticket and shifts probability to "Turkish" for a Turkish one — but its
 Nouls are poorly calibrated zero-shot (`weather` 0.59 "yes" on a billing ticket). Expected for
 0.8B without training; the point of the smoke model is mechanics, not judgement.
+
+## 13. Addendum (Step 4 GPU run, 2026-09-17): the target model, Qwen3.8-27B at 4-bit on the RTX 3090
+
+`unsloth/Qwen3.8-27B-unsloth-bnb-4bit` (sha `8aa5f05d`) was downloaded — **20.83 GiB**, one
+safetensors shard, not the 17-18 GB estimated in §10 — and `tests/test_engine_gpu_27b.py`
+run alone with `uv run task test-gpu tests/test_engine_gpu_27b.py`. Six tests, all passing.
+
+**Why it is 20.8 GB.** The checkpoint keeps `lm_head`, `embed_tokens`, every norm, `conv1d` and
+the GDN `in_proj_qkv/a/b` unquantized (`llm_int8_skip_modules`), which is ~9.5 GB of 16-bit
+weights on top of ~11 GB of nf4, plus the vision tower (333 tensors, dropped on load).
+Resident after a text-only load: **19.96 GiB**; load peak 22.33 GiB; load time 16 s from disk.
+
+**Three loader facts learned the hard way** (all now handled in `HFEngine.from_pretrained`):
+
+1. The checkpoint is in **VLM layout** (`model.language_model.layers.*`), and the parent
+   config carries the `quantization_config` while `text_config` does not. Loading with
+   `AutoModelForCausalLM` remaps the keys — including the bitsandbytes aux tensors — but has no
+   quantizer, so it tries to load packed uint8 weights into bf16 `Linear` layers and fails on
+   shape. Loading the full `ForConditionalGeneration` class keeps the quantizer but then the
+   quant states did not attach. **Fix:** hand `AutoModelForCausalLM` the text config with the
+   parent's `quantization_config` copied onto it — Unsloth's own `_get_text_only_config` trick.
+   No vision tower is instantiated at all.
+2. Passing `quantization_config=None` explicitly makes transformers 5.5 overwrite the
+   checkpoint's own quantization config with `None` and crash in the quantizer lookup. Only
+   pass the key when set.
+3. **Every unquantized tensor in the checkpoint is fp16** (`embed_tokens`, norms, `conv1d`,
+   `in_proj_*`; only `lm_head` is bf16), and a pre-quantized load keeps stored dtypes whatever
+   `dtype` is requested — so the network ran in fp16 and died at the bf16 `lm_head`. Setting
+   `Linear4bit.compute_dtype` alone does nothing about this. `force_quantized_model_dtype`
+   casts the non-4-bit floating parameters to bf16 and aligns `quant_state.dtype`. Cost: three
+   mantissa bits on exactly the tensors the quantizer left in high precision. Recorded, not
+   hidden; the Q4_K_M GGUF comparison in the quantization table is where it gets measured.
+
+**The contract on the 27B.** Broadcast vs independent: worst |diff| **0.44** over the five
+mixed questions; chunked (2 rows/pass) vs single pass: 0.5. Attribution probe: the *same*
+joint sequence run at batch 1 vs duplicated to batch 4, **with no cache involved**, differs by
+up to **0.5** on this model — bf16 kernel selection changes with batch shape across 64 layers
+(cuBLAS, bnb dequant, fla). The broadcast sits on that noise floor, so the test tolerance is
+0.75 logits **and** a probability-level bound of 0.05, which is the quantity users see.
+
+| Setting | worst \|broadcast − independent\| |
+|---|---|
+| batch-1 vs batch-4 of the identical sequence, no cache (noise floor) | 0.50 |
+| broadcast, 1 row | 0.50 |
+| broadcast, 5 rows | 0.44 |
+| chunked 2 rows/pass vs one pass | 0.50 |
+
+**VRAM and first timings, 1,587-token state, bf16 compute, fla kernels, one 27B copy:**
+
+| questions | total | prefill | suffix passes | rows/pass (adaptive) | peak VRAM |
+|---|---|---|---|---|---|
+| 1 | 1,530 ms | 1,386 ms | 140 ms, 1 pass | 1 | 20.48 GiB |
+| 4 | 1,720 ms | 1,396 ms | 320 ms, 1 pass | 4 | 21.03 GiB |
+| 16 | 2,549 ms | 1,403 ms | 1,142 ms, 3 passes | ~6 | 21.65 GiB |
+| 64 | 5,821 ms | 1,410 ms | 4,402 ms, 10 passes | ~7 | 21.65 GiB |
+
+**64-question call = 3.81x the 1-question call** (single measurement; Step 6 does 20 repeats).
+That misses the < 2x target, and the numbers say why: with ~3 GiB of headroom the adaptive
+scheduler fits only ~7 rows of broadcast state (150 MB fp32 recurrent + ~100 MB KV per row at
+1.6k tokens) per pass, and each pass runs at ~1 ms/token — the same per-token cost as the
+prefill. The suffix work is therefore compute-bound, not overhead-bound: 64 questions x ~70
+suffix tokens = ~4,500 tokens, nearly 3x the prefix. Two levers exist, both for Step 6:
+(a) fewer suffix tokens per question — the format's per-question boilerplate (`### Answer`
+line, chat tail, empty think block) is roughly half of each suffix; (b) more headroom, e.g.
+a leaner quantization of the BF16 base (quantise `in_proj_*`, embeddings on CPU) so that
+more rows fit per pass. Before the memory-accounting fix in this step, the scheduler fit
+**1 row per pass** and the ratio was 6.56x.
+
+**Zero-shot, 27B, the billing ticket** — the model reads the state: `tone` frustrated 0.954,
+`urgency` today 0.980, `billing` yes 0.999, `weather` no 1.000, `lang` English 1.000; and
+English / Turkish / German tickets are each identified at 1.00. Informational: nothing here is
+an eval, and these confidences are exactly the sort of thing Step 5 exists to calibrate.
