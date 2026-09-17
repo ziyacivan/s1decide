@@ -1,11 +1,11 @@
 {
   "seed": 20260917,
-  "rows": 52754,
+  "rows": 80754,
   "splits": {
-    "val": 4895,
-    "train": 38527,
-    "test": 4975,
-    "eval": 4357
+    "val": 6845,
+    "train": 52862,
+    "test": 6690,
+    "eval": 14357
   },
   "by_family": {
     "anli": {
@@ -28,6 +28,27 @@
       "train": 4753,
       "test": 669,
       "val": 578
+    },
+    "massive_de": {
+      "train": 4815,
+      "test": 520,
+      "val": 665
+    },
+    "massive_en": {
+      "train": 4750,
+      "val": 660,
+      "test": 590
+    },
+    "massive_fr": {
+      "eval": 5000
+    },
+    "massive_ja": {
+      "eval": 5000
+    },
+    "massive_tr": {
+      "val": 625,
+      "train": 4770,
+      "test": 605
     },
     "mmlu": {
       "test": 157,
@@ -66,6 +87,56 @@
       "rows_loaded": 4000,
       "rows_kept": 4000,
       "note": "151 intents including out-of-scope — the highest-cardinality source we have."
+    },
+    "massive_en": {
+      "repo": "AmazonScience/massive",
+      "canonical_repo": "AmazonScience/massive",
+      "license": "cc-by-4.0",
+      "role": "train",
+      "primitive": "choice",
+      "rows_loaded": 1200,
+      "rows_kept": 1200,
+      "note": "English. Utterances 0-1,199 of the locale. The control locale: the other four are read against it."
+    },
+    "massive_tr": {
+      "repo": "AmazonScience/massive",
+      "canonical_repo": "AmazonScience/massive",
+      "license": "cc-by-4.0",
+      "role": "train",
+      "primitive": "choice",
+      "rows_loaded": 1200,
+      "rows_kept": 1200,
+      "note": "Turkish. Utterances 1,200-2,399, disjoint from the other locales. Agglutinative and Latin-script; the non-English language we most want to work, and the reason MASSIVE is in the corpus at all."
+    },
+    "massive_de": {
+      "repo": "AmazonScience/massive",
+      "canonical_repo": "AmazonScience/massive",
+      "license": "cc-by-4.0",
+      "role": "train",
+      "primitive": "choice",
+      "rows_loaded": 1200,
+      "rows_kept": 1200,
+      "note": "German. Utterances 2,400-3,599, disjoint from the other locales. A second Latin-script European language, so 'multilingual' is not one language plus English."
+    },
+    "massive_fr": {
+      "repo": "AmazonScience/massive",
+      "canonical_repo": "AmazonScience/massive",
+      "license": "cc-by-4.0",
+      "role": "ood",
+      "primitive": "choice",
+      "rows_loaded": 1000,
+      "rows_kept": 1000,
+      "note": "OOD, unseen language, NEAR: same script and family as the training locales. Parallel to massive_ja on purpose — same utterances, so the near/far difference is language and script alone."
+    },
+    "massive_ja": {
+      "repo": "AmazonScience/massive",
+      "canonical_repo": "AmazonScience/massive",
+      "license": "cc-by-4.0",
+      "role": "ood",
+      "primitive": "choice",
+      "rows_loaded": 1000,
+      "rows_kept": 1000,
+      "note": "OOD, unseen language, FAR: different script, no shared family, different tokenisation behaviour. Parallel to massive_fr, as above."
     },
     "go_emotions": {
       "repo": "google-research-datasets/go_emotions",
@@ -138,8 +209,19 @@
       "note": "Rule-labelled ordinal control set, generated here (ADR 0005 rule c). No model in the loop, so its labels are exact."
     }
   },
-  "two_stage_parents_expanded": 8000,
+  "two_stage_parents_expanded": 13600,
   "licences": {
+    "AmazonScience/massive": {
+      "license": "CC-BY-4.0",
+      "verdict": "train",
+      "rows": 28000,
+      "splits": {
+        "train": 14335,
+        "val": 1950,
+        "test": 1715,
+        "eval": 10000
+      }
+    },
     "PolyAI/banking77": {
       "license": "CC-BY-4.0",
       "verdict": "train",
@@ -237,6 +319,6 @@
       "go_emotions",
       "mmlu"
     ],
-    "train_states": 10606
+    "train_states": 13798
   }
 }

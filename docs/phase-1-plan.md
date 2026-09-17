@@ -84,12 +84,38 @@ Approved 2026-09-17. MASSIVE loads only from its parquet branch's single `defaul
 (1,784,670 rows, all 51 locales), so the loader filters by `locale` and `partition`.
 
 - **Train locales: `en-US`, `tr-TR`, `de-DE`**, capped per locale so MASSIVE cannot dominate.
-  Proposed cap: **3,000 rows per locale (9,000 total)**. Rationale from the committed manifest:
-  banking77 and clinc_oos contribute ~15.8k and ~16.1k training rows each, and go_emotions
-  ~4.8k; 3k per locale puts MASSIVE's three train locales at roughly go_emotions' weight and
-  well under either intent source, so it adds multilingual coverage without reshaping the mix.
+  Cap: **1,200 source rows per locale**, measured 2026-09-17 against the rebuilt manifest.
+
+  The first proposal was 3,000, and it was wrong. It compared *source* rows against banking77's
+  4,000 and ignored two things the manifest makes obvious: each source row expands to ~5 rows
+  through the two-stage path, and there are three locales. At 3,000 MASSIVE was **48.2% of
+  training** — the largest block in the corpus by a wide margin. The comparison has to be made
+  on expanded rows summed across locales.
+
+  | source rows/locale | MASSIVE train rows | share of training |
+  |---|---|---|
+  | 3,000 | 36,180 | 48.4% |
+  | 1,500 | 18,090 | 32.0% |
+  | **1,200** | **14,335** | **27.1%** (measured) |
+  | 1,000 | 12,060 | 23.8% |
+
+  At 1,200 each locale is ~9% of training — the same weight as go_emotions, which is what the
+  original rationale claimed and only now is true — and the three together (27.1%) sit just
+  below banking77 alone (29.9%) and clinc_oos (30.4%). That is the intended reading of "must
+  not dominate": comparable to the largest other source, not larger than all of them.
+
+- **MASSIVE is a parallel corpus** — the same utterance is translated into all 51 locales and
+  keeps its id. Taking the first N rows of each locale would give N meanings three times, not
+  3N. The training locales therefore take **disjoint slices** (offsets 0 / 1,200 / 2,400).
+  Verified: the first 3,000 train ids are identical across en/tr/de, and the slices now share
+  no utterance. The state-hash leakage guard cannot see this — two translations of one sentence
+  are different strings — so the slicing is what prevents it, not the guard.
 - **Held-out locales: `fr-FR` and `ja-JP`**, never in train or val, forming an **unseen-language
-  OOD set**. Chosen deliberately: `fr-FR` is close to the training languages (Latin script,
+  OOD set**, and taken from the **test partition** so they are different content and not
+  translations of training rows (verified: zero utterance-id overlap with the training slices).
+  They are parallel to *each other* on purpose, so the near/far difference is language and
+  script alone. Residual text overlap with training is 1 row in 1,000 — the French word
+  `silence` is also English — and the leakage guard drops it. Chosen deliberately: `fr-FR` is close to the training languages (Latin script,
   Indo-European) and `ja-JP` is far from all of them (non-Latin script, different family). Two
   points on that axis say more than two similar languages would — if accuracy holds on French
   but collapses on Japanese, the failure is script and tokenisation rather than language

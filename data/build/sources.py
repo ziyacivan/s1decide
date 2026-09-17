@@ -43,6 +43,8 @@ class Source:
         revision: Dataset revision, for parquet-branch loads.
         locale: Keep only rows with this ``locale``. MASSIVE ships all 51 languages in one
             config, and each language is a separate family to us.
+        row_offset: Skip this many rows after filtering, before applying ``max_rows``. Used to
+            give the MASSIVE training locales *disjoint* slices of a parallel corpus.
         normaliser: Which normaliser to use, when several families share one. Defaults to
             ``family``.
         max_rows: Cap, to keep the build quick and the families balanced.
@@ -58,6 +60,7 @@ class Source:
     split: str = "train"
     revision: str | None = None
     locale: str | None = None
+    row_offset: int = 0
     normaliser: str | None = None
     max_rows: int | None = None
     canonical_repo: str | None = None
@@ -88,14 +91,40 @@ SOURCES: tuple[Source, ...] = (
     ),
     # MASSIVE: 60 intents in 51 languages, one `default` config, CC-BY-4.0 first-party.
     #
-    # Capped at 3,000 rows per locale (9,000 trained on out of 34,542 available per language).
-    # The cap is a balance decision, not a size one: banking77 and clinc_oos contribute ~15.8k
-    # and ~16.1k training rows and go_emotions ~4.8k, so 3k per locale puts each MASSIVE
-    # language at roughly go_emotions' weight and well under either intent source. Uncapped,
-    # MASSIVE's three locales would be ~104k rows and would outweigh everything else combined,
-    # and the model would learn "predict an intent" rather than "answer the question asked".
+    # Capped at 1,200 source rows per locale. The cap is a balance decision, not a size one.
+    #
+    # It was 3,000, chosen by comparing source-row counts against banking77's 4,000. That was
+    # wrong twice over, and the manifest said so: each source row expands to ~5 rows through the
+    # two-stage path (one stage-2 row plus a positive and three hard negatives), and there are
+    # *three* locales, so 3,000 per locale meant 36,180 training rows — **48% of the corpus**,
+    # the single largest block by far. The comparison has to be made on expanded rows summed
+    # across the locales, which is what the manifest reports.
+    #
+    #   source rows/locale   MASSIVE train rows   share of training
+    #                 3000                36180               48.4%
+    #                 1500                18090               32.0%
+    #                 1200                14472               27.3%   <- chosen
+    #                 1000                12060               23.8%
+    #
+    # 1,200 puts all three locales together at roughly banking77's single-source weight (15,810,
+    # ~30%), which is the intended reading of "must not dominate": comparable to the largest
+    # other source, not larger than all of them. Uncapped it would be ~104k source rows and the
+    # model would learn "predict an intent" rather than "answer the question asked".
     #
     # 60 intents is above the 26-label ceiling, so every row goes through two-stage expansion.
+    #
+    # **MASSIVE is a parallel corpus**: the same utterance is translated into all 51 locales and
+    # keeps its id, so taking the first 3,000 rows of each language would give three translations
+    # of one set of 3,000 meanings rather than 9,000 distinct ones (verified — the first 3,000
+    # train ids are identical across en/tr/de). The locales therefore take *disjoint* slices via
+    # `row_offset`. Diversity is worth more here than alignment: the controlled
+    # same-meaning-different-language comparison is what the fr/ja OOD pair is for, and it is
+    # already perfectly controlled because those two *are* parallel to each other. Seeing one
+    # meaning three times mostly invites memorising the utterance.
+    #
+    # Note for the leakage guard: it hashes state text, so it cannot see cross-locale
+    # parallelism — two translations of one sentence are different strings. Disjoint slices are
+    # what keeps that from mattering, not the guard.
     Source(
         family="massive_en",
         repo="AmazonScience/massive",
@@ -104,9 +133,11 @@ SOURCES: tuple[Source, ...] = (
         role="train",
         revision="refs/convert/parquet",
         locale="en-US",
+        row_offset=0,
         normaliser="massive",
-        max_rows=3000,
-        note="English. The control locale: the other four are read against it.",
+        max_rows=1200,
+        note="English. Utterances 0-1,199 of the locale. The control locale: the other four "
+        "are read against it.",
     ),
     Source(
         family="massive_tr",
@@ -116,10 +147,12 @@ SOURCES: tuple[Source, ...] = (
         role="train",
         revision="refs/convert/parquet",
         locale="tr-TR",
+        row_offset=1200,
         normaliser="massive",
-        max_rows=3000,
-        note="Turkish. Agglutinative and Latin-script; the non-English language we most want "
-        "to work, and the reason MASSIVE is in the corpus at all.",
+        max_rows=1200,
+        note="Turkish. Utterances 1,200-2,399, disjoint from the other locales. Agglutinative "
+        "and Latin-script; the non-English language we most want to work, and the reason "
+        "MASSIVE is in the corpus at all.",
     ),
     Source(
         family="massive_de",
@@ -129,10 +162,11 @@ SOURCES: tuple[Source, ...] = (
         role="train",
         revision="refs/convert/parquet",
         locale="de-DE",
+        row_offset=2400,
         normaliser="massive",
-        max_rows=3000,
-        note="German. A second Latin-script European language, so 'multilingual' is not one "
-        "language plus English.",
+        max_rows=1200,
+        note="German. Utterances 2,400-3,599, disjoint from the other locales. A second "
+        "Latin-script European language, so 'multilingual' is not one language plus English.",
     ),
     # The unseen-language OOD pair. Never in train or val. Two points chosen to separate two
     # different failures: fr-FR is close to the training languages (Latin script,
@@ -151,7 +185,9 @@ SOURCES: tuple[Source, ...] = (
         normaliser="massive",
         split="test",
         max_rows=1000,
-        note="OOD, unseen language, NEAR: same script and family as the training locales.",
+        note="OOD, unseen language, NEAR: same script and family as the training locales. "
+        "Parallel to massive_ja on purpose — same utterances, so the near/far difference is "
+        "language and script alone.",
     ),
     Source(
         family="massive_ja",
@@ -165,7 +201,7 @@ SOURCES: tuple[Source, ...] = (
         split="test",
         max_rows=1000,
         note="OOD, unseen language, FAR: different script, no shared family, different "
-        "tokenisation behaviour.",
+        "tokenisation behaviour. Parallel to massive_fr, as above.",
     ),
     Source(
         family="go_emotions",
@@ -426,6 +462,14 @@ def load_source(source: Source) -> list[dict[str, Any]]:
                 f"{source.family}: locale {source.locale!r} matched no rows of "
                 f"{before} in {source.repo} ({source.split})"
             )
+
+    if source.row_offset:
+        if source.row_offset >= len(dataset):
+            raise ValueError(
+                f"{source.family}: row_offset {source.row_offset} is past the end of "
+                f"{len(dataset)} rows — the disjoint slices would silently collapse to nothing"
+            )
+        dataset = dataset.select(range(source.row_offset, len(dataset)))
 
     rows: list[dict[str, Any]] = []
     for row in _NORMALISERS[source.normaliser or source.family](dataset):
