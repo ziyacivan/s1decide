@@ -1,0 +1,7 @@
+{"at": "2026-09-17T22:19:02+00:00", "rows_this_run": 16, "rows_done": 16, "total_rows": 100, "elapsed_seconds": 13.163825, "rows_per_second": 1.2155, "teacher": "gptoss-low-1024", "truncated": 0, "uncommitted": 0}
+{"at": "2026-09-17T22:19:14+00:00", "rows_this_run": 32, "rows_done": 32, "total_rows": 100, "elapsed_seconds": 24.967539, "rows_per_second": 1.2817, "teacher": "gptoss-low-1024", "truncated": 0, "uncommitted": 0}
+{"at": "2026-09-17T22:19:21+00:00", "rows_this_run": 48, "rows_done": 48, "total_rows": 100, "elapsed_seconds": 32.204771, "rows_per_second": 1.4905, "teacher": "gptoss-low-1024", "truncated": 0, "uncommitted": 0}
+{"at": "2026-09-17T22:19:30+00:00", "rows_this_run": 64, "rows_done": 64, "total_rows": 100, "elapsed_seconds": 40.954473, "rows_per_second": 1.5627, "teacher": "gptoss-low-1024", "truncated": 0, "uncommitted": 0}
+{"at": "2026-09-17T22:19:36+00:00", "rows_this_run": 80, "rows_done": 80, "total_rows": 100, "elapsed_seconds": 47.509141, "rows_per_second": 1.6839, "teacher": "gptoss-low-1024", "truncated": 0, "uncommitted": 0}
+{"at": "2026-09-17T22:19:43+00:00", "rows_this_run": 96, "rows_done": 96, "total_rows": 100, "elapsed_seconds": 54.460531, "rows_per_second": 1.7627, "teacher": "gptoss-low-1024", "truncated": 0, "uncommitted": 0}
+{"at": "2026-09-17T22:19:47+00:00", "rows_this_run": 100, "rows_done": 100, "total_rows": 100, "elapsed_seconds": 58.671959, "rows_per_second": 1.7044, "teacher": "gptoss-low-1024", "truncated": 0, "uncommitted": 0}

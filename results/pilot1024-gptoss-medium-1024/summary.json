@@ -1,0 +1,28 @@
+{
+  "run_id": "pilot1024-gptoss-medium-1024",
+  "finished": "2026-09-17T22:22:43+00:00",
+  "rows_total": 100,
+  "rows_this_run": 100,
+  "rows_resumed": 0,
+  "elapsed_seconds": 159.29,
+  "setting": {
+    "model": "openai/gpt-oss-20b",
+    "label": "gptoss-medium-1024",
+    "effort": "medium",
+    "max_new_tokens": 1024,
+    "revision": null,
+    "quantization": "nf4-bf16",
+    "effort_description": "native effort=medium, max_new_tokens=1024"
+  },
+  "committed": 100,
+  "uncommitted": 0,
+  "truncation_rate": 0.0,
+  "hit_cap_rate": 0.0,
+  "trace_tokens": {
+    "n": 100,
+    "mean": 219.91,
+    "p90": 368.0,
+    "max": 707.0
+  },
+  "tokens_per_second": 138.0563751647938
+}

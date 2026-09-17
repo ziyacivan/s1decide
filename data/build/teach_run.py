@@ -56,6 +56,30 @@ TEACHERS: dict[str, TeacherSetting] = {
         effort="medium",
         max_new_tokens=384,
     ),
+    "qwen-low-1024": TeacherSetting(
+        model="unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+        label="qwen-low-1024",
+        effort="low",
+        max_new_tokens=1024,
+    ),
+    "gptoss-low-1024": TeacherSetting(
+        model="openai/gpt-oss-20b",
+        label="gptoss-low-1024",
+        effort="low",
+        max_new_tokens=1024,
+    ),
+    "gptoss-medium-1024": TeacherSetting(
+        model="openai/gpt-oss-20b",
+        label="gptoss-medium-1024",
+        effort="medium",
+        max_new_tokens=1024,
+    ),
+    "magistral-1024": TeacherSetting(
+        model="unsloth/Magistral-Small-2509-unsloth-bnb-4bit",
+        label="magistral-1024",
+        effort=None,
+        max_new_tokens=1024,
+    ),
     "magistral-384": TeacherSetting(
         model="unsloth/Magistral-Small-2509-unsloth-bnb-4bit",
         label="magistral-384",
