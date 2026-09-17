@@ -27,6 +27,32 @@ _COLUMNS = (
 )
 
 
+def _stale_format_banner(run_format: str | None) -> list[str]:
+    """Warn, in the document itself, when a run predates the current prompt format.
+
+    A metric produced under one prompt format is not comparable with one produced under
+    another, and a reader of a committed ``SUMMARY.md`` has no other way to know.
+
+    Args:
+        run_format: The ``format_version`` recorded in the run.
+
+    Returns:
+        Markdown lines, empty when the run is current.
+    """
+    from s1decide.prompt import FORMAT_VERSION
+
+    if run_format is None or run_format == FORMAT_VERSION:
+        return []
+    return [
+        f"> **Format {run_format} — not comparable to {FORMAT_VERSION}.** This run was produced "
+        f"under an older prompt format. Every number below is valid for format {run_format} and "
+        f"must not be compared with a format-{FORMAT_VERSION} run; the prompts differ, so the "
+        "model saw different inputs. Kept deliberately: the change between formats is itself a "
+        "result.",
+        "",
+    ]
+
+
 def _row(label: str, summary: Mapping[str, Any]) -> str:
     cells = []
     for key, _title, fmt in _COLUMNS:
@@ -65,6 +91,7 @@ def render_summary(report: Mapping[str, Any]) -> str:
         + (" **(tree dirty at run time)**" if git.get("dirty") else ""),
         f"- **Created**: {meta.get('created', '?')} · {meta.get('platform', '?')}",
         "",
+        *_stale_format_banner(meta.get("format_version")),
         "## Coverage",
         "",
         "| split | kept | total | fraction | dropped >26 options | dropped invalid |",
@@ -199,6 +226,10 @@ def render_latency(payload: Mapping[str, Any]) -> str:
         "",
         f"**All targets met: {'yes' if targets.get('all_met') else 'no'}.**"
         + (f" Amortised cost at 64 questions: {amortised:.0f} ms/question." if amortised else ""),
+        "",
+        "The two format-overhead rows differ by the base model's chat tail "
+        "(`<|im_end|>...<think></think>`), which its template imposes and no change to our "
+        "format removes. The target applies to the controllable figure (ADR 0003).",
         "",
         f"The retired rule (`{retired['rule']}`) would read "
         f"**{retired['ratio_64_over_1']:.2f}x**. ADR 0003 explains why it was replaced: it is met "

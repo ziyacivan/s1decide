@@ -1,0 +1,242 @@
+{
+  "seed": 20260917,
+  "rows": 52754,
+  "splits": {
+    "val": 4895,
+    "train": 38527,
+    "test": 4975,
+    "eval": 4357
+  },
+  "by_family": {
+    "anli": {
+      "eval": 1000
+    },
+    "banking77": {
+      "val": 2085,
+      "train": 15810,
+      "test": 2105
+    },
+    "clinc_oos": {
+      "train": 16075,
+      "val": 1970,
+      "test": 1955
+    },
+    "commonsense_qa": {
+      "eval": 1476
+    },
+    "go_emotions": {
+      "train": 4753,
+      "test": 669,
+      "val": 578
+    },
+    "mmlu": {
+      "test": 157,
+      "val": 178,
+      "train": 1162
+    },
+    "ordinal_control": {
+      "train": 727,
+      "val": 84,
+      "test": 89
+    },
+    "pubmedqa": {
+      "eval": 890
+    },
+    "sciq": {
+      "eval": 991
+    }
+  },
+  "sources": {
+    "banking77": {
+      "repo": "legacy-datasets/banking77",
+      "canonical_repo": "PolyAI/banking77",
+      "license": "cc-by-4.0",
+      "role": "train",
+      "primitive": "choice",
+      "rows_loaded": 4000,
+      "rows_kept": 4000,
+      "note": "77 intents — exercises the two-stage path. PolyAI/banking77 is script-based and unloadable on datasets 4.x; this is HF's parquet mirror of the same CC-BY-4.0 data."
+    },
+    "clinc_oos": {
+      "repo": "clinc/clinc_oos",
+      "canonical_repo": "clinc/clinc_oos",
+      "license": "cc-by-3.0",
+      "role": "train",
+      "primitive": "choice",
+      "rows_loaded": 4000,
+      "rows_kept": 4000,
+      "note": "151 intents including out-of-scope — the highest-cardinality source we have."
+    },
+    "go_emotions": {
+      "repo": "google-research-datasets/go_emotions",
+      "canonical_repo": "google-research-datasets/go_emotions",
+      "license": "apache-2.0",
+      "role": "train",
+      "primitive": "noul",
+      "rows_loaded": 6000,
+      "rows_kept": 6000,
+      "note": "Multi-label over 28 emotions, so one message yields several bundled Nouls."
+    },
+    "mmlu": {
+      "repo": "cais/mmlu",
+      "canonical_repo": "cais/mmlu",
+      "license": "mit",
+      "role": "train",
+      "primitive": "choice",
+      "rows_loaded": 1500,
+      "rows_kept": 1497,
+      "note": "4-option knowledge questions; the question is the state."
+    },
+    "commonsense_qa": {
+      "repo": "tau/commonsense_qa",
+      "canonical_repo": "tau/commonsense_qa",
+      "license": "mit",
+      "role": "heldout",
+      "primitive": "choice",
+      "rows_loaded": 1500,
+      "rows_kept": 1476,
+      "note": "Held-out family: 5-option commonsense, never trained on."
+    },
+    "pubmedqa": {
+      "repo": "qiaojin/PubMedQA",
+      "canonical_repo": "qiaojin/PubMedQA",
+      "license": "mit",
+      "role": "heldout",
+      "primitive": "noul",
+      "rows_loaded": 890,
+      "rows_kept": 890,
+      "note": "Held-out family: biomedical yes/no over an abstract. 'maybe' rows are dropped."
+    },
+    "anli": {
+      "repo": "facebook/anli",
+      "canonical_repo": "facebook/anli",
+      "license": "cc-by-nc-4.0",
+      "role": "ood",
+      "primitive": "choice",
+      "rows_loaded": 1000,
+      "rows_kept": 1000,
+      "note": "OOD. Non-commercial, so the licence gate makes training on it impossible."
+    },
+    "sciq": {
+      "repo": "allenai/sciq",
+      "canonical_repo": "allenai/sciq",
+      "license": "cc-by-nc-3.0",
+      "role": "ood",
+      "primitive": "choice",
+      "rows_loaded": 991,
+      "rows_kept": 991,
+      "note": "OOD. Non-commercial, as above."
+    },
+    "ordinal_control": {
+      "repo": "s1decide/ordinal_control",
+      "canonical_repo": "s1decide/ordinal_control",
+      "license": "apache-2.0",
+      "role": "train",
+      "primitive": "score",
+      "rows_loaded": 900,
+      "rows_kept": 900,
+      "note": "Rule-labelled ordinal control set, generated here (ADR 0005 rule c). No model in the loop, so its labels are exact."
+    }
+  },
+  "two_stage_parents_expanded": 8000,
+  "licences": {
+    "PolyAI/banking77": {
+      "license": "CC-BY-4.0",
+      "verdict": "train",
+      "rows": 20000,
+      "splits": {
+        "val": 2085,
+        "train": 15810,
+        "test": 2105
+      }
+    },
+    "allenai/sciq": {
+      "license": "cc-by-nc-3.0",
+      "verdict": "eval-only",
+      "rows": 991,
+      "splits": {
+        "eval": 991
+      }
+    },
+    "cais/mmlu": {
+      "license": "MIT",
+      "verdict": "train",
+      "rows": 1497,
+      "splits": {
+        "test": 157,
+        "val": 178,
+        "train": 1162
+      }
+    },
+    "clinc/clinc_oos": {
+      "license": "CC-BY-3.0",
+      "verdict": "train",
+      "rows": 20000,
+      "splits": {
+        "train": 16075,
+        "val": 1970,
+        "test": 1955
+      }
+    },
+    "facebook/anli": {
+      "license": "CC-BY-NC-4.0",
+      "verdict": "eval-only",
+      "rows": 1000,
+      "splits": {
+        "eval": 1000
+      }
+    },
+    "google-research-datasets/go_emotions": {
+      "license": "Apache-2.0",
+      "verdict": "train",
+      "rows": 6000,
+      "splits": {
+        "train": 4753,
+        "test": 669,
+        "val": 578
+      }
+    },
+    "qiaojin/PubMedQA": {
+      "license": "MIT",
+      "verdict": "train",
+      "rows": 890,
+      "splits": {
+        "eval": 890
+      }
+    },
+    "s1decide/ordinal_control": {
+      "license": "Apache-2.0",
+      "verdict": "train",
+      "rows": 900,
+      "splits": {
+        "train": 727,
+        "val": 84,
+        "test": 89
+      }
+    },
+    "tau/commonsense_qa": {
+      "license": "MIT",
+      "verdict": "train",
+      "rows": 1476,
+      "splits": {
+        "eval": 1476
+      }
+    }
+  },
+  "files": {
+    "eval": "data\\processed\\eval.jsonl",
+    "test": "data\\processed\\test.jsonl",
+    "train": "data\\processed\\train.jsonl",
+    "val": "data\\processed\\val.jsonl"
+  },
+  "leakage": {
+    "checked": true,
+    "external_rows": 1750,
+    "leaked_rows": 217,
+    "leaked_families": [
+      "go_emotions",
+      "mmlu"
+    ],
+    "train_states": 10606
+  }
+}

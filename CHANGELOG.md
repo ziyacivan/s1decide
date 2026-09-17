@@ -98,6 +98,25 @@ this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   sources **decided** eval-only as a risk-tolerance choice; Q1, Q2 and Q4 remain proposed.
 - `master` and the `phase-0` tag pushed to the private backup remote. Nothing else.
 
+- **Phase 1 Step 2b** — the data pipeline. `uv run task data` builds `data/processed/` from the
+  registry in `data/build/sources.py`: fetch → normalise → two-stage expand → augment → split →
+  licence gate → write, deterministic and idempotent. High-cardinality questions (banking77 77
+  intents, clinc_oos 151) are expanded into the format-0.2 two-stage form, with stage-1 rows
+  rendered byte-identically to `render_stage1`. `data/build/synthetic.py` generates the
+  rule-labelled ordinal control set (ADR 0005 rule c). Splitting is by **state hash**;
+  `commonsense_qa` and `pubmedqa` are held-out families and `anli`/`sciq` are OOD sets whose
+  non-commercial licence makes training on them impossible by construction.
+  `docs/dataset-build.md` is generated from the manifest.
+  - Substitution recorded: `datasets` 4.x dropped script-based datasets, so `PolyAI/banking77`
+    and `AmazonScience/massive` no longer load at their canonical ids.
+    `legacy-datasets/banking77` (HF's parquet mirror, same CC-BY-4.0 data) is used instead.
+    **MASSIVE is deferred** — its parquet branch exposes only a single `default` config.
+  - The amendment-B leakage guard found **217 of 1,750** external Tier-2 rows sharing a state
+    with our training data (`go_emotions`, `mmlu`); they must be dropped before any Tier-2
+    number is reported.
+- Branch renamed `master` → `main` and pushed. The old remote `master` still exists; it can be
+  deleted once the GitHub default branch is switched.
+
 ### Notes
 
 - vLLM is deliberately **not** a project extra: uv's universal lock cannot satisfy

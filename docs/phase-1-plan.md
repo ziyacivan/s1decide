@@ -90,6 +90,18 @@ only, `offload_embedding=True`, `use_gradient_checkpointing="unsloth"`. Ordinal 
 Also required: **a test that fails if packing or `padding_free` is enabled for a GDN hybrid model
 on transformers < 5.9**, so the silent state-leak finding cannot be undone by a version bump.
 
+### Planned experiment: raw-completion render (after S1 LoRA, not before)
+
+A/B a **raw-completion render** — no chat template, no `<think></think>` block — against the
+chat render, on identical data, comparing **accuracy and ECE**. The chat tail is 9 tokens per
+question and is the entire remaining gap in all-in format overhead; if a raw render holds up,
+Noul's minimum suffix drops from 21 tokens to 12.
+
+Run it **after** S1 LoRA, because a trained model may tolerate a format the base model does not,
+and the base model's zero-shot behaviour is not evidence about the trained one. **Do not change
+the default render** on the strength of this; it is a measurement, and switching would be its own
+`FORMAT_VERSION` bump with its own re-run.
+
 ### Amendment C — hardware
 
 - **Smoke run** (pipeline correctness, ≤ 5 min): the small same-family model from ADR 0002,

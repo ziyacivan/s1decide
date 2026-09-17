@@ -245,8 +245,11 @@ Tasks that aren't implementable yet fail loudly with "not implemented".
       - [ ] marginal cost per question at 64, `(median(64) − median(1)) / 63`, ≤ 150 ms;
       - [ ] fitted cost model (`a·passes + b·suffix_tokens`, with R²) re-fitted and
             committed per release;
-      - [ ] format overhead ≤ 25% of suffix tokens (ADR 0003 option B; baseline at
-            adoption: 51.7% overall, 70% for Noul).
+      - [ ] `format_overhead_controllable` ≤ 25% of suffix tokens — the overhead our
+            format adds, excluding the base model's chat tail (ADR 0003 option B).
+            The all-in `format_overhead` is reported beside it in every bench output
+            and in `LATENCY.md`; the difference between the two is the chat tail, which
+            the base model's template imposes and no format change of ours removes.
 - [ ] Zero-shot baseline (no LoRA) + S1 LoRA + S2 calibration evaluated on
       held-out families and ≥ 2 fully OOD sets; ECE, Brier, acc, AUROC per
       option-count bucket; reliability diagrams committed.

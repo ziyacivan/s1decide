@@ -22,6 +22,8 @@ data/raw/*
 !data/raw/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+# The manifest is provenance (counts, licences, leakage), not data — keep it.
+!data/processed/manifest.json
 
 # Unsloth writes generated modules into the CWD when it is imported (e.g. by `task doctor`)
 unsloth_compiled_cache/

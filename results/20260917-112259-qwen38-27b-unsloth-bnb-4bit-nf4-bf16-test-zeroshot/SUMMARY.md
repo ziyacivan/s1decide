@@ -8,6 +8,8 @@
 - **Commit**: `1e7cd2584a13` **(tree dirty at run time)**
 - **Created**: 2026-09-17T11:36:22+00:00 · Windows 10 · Python 3.11.16
 
+> **Format 0.1 — not comparable to 0.2.** This run was produced under an older prompt format. Every number below is valid for format 0.1 and must not be compared with a format-0.2 run; the prompts differ, so the model saw different inputs. Kept deliberately: the change between formats is itself a result.
+
 ## Coverage
 
 | split | kept | total | fraction | dropped >26 options | dropped invalid |

@@ -1,8 +1,11 @@
 # Dataset card
 
-Sources used by this project, what they are licensed under, and what that permits. Row counts
-and per-split figures are produced by code (`eval/data.py`, recorded in each run's
-`metrics.json` under `coverage`), never typed here by hand.
+Sources used by this project, what they are licensed under, and what that permits.
+
+**All counts live in [`dataset-build.md`](dataset-build.md)**, generated from
+`data/processed/manifest.json` by `uv run task data`. Nothing numeric is typed here, so the
+reasoning below and the figures there cannot drift apart. The licence audit behind the source
+list is `docs/research/source-licences-2026-09-17.md`; the rules are ADR 0004 and ADR 0005.
 
 ## Currently used
 

@@ -653,11 +653,36 @@ def task_fmt(argv: list[str]) -> int:
 # planned tasks — fail loudly until implemented
 # --------------------------------------------------------------------------- #
 
-register_not_implemented(
-    "data",
-    "Fetch, normalise, augment and split sources into data/processed/",
-    "Phase 1 data-engineer work; needs data/build/ scripts",
-)
+
+@register("data", "Fetch, normalise, augment and split sources into data/processed/")
+def task_data(argv: list[str]) -> int:
+    """Build the dataset. ``--limit N`` caps rows per source for a smoke build."""
+    import argparse
+    import json
+
+    ensure_repo_on_path()
+    from data.build.pipeline import BuildConfig, build
+
+    parser = argparse.ArgumentParser(prog="task data")
+    parser.add_argument("--limit", type=int, default=None, help="cap rows per source")
+    parser.add_argument("--seed", type=int, default=BuildConfig.seed)
+    args = parser.parse_args(argv)
+
+    manifest = build(BuildConfig(seed=args.seed, limit_per_source=args.limit))
+
+    from data.build.report import write_build_report
+
+    root = repo_root()
+    report = write_build_report(
+        root / "data" / "processed" / "manifest.json", root / "docs" / "dataset-build.md"
+    )
+    print(json.dumps({k: manifest[k] for k in ("rows", "splits", "by_family")}, indent=2))
+    print(f"wrote {report.relative_to(root)}")
+    print(f"two-stage parents expanded: {manifest['two_stage_parents_expanded']}")
+    print(f"leakage: {manifest['leakage']}")
+    return 0
+
+
 register_not_implemented(
     "smoke",
     "200-sample end-to-end run: data -> tiny LoRA -> eval, <= 5 min on a 3090",
