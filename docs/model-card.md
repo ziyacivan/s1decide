@@ -184,6 +184,14 @@ Source: `results/<quantization-run>/metrics.json`.
 Temperature is fitted **at the deployment quantization**, so each row carries its own
 calibration. A temperature fitted in one precision and applied in another is not calibration.
 
+That is a measured position, not a precaution. Running one model — same weights, same prompts,
+same 100 rows, same greedy decoding — under two different 4-bit quantizations produced
+**78% exact agreement** on a 5-level ordinal judgement, 94% within one level, and a label
+marginal shifted by **0.17 levels**, with 16 of 22 disagreements moving the same direction. A
+single scalar temperature corrects systematic over- or under-confidence; it cannot absorb a
+systematic shift in what the model says. Full measurement and its limits:
+[`docs/research/quantization-label-disagreement-2026-09-18.md`](research/quantization-label-disagreement-2026-09-18.md).
+
 ## Latency
 
 One forward pass for every question in a call. Source:

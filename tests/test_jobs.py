@@ -17,6 +17,7 @@ from pathlib import Path
 import pytest
 
 from s1decide.jobs import (
+    CHECKPOINT_EVERY,
     STALE_HEARTBEAT_SECONDS,
     JobPaths,
     checkpoint_rows,
@@ -320,3 +321,29 @@ def test_the_status_survives_a_machine_with_no_boot_time(tmp_path, monkeypatch) 
     run_job(tmp_path, items(2), double, key=lambda i: i["id"])
     monkeypatch.setattr(jobs, "boot_time", lambda: None)
     assert "booted" not in jobs.job_status(tmp_path).render()
+
+
+def test_the_checkpoint_interval_bounds_the_worst_case_loss() -> None:
+    """Lowered to 50 after a reboot cost 144 rows — ~40 min at the teacher run's 0.060 rows/s.
+
+    The bound that matters is time, not rows: at 0.060 rows/s, 50 rows is about 14 minutes of
+    work at risk. Pinned so raising it again is a deliberate act with this arithmetic in view.
+    """
+    assert CHECKPOINT_EVERY <= 50
+    slowest_observed_rows_per_second = 0.060
+    worst_case_minutes = CHECKPOINT_EVERY / slowest_observed_rows_per_second / 60
+    assert worst_case_minutes <= 15
+
+
+def test_rows_are_flushed_at_the_checkpoint_interval_not_only_at_the_end(tmp_path) -> None:
+    """The point of a checkpoint is to survive a kill, so it has to be on disk before the end."""
+    flushed: list[int] = []
+
+    def work(batch):
+        flushed.append(len(read_done_ids(JobPaths(tmp_path))))
+        return double(batch)
+
+    run_job(tmp_path, items(120), work, key=lambda i: i["id"], batch_size=10)
+    assert max(flushed) >= CHECKPOINT_EVERY, (
+        f"nothing reached disk mid-run: counts seen were {sorted(set(flushed))}"
+    )

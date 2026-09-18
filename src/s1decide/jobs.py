@@ -47,9 +47,17 @@ __all__ = [
     "spawn_detached",
 ]
 
-#: Rows between checkpoint flushes. Small enough that a crash costs minutes, large enough that
-#: the writes are not the bottleneck.
-CHECKPOINT_EVERY = 200
+#: Rows between checkpoint flushes, and therefore the worst-case loss when the machine goes
+#: away without warning.
+#:
+#: 50, lowered from 200 after a Windows Update reboot cost 144 rows — about 40 minutes at the
+#: teacher run's 0.060 rows/s. At 50 the worst case is ~14 minutes. The write is a few hundred
+#: kilobytes appended and fsynced, so at these rates it is far below the noise: one flush per
+#: ~14 minutes of GPU work.
+#:
+#: The number that matters is *time*, not rows. A job running at 2 rows/s checkpoints every 25
+#: seconds at this setting, which is more often than it needs but costs nothing either.
+CHECKPOINT_EVERY = 50
 
 #: A heartbeat older than this means the job is wedged rather than slow. Generous: one batch of
 #: reasoning traces on a 27B at 4-bit can legitimately take several minutes.

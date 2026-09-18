@@ -284,3 +284,5 @@
 {"at": "2026-09-18T04:55:03+00:00", "rows_this_run": 1136, "rows_done": 1136, "total_rows": 6000, "elapsed_seconds": 18909.256234, "rows_per_second": 0.0601, "teacher": "qwen-low-1024", "truncated": 0, "uncommitted": 0}
 {"at": "2026-09-18T04:56:00+00:00", "rows_this_run": 1140, "rows_done": 1140, "total_rows": 6000, "elapsed_seconds": 18966.243563, "rows_per_second": 0.0601, "teacher": "qwen-low-1024", "truncated": 0, "uncommitted": 0}
 {"at": "2026-09-18T04:57:11+00:00", "rows_this_run": 1144, "rows_done": 1144, "total_rows": 6000, "elapsed_seconds": 19037.634901, "rows_per_second": 0.0601, "teacher": "qwen-low-1024", "truncated": 0, "uncommitted": 0}
+{"at": "2026-09-18T16:01:32+00:00", "rows_this_run": 4, "rows_done": 1004, "total_rows": 6000, "elapsed_seconds": 73.292118, "rows_per_second": 0.0546, "teacher": "qwen-low-1024", "truncated": 0, "uncommitted": 0}
+{"at": "2026-09-18T16:02:33+00:00", "rows_this_run": 8, "rows_done": 1008, "total_rows": 6000, "elapsed_seconds": 133.907713, "rows_per_second": 0.0597, "teacher": "qwen-low-1024", "truncated": 0, "uncommitted": 0}
