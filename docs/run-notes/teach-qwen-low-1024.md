@@ -1,0 +1,102 @@
+# Overnight teacher run — launched 2026-09-17 23:39 UTC
+
+**Status command (this is the one to run in the morning):**
+
+```
+uv run task teach --status teach-qwen-low-1024
+```
+
+When that says `DONE`, the second leg is already running:
+
+```
+uv run task teach --status teach-gptoss-medium-1024
+```
+
+## What is running
+
+A detached chain (`uv run task teach-overnight --detach --limit 6000`, pid 22976) running both
+teachers back to back over the same 6,000 source rows. Each leg keeps its own run directory,
+checkpoints and resume state, so a failure in the second cannot cost the first.
+
+| | leg 1 | leg 2 |
+|---|---|---|
+| run id | `teach-qwen-low-1024` | `teach-gptoss-medium-1024` |
+| model | `unsloth/Qwen3.8-27B-unsloth-bnb-4bit` | `openai/gpt-oss-20b` |
+| quantization | bitsandbytes nf4, bf16 compute | MXFP4 |
+| reasoning | native effort `low` | native effort `medium` |
+| generation cap | 1,024 tokens | 1,024 tokens |
+| batch | 4 | 16 |
+| measured rate | 0.060 rows/s | 0.63 rows/s |
+| estimated wall time | **~27.6 h** | ~2.6 h |
+
+Both legs label the same `data/processed/teach_items.jsonl` rows, with the same rubric and the
+same prompt, so the agreement rate measures the teachers and not the prompt.
+
+## Runtime path: bitsandbytes, not llama.cpp — and why
+
+The time-boxed experiment ran teacher 1 through `llama-server` with Q4_K_M and continuous
+batching at `--parallel 16`, on the same 100 pilot rows.
+
+| | bitsandbytes nf4 | llama.cpp Q4_K_M |
+|---|---|---|
+| rows/s | 0.060 | **0.312** (5.18x) |
+| tokens/s | 34.4 | 165.2 |
+| committed | 100/100 | 100/100 |
+| hit the cap | 0% | 0% |
+| **exact match vs nf4** | — | **78.0%** |
+| within ±1 level | — | 94.0% |
+
+The rule required **both** a 2.5x speed-up and 90% exact match. Speed passed at 5.18x; exact
+match failed at 78%. So the speed-up is declined and teacher 1 runs on bitsandbytes, at the cost
+of roughly a day of wall time.
+
+That is the right call beyond rule-following. Two quantizations of one model disagreeing on a
+fifth of an ordinal task is not a runtime detail — the disagreement is concentrated on adjacent
+levels, exactly where the scale is hardest and where the ±1 keep-rule is already doing the most
+work. Adopting Q4_K_M would have changed what the teacher said while the dataset card went on
+naming one model.
+
+The client survives at `src/s1decide/engine/llamacpp_client.py` as the seed of the GGUF engine.
+
+## Progress at the time of writing
+
+```
+run teach-qwen-low-1024: RUNNING
+  rows      208 / 6,000 (3.5%)
+  remaining 5,792
+  rate      0.06 rows/s
+  eta       26.2 h
+  heartbeat 24s ago
+  teacher   qwen-low-1024
+  truncated 0
+```
+
+First checkpoint written (200 rows in `rows.jsonl`). ETA matches the pilot's 0.060 rows/s, and
+nothing has truncated.
+
+## If something has gone wrong
+
+- **`FAILED`** — the traceback is in `results/teach-qwen-low-1024/FAILED` and the job has
+  stopped; it never retries in a loop. Re-running the same command resumes from the last
+  checkpoint and recomputes nothing.
+- **`STALE`** — the heartbeat is older than 15 minutes. The process is wedged rather than slow.
+  `uv run task gpu-kill` clears our own trees, then re-run to resume.
+- **Nothing on the GPU** — the machine rebooted. Resume with
+  `uv run task teach-overnight --detach --limit 6000`; finished rows are never recomputed.
+
+## Pre-flight, recorded
+
+- Unsloth Studio: not running.
+- Foreign VRAM holders: none touched. 490 MiB held by the desktop compositor, Chrome and VS
+  Code, all left alone; `gpu-kill` only ever targets our own process trees.
+- Sysmem fallback: confirmed off by `doctor` — a 24.70 GiB request raised `OutOfMemoryError`.
+- Kernels: `gdn 2/4 accelerated | fla: chunk, fused_recurrent | torch: conv:fn, conv:update`,
+  recorded in the run's `meta.kernels`.
+- Standby and monitor timeout: disabled by the owner.
+- `doctor`: 17 checks, 0 fail, 1 warn (the optional `llama-cpp-python`, unrelated).
+
+## What happens after
+
+The two legs produce per-teacher labels. The corpus step that keeps only exact and ±1 agreement,
+records the drop rate and folds the result into `Score` has **not** run yet and is not part of
+this job — it is the next piece of work, and it is CPU-side.

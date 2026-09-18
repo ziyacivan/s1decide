@@ -1,0 +1,2 @@
+
+=== spawned 2026-09-17T23:39:38+00:00: ['C:\\Users\\yusuf\\Documents\\Github\\s1decide\\.venv\\Scripts\\python.exe', '-m', 'data.build.teach_overnight', '--items', 'data/processed/teach_items.jsonl', '--limit', '6000']

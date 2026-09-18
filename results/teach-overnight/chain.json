@@ -1,0 +1,16 @@
+{
+  "started": "2026-09-17T23:39:38+00:00",
+  "plan": [
+    {
+      "teacher": "qwen-low-1024",
+      "batch_size": 4,
+      "run_id": "teach-qwen-low-1024"
+    },
+    {
+      "teacher": "gptoss-medium-1024",
+      "batch_size": 16,
+      "run_id": "teach-gptoss-medium-1024"
+    }
+  ],
+  "legs": []
+}
