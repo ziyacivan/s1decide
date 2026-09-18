@@ -1,0 +1,6 @@
+{
+  "latency": "results/20260917-220416-qwen38-27b-unsloth-bnb-4bit-nf4-bf16-latency/latency.json",
+  "reliability": "results/20260917-format02-zeroshot/metrics.json",
+  "risk-coverage": "results/20260917-format02-zeroshot/metrics.json",
+  "training-mix": "data/processed/manifest.json"
+}

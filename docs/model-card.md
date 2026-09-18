@@ -173,13 +173,23 @@ is measured on the 3090 at the same splits.
 
 Source: `results/<quantization-run>/metrics.json`.
 
-| quantization | accuracy | ECE | BSS vs base rate | VRAM | notes |
-|---|---|---|---|---|---|
-| BF16 | **not measured** | **not measured** | **not measured** | — | deferred to v0.2 |
-| Q8_0 | TBD | TBD | TBD | TBD | |
-| Q5_K_M | TBD | TBD | TBD | TBD | |
-| Q4_K_M | TBD | TBD | TBD | TBD | |
-| nf4 (bitsandbytes) | TBD | TBD | TBD | TBD | the deployment this card's other numbers use |
+Each row is calibrated **twice** at its own quantization and both are reported: `temperature`
+(one scalar per option-count bucket, cannot change which option wins) and `vector` (temperature
+plus a per-position bias, which can). One column would hide whether a quantization costs
+confidence or costs a shifted positional preference — temperature fixes the first and cannot
+touch the second.
+
+| quantization | accuracy | ECE (temp) | ECE (vector) | BSS (temp) | BSS (vector) | VRAM |
+|---|---|---|---|---|---|---|
+| BF16 | **not measured** | **not measured** | **not measured** | **not measured** | **not measured** | — |
+| Q8_0 | TBD | TBD | TBD | TBD | TBD | TBD |
+| Q5_K_M | TBD | TBD | TBD | TBD | TBD | TBD |
+| Q4_K_M | TBD | TBD | TBD | TBD | TBD | TBD |
+| nf4 (bitsandbytes) | TBD | TBD | TBD | TBD | TBD | TBD |
+
+BF16 is deferred to v0.2. nf4 is the deployment this card's other numbers use. The deployed
+calibration method is named in each run's `calibration.json`; accuracy differs between the two
+methods only under `vector`, which is the one that can change an answer.
 
 Temperature is fitted **at the deployment quantization**, so each row carries its own
 calibration. A temperature fitted in one precision and applied in another is not calibration.

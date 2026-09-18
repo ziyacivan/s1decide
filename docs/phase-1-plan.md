@@ -364,6 +364,43 @@ hash with our training data. Before any Tier-2 figure is reported:
 - state in the model card that `pngwn/system-one-decisions` is derived from sources we train on,
   so Tier 2 is **"external" in labelling, not in distribution**.
 
+## Queued — `Noul` quantization stability (**first GPU task after leg 2 completes**)
+
+Queued 2026-09-18. **Not started; the GPU is held by the teacher run.**
+
+`docs/research/quantization-label-disagreement-2026-09-18.md` measured nf4 against Q4_K_M on
+the same model and the same 100 rows, for a 5-level `Score` judgement produced by hundreds of
+decode steps: **78% exact agreement, 94% within one level**, and a label marginal shifted by
+0.17 levels. That note is explicit that it may not generalise — and the hypothesis worth
+testing is that it does not.
+
+**Hypothesis.** A `Noul` answer is a single masked logit read from one forward pass, with no
+decode loop to accumulate divergence. It should be far more stable across quantizations than a
+judgement that depends on hundreds of sampled tokens. If it is, the 22% disagreement is a fact
+about *generation*, not about the primitive we publish, and the quantization table's job is
+narrower than the note currently implies.
+
+**Protocol — deliberately identical to the `Score` note, so the two are comparable:**
+
+1. Take the `Noul` questions over the same pilot states (`data/processed/teach_items.jsonl`
+   rows already used, expanded to `Noul` form), so the *content* is held constant.
+2. Score them twice: nf4 through `HFEngine`, and Q4_K_M through `llama-server`'s `/completion`
+   with `n_probs` to read the masked option logits — **not** by generating. This needs the
+   logit-reading half of `engine/llamacpp.py`, which
+   `src/s1decide/engine/llamacpp_client.py` does not yet have; writing it is part of the task
+   and it is the piece the GGUF engine needs anyway.
+3. Report exactly what the `Score` note reports: exact agreement, the marginal on each side, the
+   direction of disagreement with a sign test, and the mean probability shift.
+4. Write it up as a dated research note and cross-reference both directions.
+
+**What would change the project.** If `Noul` agreement is ~99%, the quantization table can lead
+with the primitives and treat the `Score` disagreement as a property of teacher generation. If
+it is also ~78%, then 4-bit quantization moves our published answers, the BF16 row deferred to
+v0.2 stops being a nice-to-have, and the model card needs to say so plainly.
+
+Cost: one scoring pass per runtime over a few hundred rows — minutes, not hours, because there
+is no generation.
+
 ## Deferred to after the S1 smoke run — bf16 GDN recurrent state (inference-engineer)
 
 The remaining half of ADR 0003 option C. Deferred 2026-09-17 on purpose: it changes numerics,

@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -317,11 +318,23 @@ def job_status(directory: Path) -> JobStatus:
 
 
 def spawn_detached(argv: Sequence[str], directory: Path) -> int:
-    """Start a command in its own process group, detached from this session.
+    """Start a command that outlives the shell, the terminal and this session.
 
-    On Windows this means ``CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS``: the child does not
-    receive the console's Ctrl-C and does not die when the console closes. On POSIX it means
-    ``start_new_session``. Either way the job outlives whoever started it, which is the point.
+    On Windows this goes through **PowerShell ``Start-Process``**, which re-parents the child
+    under the PowerShell host. ``subprocess.Popen`` with
+    ``CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS`` is not enough and the difference is not
+    theoretical: a run launched that way died 2.5 minutes later with
+
+        forrtl: error (200): program aborting due to window-CLOSE event
+
+    the Intel Fortran runtime inside numpy's MKL reacting to a console control event. The child
+    stayed associated with the launching console — and, on a tool-driven shell, with its job
+    object — so when that went away it was terminated. The first such run only survived five
+    hours because the launching session happened to stay busy that long, which is luck, not
+    detachment.
+
+    ``CREATE_BREAKAWAY_FROM_JOB`` is tried first since it is cheaper and needs no shell; a job
+    configured to forbid breakaway makes ``Popen`` fail, and then the PowerShell path is used.
 
     Args:
         argv: The command to run.
@@ -329,27 +342,91 @@ def spawn_detached(argv: Sequence[str], directory: Path) -> int:
 
     Returns:
         The child's process id, also written to ``pid`` in the job directory.
+
+    Raises:
+        RuntimeError: If the process could not be started detached at all. Launching a
+            multi-hour job that will die with the terminal is worse than not launching it.
     """
     paths = JobPaths(directory).ensure()
-    if sys.platform == "win32":
-        flags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
-        kwargs: dict[str, Any] = {"creationflags": flags}
-    else:
-        kwargs = {"start_new_session": True}
-
+    stamp = datetime.now(UTC).isoformat(timespec="seconds")
     with paths.log.open("a", encoding="utf-8") as handle:
-        handle.write(f"\n=== spawned {datetime.now(UTC).isoformat(timespec='seconds')}: {argv}\n")
-        handle.flush()
-        process = subprocess.Popen(
-            list(argv),
-            stdout=handle,
-            stderr=subprocess.STDOUT,
-            stdin=subprocess.DEVNULL,
-            cwd=str(directory.parents[1]) if len(directory.parents) > 1 else None,
-            **kwargs,
+        handle.write(f"\n=== spawned {stamp}: {list(argv)}\n")
+
+    if sys.platform != "win32":
+        with paths.log.open("a", encoding="utf-8") as handle:
+            process = subprocess.Popen(
+                list(argv),
+                stdout=handle,
+                stderr=subprocess.STDOUT,
+                stdin=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+        (directory / "pid").write_text(str(process.pid), encoding="utf-8", newline="\n")
+        return process.pid
+
+    pid = _spawn_windows_breakaway(argv, paths) or _spawn_windows_powershell(argv, paths)
+    if pid is None:
+        raise RuntimeError(
+            "could not start the job detached; it would die with this terminal, so it was not "
+            "started at all"
         )
-    (directory / "pid").write_text(str(process.pid), encoding="utf-8", newline="\n")
-    return process.pid
+    (directory / "pid").write_text(str(pid), encoding="utf-8", newline="\n")
+    return pid
+
+
+def _spawn_windows_breakaway(argv: Sequence[str], paths: JobPaths) -> int | None:
+    """Try to break the child out of this process's job object."""
+    flags = (
+        subprocess.CREATE_NEW_PROCESS_GROUP
+        | subprocess.DETACHED_PROCESS
+        | getattr(subprocess, "CREATE_BREAKAWAY_FROM_JOB", 0x01000000)
+    )
+    try:
+        with paths.log.open("a", encoding="utf-8") as handle:
+            process = subprocess.Popen(
+                list(argv),
+                stdout=handle,
+                stderr=subprocess.STDOUT,
+                stdin=subprocess.DEVNULL,
+                creationflags=flags,
+            )
+        return process.pid
+    except OSError:
+        # The job forbids breakaway. Not fatal — PowerShell re-parents instead.
+        return None
+
+
+def _spawn_windows_powershell(argv: Sequence[str], paths: JobPaths) -> int | None:
+    """Start the child from the PowerShell host, which is not in this shell's job."""
+    powershell = shutil.which("powershell") or shutil.which("pwsh")
+    if powershell is None:  # pragma: no cover - PowerShell ships with Windows
+        return None
+
+    def quote(value: str) -> str:
+        return "'" + str(value).replace("'", "''") + "'"
+
+    # Start-Process cannot send stdout and stderr to one file, so stderr gets its own and the
+    # status report reads both.
+    arguments = ",".join(quote(a) for a in argv[1:])
+    script = (
+        f"$p = Start-Process -FilePath {quote(argv[0])} "
+        + (f"-ArgumentList {arguments} " if len(argv) > 1 else "")
+        + f"-WorkingDirectory {quote(str(paths.directory.parents[1]))} "
+        f"-RedirectStandardOutput {quote(str(paths.log))} "
+        f"-RedirectStandardError {quote(str(paths.directory / 'log.err.txt'))} "
+        "-WindowStyle Hidden -PassThru; $p.Id"
+    )
+    completed = subprocess.run(
+        [powershell, "-NoProfile", "-NonInteractive", "-Command", script],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    for line in reversed(completed.stdout.strip().splitlines()):
+        if line.strip().isdigit():
+            return int(line.strip())
+    return None
 
 
 def run_job(

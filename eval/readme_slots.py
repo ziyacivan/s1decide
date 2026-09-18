@@ -15,7 +15,23 @@ import re
 from pathlib import Path
 from typing import Any
 
-__all__ = ["fill_slots", "render_latency_slot", "render_zeroshot_slot", "update_readme"]
+__all__ = [
+    "StaleFigure",
+    "check_figures_fresh",
+    "fill_slots",
+    "render_latency_slot",
+    "render_provenance_slot",
+    "render_zeroshot_slot",
+    "update_readme",
+]
+
+
+class StaleFigure(RuntimeError):
+    """A figure is older than the JSON it was generated from.
+
+    Raised rather than warned about: a README showing last week's picture beside this
+    week's number is worse than one showing neither.
+    """
 
 
 def _read(path: Path) -> dict[str, Any]:
@@ -42,6 +58,23 @@ def render_zeroshot_slot(metrics: dict[str, Any]) -> str:
             f"| Accuracy at 80% coverage | {selective:.4f} |",
             "",
         ]
+    )
+
+
+def render_provenance_slot(metrics: dict[str, Any]) -> str:
+    """One line saying what the headline numbers were measured on.
+
+    A calibration table without its eval set, question count and evaluation mode is not
+    checkable — `case-control` and `full` are different measurements of the same model, and the
+    run id is what lets anyone find the JSON behind the row.
+    """
+    meta = metrics["meta"]
+    split = meta.get("split", "?")
+    mode = meta.get("eval_mode", "full")
+    return (
+        f"\nEvaluated on `{meta.get('dataset', '?')}` `{split}` — "
+        f"{metrics['overall']['n']:,} questions, eval mode `{mode}`, "
+        f"run `{meta.get('run_id', '?')}`.\n"
     )
 
 
@@ -81,12 +114,35 @@ def fill_slots(readme: str, blocks: dict[str, str]) -> str:
         ValueError: If a named block has no markers — silently adding one at the end would put
             a metrics table somewhere nobody looks.
     """
-    for name, contents in blocks.items():
-        pattern = re.compile(rf"(<!--metrics:{name}-->)(.*?)(<!--/metrics:{name}-->)", re.S)
+    for raw_name, contents in blocks.items():
+        # Metric blocks are written `<!--metrics:x-->`; figure captions carry their own prefix.
+        name = raw_name if ":" in raw_name else f"metrics:{raw_name}"
+        marker = re.escape(name)
+        pattern = re.compile(rf"(<!--{marker}-->)(.*?)(<!--/{marker}-->)", re.S)
         if not pattern.search(readme):
-            raise ValueError(f"README has no <!--metrics:{name}--> block to fill")
+            raise ValueError(f"README has no <!--{name}--> block to fill")
         readme = pattern.sub(lambda m: m.group(1) + contents + m.group(3), readme)
     return readme
+
+
+def check_figures_fresh(root: Path) -> list[str]:
+    """Every figure must be newer than the JSON behind it.
+
+    Returns:
+        The names of stale figures, empty when all are current.
+    """
+    from eval.figures import FIGURES, resolve_sources
+
+    sources = resolve_sources(root)
+    stale = []
+    for spec in FIGURES:
+        image = root / "docs" / "figures" / f"{spec.name}.png"
+        source = root / spec.source.format(**sources)
+        if not image.is_file():
+            stale.append(f"{spec.name} (missing)")
+        elif source.is_file() and image.stat().st_mtime < source.stat().st_mtime:
+            stale.append(f"{spec.name} (older than {spec.source.format(**sources)})")
+    return stale
 
 
 def latest_latency_run(results: Path) -> Path:
@@ -119,15 +175,35 @@ def update_readme(root: Path | None = None) -> Path:
     zeroshot = _read(results / REFERENCE_RUNS["zeroshot"].run_id / "metrics.json")
     latency = _read(latest_latency_run(results) / "latency.json")
 
+    stale = check_figures_fresh(root)
+    if stale:
+        raise StaleFigure(
+            "figures are out of date: " + ", ".join(stale) + " — run `uv run task figures`"
+        )
+
+    from eval.figures import figure_captions
+
+    blocks = {
+        "zeroshot": render_zeroshot_slot(zeroshot),
+        "zeroshot-provenance": render_provenance_slot(zeroshot),
+        "latency": render_latency_slot(latency),
+    }
+    from eval.figures import FIGURES
+
+    captions = figure_captions(root)
+    # The image line is generated too, not just the caption: a hand-written `![alt](path)` let
+    # the alt text drift from the spec that documents it, which is exactly the class of rot
+    # these blocks exist to prevent.
+    blocks |= {
+        f"figure:{spec.name}": (
+            f"\n![{spec.alt}](docs/figures/{spec.name}.png)\n\n*{captions[spec.name]}*\n"
+        )
+        for spec in FIGURES
+    }
+
     readme = root / "README.md"
     readme.write_text(
-        fill_slots(
-            readme.read_text(encoding="utf-8"),
-            {
-                "zeroshot": render_zeroshot_slot(zeroshot),
-                "latency": render_latency_slot(latency),
-            },
-        ),
+        fill_slots(readme.read_text(encoding="utf-8"), blocks),
         encoding="utf-8",
         newline="\n",
     )

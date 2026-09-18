@@ -39,3 +39,6 @@ outputs/
 # OS
 Thumbs.db
 .DS_Store
+
+# Announcement drafts are written locally and never committed.
+docs/announce/

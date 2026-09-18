@@ -28,12 +28,16 @@ from typing import Any
 import numpy as np
 
 __all__ = [
+    "CALIBRATION_METHODS",
     "CALIBRATION_VERSION",
+    "MIN_VECTOR_SAMPLES_PER_PARAMETER",
     "OPTION_COUNT_BUCKETS",
     "Calibration",
     "fit_calibration",
     "fit_temperature",
+    "fit_vector_scaling",
     "nll_at_temperature",
+    "nll_with_vector",
     "option_count_bucket",
 ]
 
@@ -75,6 +79,24 @@ def option_count_bucket(n_options: int) -> str:
 #: Search bounds for the temperature. Wide enough to express "far too confident" (T >> 1)
 #: and "far too timid" (T << 1) without letting a degenerate fit run away.
 TEMPERATURE_BOUNDS = (0.05, 20.0)
+
+#: The calibration methods a run may fit and report.
+#:
+#: ``temperature`` divides every logit by one scalar per option-count bucket. It can only make a
+#: distribution sharper or flatter; it cannot change which option wins, so accuracy is identical
+#: before and after by construction.
+#:
+#: ``vector`` adds a per-position bias as well: ``softmax(z / T + b)``. It **can** change the
+#: winner, and that is the point — the option→token mapping is shuffled per example, so a
+#: position that is still systematically favoured reflects the model preferring a *slot* rather
+#: than an answer. Correcting that is a real gain; it is also a real risk, which is why both
+#: methods are fitted, both are reported, and the deployed one is named in `calibration.json`.
+CALIBRATION_METHODS: tuple[str, ...] = ("temperature", "vector")
+
+#: A bias vector has one free parameter per option, so a bucket spanning 3-5 options cannot
+#: share one. Vector scaling is therefore fitted per **exact** option count, and only where
+#: there is enough data for `n + 1` parameters not to be fitted to noise.
+MIN_VECTOR_SAMPLES_PER_PARAMETER = 20
 
 _GOLDEN = (math.sqrt(5.0) - 1.0) / 2.0
 
@@ -197,6 +219,123 @@ def fit_temperature(
     return float(1.0 / (0.5 * (lo + hi)))
 
 
+def fit_vector_scaling(
+    logits: Sequence[Sequence[float]],
+    labels: Sequence[int],
+    *,
+    weights: Sequence[float] | None = None,
+    iterations: int = 500,
+    tolerance: float = 1e-7,
+) -> tuple[float, list[float]]:
+    """Fit ``softmax(z / T + b)`` by gradient descent on the weighted NLL.
+
+    Every row must have the same number of options: a bias vector is indexed by position, so
+    there is nothing to share between a 3-option and a 5-option question.
+
+    The objective is convex in ``(beta, b)`` where ``beta = 1/T`` — a log-sum-exp of an affine
+    function minus a linear term — so a plain descent with a backtracking step finds the global
+    optimum, and does it identically on every platform. No scipy, no gradients library.
+
+    ``b`` is centred to sum zero after every step. Softmax is shift-invariant, so without that
+    the bias would drift along a flat direction forever and two equivalent fits would serialise
+    as different numbers.
+
+    Args:
+        logits: Raw masked logits, one row per question, all the same length.
+        labels: Index of the correct option per question.
+        weights: Importance weight per question, for case-control sampling.
+        iterations: Maximum descent steps.
+        tolerance: Stop when the objective improves by less than this.
+
+    Returns:
+        ``(temperature, bias)``.
+
+    Raises:
+        ValueError: If there is nothing to fit, or the rows differ in length.
+    """
+    if not logits:
+        raise ValueError("no data to fit vector scaling on")
+    # Checked before np.asarray: numpy raises on ragged input too, but with a message about
+    # inhomogeneous shapes that says nothing about what the caller did wrong.
+    widths = {len(row) for row in logits}
+    if len(widths) != 1:
+        raise ValueError(
+            f"vector scaling needs rows of equal length; got widths {sorted(widths)} — "
+            "group by option count first"
+        )
+    z = np.asarray(logits, dtype=np.float64)
+    y = np.asarray(labels, dtype=np.int64)
+    if z.shape[0] != y.size:
+        raise ValueError(f"{z.shape[0]} logit rows but {y.size} labels")
+    w = _validate_weights(weights, z.shape[0])
+    mass = float(w.sum())
+    n_options = z.shape[1]
+    onehot = np.zeros_like(z)
+    onehot[np.arange(y.size), y] = 1.0
+
+    def objective(beta: float, bias: np.ndarray) -> float:
+        scores = beta * z + bias
+        shifted = scores - scores.max(axis=1, keepdims=True)
+        log_norm = np.log(np.exp(shifted).sum(axis=1)) + scores.max(axis=1)
+        return float(np.sum(w * (log_norm - scores[np.arange(y.size), y])) / mass)
+
+    beta = 1.0
+    bias = np.zeros(n_options, dtype=np.float64)
+    step = 0.5
+    current = objective(beta, bias)
+
+    for _ in range(iterations):
+        scores = beta * z + bias
+        shifted = scores - scores.max(axis=1, keepdims=True)
+        probabilities = np.exp(shifted)
+        probabilities /= probabilities.sum(axis=1, keepdims=True)
+        residual = probabilities - onehot
+        grad_beta = float(np.sum(w * np.sum(residual * z, axis=1)) / mass)
+        grad_bias = (w[:, None] * residual).sum(axis=0) / mass
+        grad_bias -= grad_bias.mean()
+
+        # Backtracking: halve the step until the objective actually falls. A convex objective
+        # plus a step that never increases it cannot diverge, which is what makes the fixed
+        # iteration count safe.
+        improved = False
+        for _ in range(40):
+            candidate_beta = max(beta - step * grad_beta, 1.0 / TEMPERATURE_BOUNDS[1])
+            candidate_beta = min(candidate_beta, 1.0 / TEMPERATURE_BOUNDS[0])
+            candidate_bias = bias - step * grad_bias
+            candidate_bias -= candidate_bias.mean()
+            value = objective(candidate_beta, candidate_bias)
+            if value <= current:
+                improved = value < current - tolerance
+                beta, bias, current = candidate_beta, candidate_bias, value
+                step *= 1.1
+                break
+            step *= 0.5
+        else:
+            break
+        if not improved:
+            break
+
+    return float(1.0 / beta), [float(x) for x in bias]
+
+
+def nll_with_vector(
+    logits: Sequence[Sequence[float]],
+    labels: Sequence[int],
+    temperature: float,
+    bias: Sequence[float],
+    weights: Sequence[float] | None = None,
+) -> float:
+    """Weighted mean NLL under ``softmax(z / T + b)``, for reporting the fit."""
+    if temperature <= 0:
+        raise ValueError(f"temperature must be positive, got {temperature}")
+    z = np.asarray(logits, dtype=np.float64) / temperature + np.asarray(bias, dtype=np.float64)
+    w = _validate_weights(weights, z.shape[0])
+    y = np.asarray(labels, dtype=np.int64)
+    shifted = z - z.max(axis=1, keepdims=True)
+    log_norm = np.log(np.exp(shifted).sum(axis=1)) + z.max(axis=1)
+    return float(np.sum(w * (log_norm - z[np.arange(y.size), y])) / float(w.sum()))
+
+
 @dataclass(frozen=True)
 class Calibration:
     """Fitted temperatures, one per option-count bucket, plus the context they are valid in.
@@ -206,6 +345,11 @@ class Calibration:
         default: Temperature for a bucket that was never fitted.
         quantization: What the model was running as when this was fitted, e.g. ``"nf4-bf16"``.
             Compared by :meth:`check_matches`.
+        vectors: Per **exact** option count, ``{"3": {"temperature": T, "bias": [...]}}`` —
+            the vector-scaling fit. Keyed by count rather than bucket because a bias vector is
+            indexed by position and a 3-option question has nothing to share with a 5-option one.
+        method: Which method :meth:`apply` uses. Both are always fitted and reported; this names
+            the one that is deployed.
         meta: Provenance — model, dataset, split, run id, commit, fit NLL before and after.
         version: Schema version.
     """
@@ -213,6 +357,8 @@ class Calibration:
     temperatures: dict[str, float]
     default: float = 1.0
     quantization: str = "unknown"
+    vectors: dict[str, dict[str, Any]] = field(default_factory=dict)
+    method: str = "temperature"
     meta: dict[str, Any] = field(default_factory=dict)
     version: str = CALIBRATION_VERSION
 
@@ -222,24 +368,71 @@ class Calibration:
                 raise ValueError(f"bucket {bucket!r}: temperature must be positive, got {t}")
         if not math.isfinite(self.default) or self.default <= 0:
             raise ValueError(f"default temperature must be positive, got {self.default}")
+        if self.method not in CALIBRATION_METHODS:
+            raise ValueError(f"unknown method {self.method!r}; known: {CALIBRATION_METHODS}")
+        for count, fit in self.vectors.items():
+            bias = fit.get("bias", [])
+            if len(bias) != int(count):
+                raise ValueError(
+                    f"option count {count}: bias vector has {len(bias)} entries, expected {count}"
+                )
+            if not math.isfinite(fit.get("temperature", 0.0)) or fit["temperature"] <= 0:
+                raise ValueError(f"option count {count}: temperature must be positive")
 
     def temperature_for(self, n_options: int) -> float:
         """Temperature for a question with ``n_options`` options."""
         return float(self.temperatures.get(option_count_bucket(n_options), self.default))
 
-    def apply(self, logits: Sequence[float]) -> np.ndarray:
-        """Softmax one row of logits at its bucket's temperature.
+    def vector_for(self, n_options: int) -> tuple[float, list[float]] | None:
+        """The vector-scaling fit for this exact option count, if one was fitted."""
+        fit = self.vectors.get(str(n_options))
+        if not fit:
+            return None
+        return float(fit["temperature"]), [float(x) for x in fit["bias"]]
+
+    def apply(self, logits: Sequence[float], method: str | None = None) -> np.ndarray:
+        """Softmax one row of logits under the chosen calibration method.
 
         Args:
             logits: Raw masked logits for one question.
+            method: Override the deployed method, for reporting both side by side.
 
         Returns:
             Calibrated probabilities in option order.
+
+        Raises:
+            ValueError: If ``method`` is not a known method.
         """
-        z = np.asarray(logits, dtype=np.float64) / self.temperature_for(len(logits))
+        chosen = method or self.method
+        if chosen not in CALIBRATION_METHODS:
+            raise ValueError(f"unknown method {chosen!r}; known: {CALIBRATION_METHODS}")
+        z = np.asarray(logits, dtype=np.float64)
+        fit = self.vector_for(len(logits)) if chosen == "vector" else None
+        if fit is not None:
+            # Vector scaling where it was fitted; a count with too little data falls back to the
+            # temperature rather than to an unfitted bias of zeros, which would silently be a
+            # different method under the same name.
+            temperature, bias = fit
+            z = z / temperature + np.asarray(bias, dtype=np.float64)
+        else:
+            z = z / self.temperature_for(len(logits))
         z -= z.max()
         w = np.exp(z)
         return w / w.sum()
+
+    def with_method(self, method: str) -> Calibration:
+        """A copy that deploys ``method``. Both fits are carried either way."""
+        if method not in CALIBRATION_METHODS:
+            raise ValueError(f"unknown method {method!r}; known: {CALIBRATION_METHODS}")
+        return Calibration(
+            temperatures=dict(self.temperatures),
+            default=self.default,
+            quantization=self.quantization,
+            vectors=dict(self.vectors),
+            method=method,
+            meta=dict(self.meta),
+            version=self.version,
+        )
 
     def check_matches(self, quantization: str) -> None:
         """Raise if this calibration was not fitted at the quantization now in use.
@@ -249,7 +442,9 @@ class Calibration:
 
         Raises:
             ValueError: On a mismatch. Shipping a BF16-fitted temperature with a Q4 model is
-                a documented anti-pattern (AGENTS.md), so it fails loudly rather than warning.
+                a documented anti-pattern (AGENTS.md), so it fails loudly rather than warning —
+                and `docs/research/quantization-label-disagreement-2026-09-18.md` measures why:
+                two 4-bit quantizations of one model disagree on 22% of an ordinal judgement.
         """
         if self.quantization != quantization:
             raise ValueError(
@@ -262,8 +457,10 @@ class Calibration:
         return {
             "version": self.version,
             "quantization": self.quantization,
+            "method": self.method,
             "default": self.default,
             "temperatures": dict(sorted(self.temperatures.items())),
+            "vectors": {k: self.vectors[k] for k in sorted(self.vectors, key=int)},
             "meta": self.meta,
         }
 
@@ -289,6 +486,10 @@ class Calibration:
             temperatures={str(k): float(v) for k, v in raw["temperatures"].items()},
             default=float(raw.get("default", 1.0)),
             quantization=str(raw.get("quantization", "unknown")),
+            # Absent in files written before vector scaling existed; those load as
+            # temperature-only rather than failing, which is what they are.
+            vectors={str(k): dict(v) for k, v in raw.get("vectors", {}).items()},
+            method=str(raw.get("method", "temperature")),
             meta=dict(raw.get("meta", {})),
             version=str(raw["version"]),
         )
@@ -317,7 +518,10 @@ def fit_calibration(
         meta: Extra provenance to record.
 
     Returns:
-        The fitted :class:`Calibration`, with before/after NLL per bucket in ``meta``.
+        The fitted :class:`Calibration`. **Both** methods are fitted: one temperature per
+        option-count bucket, and one temperature-plus-bias per exact option count where there
+        is enough data. ``method`` deploys the temperature; the eval reports both so the
+        comparison is visible rather than assumed.
     """
     by_bucket: dict[str, list[Any]] = {}
     for p in predictions:
@@ -340,7 +544,40 @@ def fit_calibration(
             "nll_after": nll_at_temperature(logits, labels, temperature),
         }
 
+    # Vector scaling, per exact option count. A bias vector has one parameter per option, so
+    # the data requirement scales with the option count — fitting 26 biases from 40 examples
+    # would produce a confident-looking artefact of the sample.
+    by_count: dict[int, list[Any]] = {}
+    for prediction in predictions:
+        by_count.setdefault(prediction.n_options, []).append(prediction)
+
+    vectors: dict[str, dict[str, Any]] = {}
+    vector_info: dict[str, Any] = {}
+    for count, group in sorted(by_count.items()):
+        needed = MIN_VECTOR_SAMPLES_PER_PARAMETER * (count + 1)
+        logits = [item.logits for item in group]
+        labels = [item.answer_idx for item in group]
+        weights = [getattr(item, "weight", 1.0) for item in group]
+        if len(group) < needed:
+            vector_info[str(count)] = {
+                "n": len(group),
+                "skipped": f"fewer than {needed} examples for {count + 1} parameters",
+            }
+            continue
+        temperature, bias = fit_vector_scaling(logits, labels, weights=weights)
+        vectors[str(count)] = {"temperature": temperature, "bias": bias, "n": len(group)}
+        vector_info[str(count)] = {
+            "n": len(group),
+            "temperature": temperature,
+            "max_abs_bias": max(abs(b) for b in bias),
+            "nll_temperature_only": nll_at_temperature(
+                logits, labels, fit_temperature(logits, labels, weights=weights), weights
+            ),
+            "nll_vector": nll_with_vector(logits, labels, temperature, bias, weights),
+        }
+
     return Calibration(
+        vectors=vectors,
         temperatures=temperatures,
         default=1.0,
         quantization=quantization,
@@ -350,5 +587,6 @@ def fit_calibration(
             "n_predictions": len(predictions),
             "min_count": min_count,
             "buckets": fit_info,
+            "vector_scaling": vector_info,
         },
     )

@@ -273,7 +273,13 @@ states plainly what was not measured.
 - [ ] Zero-shot baseline (no LoRA) + S1 LoRA + S2 calibration evaluated on
       held-out families and ≥ 2 fully OOD sets; ECE, Brier, acc, AUROC per
       option-count bucket; reliability diagrams committed.
-- [ ] Quantization table **Q8 / Q5_K_M / Q4_K_M** with acc + ECE, all on the 3090.
+- [ ] Quantization table **Q8 / Q5_K_M / Q4_K_M**, all on the 3090, each row reporting
+      accuracy plus **ECE and BSS under both calibration methods** — `temperature` (per
+      option-count bucket) and `vector` (temperature plus per-position bias, per exact option
+      count). Both are fitted on `val` at that row's own quantization; `calibration.json`
+      names the one deployed. Reporting one method per row would hide whether a quantization's
+      cost is confidence (which temperature fixes) or a shifted positional preference (which
+      it cannot).
       **BF16 is deferred to v0.2** — a BF16 27B forward pass does not fit in 24 GiB.
       The model card states that BF16 was not measured, in those words, next to the table.
 - [ ] Fair LLM baselines (Qwen3.8-27B itself with constrained decode + logprobs,

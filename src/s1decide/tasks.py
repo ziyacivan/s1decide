@@ -706,6 +706,22 @@ def task_gpu_kill(argv: list[str]) -> int:
     return 0
 
 
+@register("figures", "Draw the README figures from committed results/ JSON")
+def task_figures(_argv: list[str]) -> int:
+    """Generate ``docs/figures/`` from committed runs.
+
+    No figure in this repository is drawn by hand or copied in; `tests/test_figures.py` fails if
+    a PNG is older than the JSON behind it, which is the same rule the numbers follow.
+    """
+    ensure_repo_on_path()
+    from eval.figures import build_all
+
+    root = repo_root()
+    for path in build_all(root):
+        print(f"wrote {path.relative_to(root)}")
+    return 0
+
+
 @register("readme", "Regenerate the README's metric blocks from results/")
 def task_readme(_argv: list[str]) -> int:
     """Fill the README's ``<!--metrics:*-->`` blocks from committed runs.
