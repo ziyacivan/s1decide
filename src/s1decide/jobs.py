@@ -39,9 +39,14 @@ from typing import Any
 
 __all__ = [
     "CHECKPOINT_EVERY",
+    "VOLATILE_META_PATHS",
     "JobPaths",
     "JobStatus",
+    "MetaMismatch",
+    "check_resume_meta",
     "checkpoint_rows",
+    "compare_meta",
+    "flatten_meta",
     "job_status",
     "read_done_ids",
     "run_job",
@@ -429,6 +434,118 @@ def _spawn_windows_powershell(argv: Sequence[str], paths: JobPaths) -> int | Non
     return None
 
 
+#: Meta fields that legitimately differ between a run and its resume, and are therefore not
+#: compared.
+#:
+#: ``started`` is the wall-clock time this process began: different by definition on a resume.
+#: ``kernels.notes`` is prose explaining the configuration, not the configuration itself — it
+#: changes when someone improves the wording, which is not a reason to refuse a resume.
+VOLATILE_META_PATHS = frozenset({"started", "kernels.notes"})
+
+
+class MetaMismatch(RuntimeError):
+    """A resume was attempted under a different configuration than the rows on disk.
+
+    Raised rather than warned about. A job that resumes under upgraded kernels, a different
+    batch size or a regenerated input file produces one corpus containing two populations, and
+    overwrites the ``meta.json`` that was the only record of the first — so the damage is both
+    silent and unrecoverable after the fact.
+    """
+
+
+def flatten_meta(meta: dict[str, Any], prefix: str = "") -> dict[str, Any]:
+    """Flatten nested metadata to dotted paths, so a difference can be named precisely.
+
+    Lists are compared whole: order matters in every list we record (a rubric, a set of notes),
+    and a per-element diff would report noise rather than a cause.
+
+    Args:
+        meta: The metadata.
+        prefix: Path prefix, used in recursion.
+
+    Returns:
+        A mapping of dotted path to value, e.g. ``{"kernels.attention": "sdpa"}``.
+    """
+    flat: dict[str, Any] = {}
+    for key, value in meta.items():
+        path = f"{prefix}{key}"
+        if isinstance(value, dict):
+            flat |= flatten_meta(value, f"{path}.")
+        else:
+            flat[path] = value
+    return flat
+
+
+def compare_meta(
+    stored: dict[str, Any],
+    incoming: dict[str, Any],
+    ignore: frozenset[str] = VOLATILE_META_PATHS,
+) -> list[str]:
+    """Differences between the metadata on disk and the metadata of a resuming run.
+
+    A path present in ``incoming`` but missing from ``stored`` is **not** a difference. That is
+    deliberate: it is what happens when a new field is added to the metadata while a job is
+    already half finished, and refusing to resume a healthy run because the code learned to
+    record one more thing would make this guard a liability on the day it shipped.
+
+    Args:
+        stored: Metadata read from the job directory.
+        incoming: Metadata this run would write.
+        ignore: Dotted paths that legitimately change.
+
+    Returns:
+        One human-readable line per difference, empty when the configurations agree.
+    """
+    on_disk, now = flatten_meta(stored), flatten_meta(incoming)
+    differences = []
+    for path in sorted(on_disk):
+        if path in ignore or path not in now:
+            continue
+        if on_disk[path] != now[path]:
+            differences.append(f"{path}: {on_disk[path]!r} on disk, {now[path]!r} now")
+    return differences
+
+
+def check_resume_meta(
+    directory: Path, meta: dict[str, Any] | None, *, force: bool = False
+) -> list[str]:
+    """Refuse to resume a job whose configuration has changed since it last ran.
+
+    Call this *before* loading a model: the point is to fail in a second rather than after a
+    five-minute load. ``run_job`` calls it too, so a caller that forgets is still covered.
+
+    A job with no rows yet is not a resume, whatever else its directory contains.
+
+    Args:
+        directory: Job directory.
+        meta: The metadata this run would write; ``None`` skips the check.
+        force: Report the differences and continue anyway.
+
+    Returns:
+        The differences found, empty when there are none or when this is a fresh run.
+
+    Raises:
+        MetaMismatch: When the configuration differs and ``force`` is not set.
+    """
+    stored_path = directory / "meta.json"
+    if meta is None or not stored_path.is_file() or not read_done_ids(JobPaths(directory)):
+        return []
+    try:
+        stored = json.loads(stored_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return []
+    differences = compare_meta(stored, meta)
+    if differences and not force:
+        raise MetaMismatch(
+            f"{directory.name} has rows produced under a different configuration:"
+            + "".join(f"\n  {line}" for line in differences)
+            + "\n\nResuming would mix two populations in one corpus and overwrite the record "
+            "of the first. Start a new run_id, or pass --force if the difference is known to "
+            "be harmless."
+        )
+    return differences
+
+
 def run_job(
     directory: Path,
     items: Sequence[Any],
@@ -438,6 +555,7 @@ def run_job(
     batch_size: int = 16,
     checkpoint_every: int = CHECKPOINT_EVERY,
     meta: dict[str, Any] | None = None,
+    force: bool = False,
 ) -> dict[str, Any]:
     """Run a batched, checkpointed, resumable job in the foreground.
 
@@ -452,13 +570,17 @@ def run_job(
         batch_size: Items per call to ``work``.
         checkpoint_every: Rows between flushes.
         meta: Recorded once in ``meta.json``.
+        force: Resume even when the stored metadata disagrees with ``meta``.
 
     Returns:
         A summary dict, also written to ``DONE``.
 
     Raises:
+        MetaMismatch: When resuming under a changed configuration and ``force`` is not set.
+            Checked before anything on disk is touched, so a refused resume changes nothing.
         Exception: Re-raised after writing ``FAILED``. The job stops; it does not retry.
     """
+    check_resume_meta(directory, meta, force=force)
     paths = JobPaths(directory).ensure()
     if paths.failed.is_file():
         paths.failed.unlink()

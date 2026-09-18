@@ -13,6 +13,7 @@ is not inference.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from collections.abc import Sequence
@@ -30,7 +31,7 @@ from data.build.teach import (
     write_summary,
 )
 
-from s1decide.jobs import JobPaths, job_status, run_job, spawn_detached
+from s1decide.jobs import JobPaths, check_resume_meta, job_status, run_job, spawn_detached
 from s1decide.kernels import kernel_report
 
 __all__ = ["TEACHERS", "load_teacher", "main", "teacher_rows"]
@@ -283,13 +284,66 @@ def load_items(path: Path, limit: int | None) -> list[dict[str, Any]]:
     return items[:limit] if limit else items
 
 
+def items_digest(items: Sequence[dict[str, Any]]) -> str:
+    """A fingerprint of exactly what a run was asked to label.
+
+    Hashes the id, state and question of every item, in order. It exists because the input file
+    is not tracked by git and the ids embed a position (``teach-00042-9f3c1ab2``): regenerating
+    ``teach_items.jsonl`` after an upstream change shifts every id from the first altered row
+    onward, and a resume would then re-label thousands of rows and write a corpus containing
+    two numbering schemes. Recording this in ``meta.json`` turns that from a silent corruption
+    into a refused resume.
+
+    Args:
+        items: The items, in the order they will be processed.
+
+    Returns:
+        A hex sha256.
+    """
+    digest = hashlib.sha256()
+    for item in items:
+        digest.update(
+            json.dumps(
+                [item["id"], item["state"], item["question"]], ensure_ascii=False, sort_keys=True
+            ).encode("utf-8")
+        )
+        digest.update(b"\n")
+    return digest.hexdigest()
+
+
 def run(
     setting: TeacherSetting,
     items: Sequence[dict[str, Any]],
     directory: Path,
     batch_size: int,
+    force: bool = False,
 ) -> dict[str, Any]:
-    """Label every item with one teacher, checkpointing as it goes."""
+    """Label every item with one teacher, checkpointing as it goes.
+
+    Args:
+        setting: Which teacher, at what reasoning setting and generation cap.
+        items: The states and questions to label.
+        directory: Job directory; an existing one is resumed.
+        batch_size: Items per generate call.
+        force: Resume even when the configuration has changed since the rows on disk.
+
+    Returns:
+        The run summary, also written to ``summary.json``.
+
+    Raises:
+        MetaMismatch: When resuming under a changed configuration without ``force``.
+    """
+    meta = {
+        "setting": setting.to_json(),
+        "rubric": list(RUBRIC),
+        "batch_size": batch_size,
+        "items_digest": items_digest(items),
+        "items_count": len(items),
+        "kernels": kernel_report(),
+        "started": datetime.now(UTC).isoformat(timespec="seconds"),
+    }
+    # Before the model load, not after: a refused resume should cost a second, not five minutes.
+    check_resume_meta(directory, meta, force=force)
     model, tokenizer = load_teacher(setting)
 
     def work(batch: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -307,13 +361,8 @@ def run(
         work,
         key=lambda item: item["id"],
         batch_size=batch_size,
-        meta={
-            "setting": setting.to_json(),
-            "rubric": list(RUBRIC),
-            "batch_size": batch_size,
-            "kernels": kernel_report(),
-            "started": datetime.now(UTC).isoformat(timespec="seconds"),
-        },
+        meta=meta,
+        force=force,
     )
 
     rows = [
@@ -352,6 +401,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--detach", action="store_true", help="run as a detached process")
     parser.add_argument("--status", default=None, metavar="RUN_ID", help="report on a run")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="resume even if the configuration changed since the rows on disk",
+    )
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     root = repo_root()
@@ -381,6 +435,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         ]
         if args.limit:
             argv_child += ["--limit", str(args.limit)]
+        if args.force:
+            argv_child.append("--force")
         pid = spawn_detached(argv_child, directory)
         print(f"detached run {run_id} (pid {pid})")
         print(f"  status: uv run task teach --status {run_id}")
@@ -389,7 +445,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     items = load_items(
         Path(args.items) if Path(args.items).is_absolute() else root / args.items, args.limit
     )
-    payload = run(setting, items, directory, args.batch_size)
+    payload = run(setting, items, directory, args.batch_size, force=args.force)
     print(json.dumps(payload, indent=2, default=str))
     return 0
 

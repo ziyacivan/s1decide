@@ -129,3 +129,38 @@ Two things came out of this, both done:
 The two legs produce per-teacher labels. The corpus step that keeps only exact and ±1 agreement,
 records the drop rate and folds the result into `Score` has **not** run yet and is not part of
 this job — it is the next piece of work, and it is CPU-side.
+
+## Pausing for days, then resuming
+
+Stopping is safe at any moment and resuming days later costs nothing but the rows generated
+since the last checkpoint — at `CHECKPOINT_EVERY = 50` that is at most ~14 minutes. Resume
+matches by row id read from `rows.jsonl`, so it depends on nothing in memory and nothing about
+the process that wrote it.
+
+```
+uv run task gpu-kill                                   # our own process trees only
+uv run task teach-overnight --detach --limit 6000      # days later; continues where it stopped
+uv run task teach --status teach-qwen-low-1024
+```
+
+What must not change while it is paused — because resume matches by id, it cannot notice any of
+it on its own:
+
+- **`data/processed/teach_items.jsonl`.** It is not tracked by git, and the ids embed a position
+  (`teach-00042-9f3c1ab2`). Regenerating it after any upstream change shifts every id from the
+  first altered row onward; a resume would then re-label thousands of rows and write a corpus
+  with two numbering schemes. Backed up to `~/Documents/teach_items.backup.jsonl`,
+  sha256 `3548d7c86b04910d…`, 1,820,033 bytes, 7,328 rows.
+- **The environment.** A `uv sync` that moves `transformers` or `fla` changes the kernels, and
+  a kernel change is a new result row rather than a silent upgrade.
+- **Batch size and teacher setting.**
+
+Since 2026-09-18 these are enforced rather than trusted: `meta.json` records the configuration
+and a digest of the exact items the run was asked to label, and `check_resume_meta` refuses a
+resume whose configuration differs, before the model is loaded. `--force` overrides it and says
+what it overrode. The digest for this run is `1c8ca0b707de26eb…` over 6,000 items; it was
+written into the existing `meta.json` mid-run so that the *first* resume is already covered, not
+only the second.
+
+A field the earlier run never recorded is deliberately not a mismatch — otherwise shipping the
+guard onto a job that was already 22% finished would have refused the very run it protects.

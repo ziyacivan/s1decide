@@ -20,7 +20,11 @@ from s1decide.jobs import (
     CHECKPOINT_EVERY,
     STALE_HEARTBEAT_SECONDS,
     JobPaths,
+    MetaMismatch,
+    check_resume_meta,
     checkpoint_rows,
+    compare_meta,
+    flatten_meta,
     job_status,
     read_done_ids,
     run_job,
@@ -347,3 +351,96 @@ def test_rows_are_flushed_at_the_checkpoint_interval_not_only_at_the_end(tmp_pat
     assert max(flushed) >= CHECKPOINT_EVERY, (
         f"nothing reached disk mid-run: counts seen were {sorted(set(flushed))}"
     )
+
+
+# --- the resume guard ------------------------------------------------------------
+#
+# The job this protects ran for a day across three sessions. Resume matches by id, so it does
+# not notice that the ids came from a regenerated file, that the kernels were upgraded in
+# between, or that the batch size changed — it just continues, and overwrites the only record
+# of how the earlier rows were made.
+
+
+def test_flatten_meta_names_a_nested_field_by_its_path() -> None:
+    flat = flatten_meta(
+        {"batch_size": 4, "kernels": {"attention": "sdpa", "packages": {"fla": True}}}
+    )
+    assert flat == {"batch_size": 4, "kernels.attention": "sdpa", "kernels.packages.fla": True}
+
+
+def test_identical_configurations_have_no_differences() -> None:
+    meta = {"batch_size": 4, "kernels": {"attention": "sdpa"}}
+    assert compare_meta(meta, dict(meta)) == []
+
+
+def test_a_changed_field_is_reported_with_both_values() -> None:
+    differences = compare_meta({"batch_size": 4}, {"batch_size": 16})
+    assert len(differences) == 1
+    assert "batch_size" in differences[0] and "4" in differences[0] and "16" in differences[0]
+
+
+def test_volatile_fields_are_not_differences() -> None:
+    """A resume has a different start time and may have reworded notes. Neither is a reason."""
+    a = {"started": "2026-09-17T23:41:14+00:00", "kernels": {"notes": ["old wording"]}}
+    b = {"started": "2026-09-18T16:14:02+00:00", "kernels": {"notes": ["new wording"]}}
+    assert compare_meta(a, b) == []
+
+
+def test_a_field_the_old_run_never_recorded_is_not_a_difference() -> None:
+    """The guard has to be deployable onto a job that is already half finished.
+
+    This is the case that made it worth writing: `items_digest` was added while the teacher run
+    was 22% done. If a new key counted as a mismatch, shipping the guard would have refused the
+    very run it was written to protect.
+    """
+    assert compare_meta({"batch_size": 4}, {"batch_size": 4, "items_digest": "abc123"}) == []
+
+
+def test_a_fresh_directory_is_not_a_resume(tmp_path) -> None:
+    (tmp_path / "meta.json").write_text('{"batch_size": 4}', encoding="utf-8")
+    assert check_resume_meta(tmp_path, {"batch_size": 16}) == []
+
+
+def test_resuming_under_a_changed_configuration_is_refused(tmp_path) -> None:
+    run_job(tmp_path, items(4), double, key=lambda i: i["id"], meta={"batch_size": 4})
+    with pytest.raises(MetaMismatch, match="batch_size"):
+        run_job(tmp_path, items(8), double, key=lambda i: i["id"], meta={"batch_size": 16})
+
+
+def test_a_refused_resume_changes_nothing_on_disk(tmp_path) -> None:
+    """Checked before the job directory is touched, so a refusal is not a partial write."""
+    run_job(tmp_path, items(4), double, key=lambda i: i["id"], meta={"batch_size": 4})
+    before = (tmp_path / "meta.json").read_text(encoding="utf-8")
+    rows_before = (tmp_path / "rows.jsonl").read_text(encoding="utf-8")
+    with pytest.raises(MetaMismatch):
+        run_job(tmp_path, items(8), double, key=lambda i: i["id"], meta={"batch_size": 16})
+    assert (tmp_path / "meta.json").read_text(encoding="utf-8") == before
+    assert (tmp_path / "rows.jsonl").read_text(encoding="utf-8") == rows_before
+
+
+def test_force_resumes_and_records_the_new_configuration(tmp_path) -> None:
+    run_job(tmp_path, items(4), double, key=lambda i: i["id"], meta={"batch_size": 4})
+    summary = run_job(
+        tmp_path, items(8), double, key=lambda i: i["id"], meta={"batch_size": 16}, force=True
+    )
+    assert summary["rows_this_run"] == 4
+    assert json.loads((tmp_path / "meta.json").read_text(encoding="utf-8"))["batch_size"] == 16
+
+
+def test_an_unchanged_configuration_resumes_normally(tmp_path) -> None:
+    meta = {"batch_size": 4, "kernels": {"attention": "sdpa"}}
+    run_job(tmp_path, items(4), double, key=lambda i: i["id"], meta=meta)
+    summary = run_job(
+        tmp_path,
+        items(8),
+        double,
+        key=lambda i: i["id"],
+        meta={**meta, "started": "later"},
+    )
+    assert summary["rows_this_run"] == 4
+
+
+def test_a_job_with_no_meta_is_not_guarded(tmp_path) -> None:
+    """Jobs that record nothing keep their old behaviour rather than becoming unresumable."""
+    run_job(tmp_path, items(4), double, key=lambda i: i["id"])
+    assert run_job(tmp_path, items(8), double, key=lambda i: i["id"])["rows_this_run"] == 4

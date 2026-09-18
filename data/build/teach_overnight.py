@@ -32,7 +32,11 @@ OVERNIGHT_PLAN: tuple[dict[str, Any], ...] = (
 
 
 def run_chain(
-    plan: Sequence[dict[str, Any]], items_path: Path, limit: int | None, root: Path
+    plan: Sequence[dict[str, Any]],
+    items_path: Path,
+    limit: int | None,
+    root: Path,
+    force: bool = False,
 ) -> dict[str, Any]:
     """Run each leg in order, recording what happened to all of them.
 
@@ -45,6 +49,7 @@ def run_chain(
         items_path: The state/question pairs to label.
         limit: Optional cap, for a rehearsal.
         root: Repository root.
+        force: Resume legs whose configuration has changed since their rows on disk.
 
     Returns:
         A summary of every leg that ran.
@@ -68,7 +73,7 @@ def run_chain(
         setting = TEACHERS[leg["teacher"]]
         directory = root / "results" / leg["run_id"]
         print(f"=== {leg['teacher']} -> {directory.name}", flush=True)
-        summary = run(setting, items, directory, leg["batch_size"])
+        summary = run(setting, items, directory, leg["batch_size"], force=force)
         legs.append({**leg, "summary": summary})
         note(
             {
@@ -90,6 +95,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--items", default="data/processed/teach_items.jsonl")
     parser.add_argument("--limit", type=int, default=6000)
     parser.add_argument("--detach", action="store_true")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="resume legs even if the configuration changed since the rows on disk",
+    )
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     root = repo_root()
@@ -103,13 +113,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             "--limit",
             str(args.limit),
         ]
+        if args.force:
+            child.append("--force")
         pid = spawn_detached(child, root / "results" / "teach-overnight")
         print(f"detached overnight chain (pid {pid})")
         for leg in OVERNIGHT_PLAN:
             print(f"  status: uv run task teach --status {leg['run_id']}")
         return 0
 
-    payload = run_chain(OVERNIGHT_PLAN, root / args.items, args.limit, root)
+    payload = run_chain(OVERNIGHT_PLAN, root / args.items, args.limit, root, force=args.force)
     print(json.dumps(payload, indent=2, default=str))
     return 0
 
