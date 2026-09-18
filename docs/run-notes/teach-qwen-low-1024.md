@@ -74,6 +74,35 @@ run teach-qwen-low-1024: RUNNING
 First checkpoint written (200 rows in `rows.jsonl`). ETA matches the pilot's 0.060 rows/s, and
 nothing has truncated.
 
+## Interrupted by a Windows Update reboot, 2026-09-18 04:58 UTC
+
+The run was killed 13 hours in by an unattended Windows Update restart.
+
+| | |
+|---|---|
+| Launched | 2026-09-17 23:39 UTC |
+| Restart initiated | **2026-09-18 04:58:03 UTC** — `MoUsoCoreWorker.exe`, "Service pack (Planned)", then `TrustedInstaller.exe`, "Upgrade (Planned)" at 04:59:04 |
+| Boot completed | 2026-09-18 04:59:30 UTC |
+| Ran for | 5 h 19 min |
+| Last progress line | 04:57:11 UTC — 1,144 rows |
+| Last checkpoint | **1,000 rows** |
+| **Rows lost** | **144** (~40 min of work) |
+| `DONE` / `FAILED` | neither written — the process died with the OS, so nothing caught anything |
+| Leg 2 | never started |
+| Resumed | **not yet — see `PREFLIGHT-FAILED.md`** |
+
+Resume was blocked at pre-flight: Unsloth Studio and its `llama-server` were holding 21.2 GB of
+the card, both started by the owner minutes earlier. Nothing of theirs was killed and nothing
+was launched over the top of it.
+
+Two things came out of this, both done:
+
+- **Windows Update pausing is now a required setting** in `docs/windows-setup.md`, with the
+  event-log evidence. Checkpointing made the reboot survivable; it is not what prevents it.
+- **`--status` prints machine boot time** and flags `<-- REBOOTED MID-RUN`. A job killed by a
+  reboot and a job wedged on a hung kernel both show a stale heartbeat and nothing else, and
+  they need different responses — one resumes, the other needs investigating first.
+
 ## If something has gone wrong
 
 - **`FAILED`** — the traceback is in `results/teach-qwen-low-1024/FAILED` and the job has

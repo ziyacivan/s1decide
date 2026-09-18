@@ -106,6 +106,38 @@ predicted peak held under a per-hardware ceiling — 0.92 of total VRAM for `rtx
 setting is belt and braces: it turns a silent slowdown into a loud failure if the budget is ever
 wrong.
 
+## 3bb. Pause Windows Update — **required for the project duration**
+
+**Settings → Windows Update → Pause updates**, and re-pause it before every multi-hour run.
+Where the edition allows it, set *Active hours* to cover the whole day as well.
+
+This is not a preference. Windows Update restarted this machine **13 hours into a 27-hour
+teacher-labelling run**:
+
+```
+2026-09-18 04:58:03 UTC  id=1074  MoUsoCoreWorker.exe  ... "Operating System: Service pack (Planned)"
+2026-09-18 04:59:04 UTC  id=1074  TrustedInstaller.exe ... "Operating System: Upgrade (Planned)"
+2026-09-18 04:59:30 UTC  boot completed
+```
+
+The job had checkpointed 1,000 rows and reached 1,144, so **144 rows were lost** — cheap only
+because the runner checkpoints every 200 rows and resumes without recomputing. It wrote no
+`FAILED` file, because nothing caught anything: the process was killed with the operating
+system. Pausing updates is what stops this; checkpointing is only what makes it survivable.
+
+To check afterwards what happened and when:
+
+```powershell
+(Get-CimInstance Win32_OperatingSystem).LastBootUpTime
+Get-WinEvent -FilterHashtable @{LogName='System'; Id=1074,6006,6008,41; StartTime=(Get-Date).AddDays(-2)}
+```
+
+`uv run task teach --status <run_id>` prints the boot time and flags `<-- REBOOTED MID-RUN`
+when the machine booted after the job's last heartbeat, so this diagnosis takes one command
+rather than a trip to the event log.
+
+Standby and monitor timeout must also be off (`powercfg`) for unattended runs.
+
 ## 3c. Freeing the GPU after an interrupted run
 
 `uv run task gpu-kill` — kills the whole process tree of any s1decide run still holding VRAM,

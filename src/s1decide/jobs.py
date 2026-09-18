@@ -56,6 +56,26 @@ CHECKPOINT_EVERY = 200
 STALE_HEARTBEAT_SECONDS = 900
 
 
+def boot_time() -> float | None:
+    """When the machine last booted, as a Unix timestamp.
+
+    Reported next to a stale heartbeat because the two together identify a reboot, and nothing
+    else does. Windows Update restarted this machine mid-run at 04:58 UTC on 2026-09-18 and the
+    job simply stopped: no ``FAILED`` file, because nothing caught anything — the process was
+    killed with the operating system. A stale heartbeat alone looks the same as a wedged job,
+    and the two need different responses.
+
+    Returns:
+        The boot timestamp, or ``None`` when psutil cannot supply it.
+    """
+    try:
+        import psutil
+
+        return float(psutil.boot_time())
+    except Exception:
+        return None
+
+
 @dataclass(frozen=True)
 class JobPaths:
     """Where a job keeps its state.
@@ -156,6 +176,8 @@ class JobStatus:
         heartbeat_age: Seconds since the heartbeat was touched.
         eta_seconds: Estimated seconds remaining.
         errors: Lines from ``FAILED``, if any.
+        booted_after_heartbeat: True when the machine booted *after* the last heartbeat, which
+            means the job died with the machine rather than wedging.
     """
 
     run_id: str
@@ -166,6 +188,7 @@ class JobStatus:
     heartbeat_age: float | None = None
     eta_seconds: float | None = None
     errors: str = ""
+    booted_after_heartbeat: bool = False
     extra: dict[str, Any] = field(default_factory=dict)
 
     def render(self) -> str:
@@ -185,6 +208,12 @@ class JobStatus:
         if self.heartbeat_age is not None:
             note = "  <-- STALE" if self.heartbeat_age > STALE_HEARTBEAT_SECONDS else ""
             lines.append(f"  heartbeat {self.heartbeat_age:.0f}s ago{note}")
+        booted = boot_time()
+        if booted is not None:
+            stamp = datetime.fromtimestamp(booted, UTC).strftime("%Y-%m-%d %H:%M UTC")
+            age = (time.time() - booted) / 3600
+            flag = "  <-- REBOOTED MID-RUN" if self.booted_after_heartbeat else ""
+            lines.append(f"  booted    {stamp} ({age:.1f} h ago){flag}")
         for key, value in self.extra.items():
             lines.append(f"  {key:9} {value}")
         if self.errors:
@@ -258,6 +287,13 @@ def job_status(directory: Path) -> JobStatus:
     if rate and total_rows:
         eta = max(0, total_rows - done_rows) / rate
 
+    booted = boot_time()
+    rebooted = bool(
+        booted is not None
+        and paths.heartbeat.is_file()
+        and booted > paths.heartbeat.stat().st_mtime
+    )
+
     return JobStatus(
         run_id=run_id,
         state=state,
@@ -267,6 +303,7 @@ def job_status(directory: Path) -> JobStatus:
         heartbeat_age=heartbeat_age,
         eta_seconds=eta,
         errors=paths.failed.read_text(encoding="utf-8") if paths.failed.is_file() else "",
+        booted_after_heartbeat=rebooted,
         extra=extra,
     )
 

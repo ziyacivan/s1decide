@@ -262,3 +262,61 @@ def test_job_paths_are_all_inside_the_run_directory(tmp_path) -> None:
     paths = JobPaths(tmp_path)
     for path in (paths.rows, paths.progress, paths.heartbeat, paths.log, paths.done, paths.failed):
         assert Path(path).parent == tmp_path
+
+
+# --- reboot detection ----------------------------------------------------------------
+
+
+def test_boot_time_is_a_plausible_timestamp() -> None:
+    from s1decide.jobs import boot_time
+
+    booted = boot_time()
+    if booted is None:
+        pytest.skip("psutil could not supply a boot time")
+    assert 0 < booted < time.time()
+
+
+def test_a_reboot_after_the_last_heartbeat_is_flagged(tmp_path, monkeypatch) -> None:
+    """A killed-by-reboot job and a wedged job both show a stale heartbeat and nothing else.
+
+    Windows Update restarted this machine 13 hours into a 27-hour run; the job wrote no FAILED
+    file because nothing caught anything. The two cases need different responses, so the status
+    has to tell them apart.
+    """
+    import s1decide.jobs as jobs
+
+    run_job(tmp_path, items(2), double, key=lambda i: i["id"])
+    (tmp_path / "DONE").unlink()
+    heartbeat = JobPaths(tmp_path).heartbeat
+    old = time.time() - (STALE_HEARTBEAT_SECONDS + 60)
+    os.utime(heartbeat, (old, old))
+
+    monkeypatch.setattr(jobs, "boot_time", lambda: time.time() - 60)
+    status = jobs.job_status(tmp_path)
+    assert status.state == "stale"
+    assert status.booted_after_heartbeat is True
+    assert "REBOOTED MID-RUN" in status.render()
+
+
+def test_a_boot_before_the_heartbeat_is_not_flagged(tmp_path, monkeypatch) -> None:
+    """An old boot plus a stale heartbeat means the job wedged; that is a different problem."""
+    import s1decide.jobs as jobs
+
+    run_job(tmp_path, items(2), double, key=lambda i: i["id"])
+    (tmp_path / "DONE").unlink()
+    old = time.time() - (STALE_HEARTBEAT_SECONDS + 60)
+    os.utime(JobPaths(tmp_path).heartbeat, (old, old))
+
+    monkeypatch.setattr(jobs, "boot_time", lambda: time.time() - 86400)
+    status = jobs.job_status(tmp_path)
+    assert status.booted_after_heartbeat is False
+    assert "REBOOTED MID-RUN" not in status.render()
+    assert "booted" in status.render()
+
+
+def test_the_status_survives_a_machine_with_no_boot_time(tmp_path, monkeypatch) -> None:
+    import s1decide.jobs as jobs
+
+    run_job(tmp_path, items(2), double, key=lambda i: i["id"])
+    monkeypatch.setattr(jobs, "boot_time", lambda: None)
+    assert "booted" not in jobs.job_status(tmp_path).render()
