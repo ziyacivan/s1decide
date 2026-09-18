@@ -93,6 +93,49 @@ def test_kill_process_tree_takes_the_children_too() -> None:
         parent.wait(timeout=10)
 
 
+def test_a_detached_teacher_run_is_recognised_as_ours() -> None:
+    """The command line that defeated the first version of OUR_MARKERS, verbatim.
+
+    On 2026-09-18 `gpu-kill` reported "no s1decide process is holding GPU memory" while this
+    process held 23,169 MiB of the card. The interpreter is uv's shared Python, not the project
+    venv; the working directory never appears in a command line; and `data.build.teach_overnight`
+    contains none of the words the project is named after.
+    """
+    process = GpuProcess(
+        pid=13208,
+        name="python.exe",
+        mib=23169,
+        command=(
+            r"C:\Users\yusuf\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none"
+            r"\python.exe -m data.build.teach_overnight "
+            "--items data/processed/teach_items.jsonl --limit 6000"
+        ),
+    )
+    assert process.is_ours
+    assert "[ours]" in process.describe()
+
+
+def test_a_single_leg_teacher_run_is_recognised_as_ours() -> None:
+    assert GpuProcess(
+        1, "python.exe", 20000, "python.exe -m data.build.teach_run --teacher x"
+    ).is_ours
+
+
+def test_someone_elses_python_is_not_ours() -> None:
+    """The failure that costs more than a missed process: killing the user's own work."""
+    for command in (
+        r"C:\Users\yusuf\.unsloth\studio\.venv\Scripts\python.exe -m unsloth_studio.server",
+        "python.exe train.py --model llama",
+        r"C:\Program Files\Blender\blender.exe",
+    ):
+        assert not GpuProcess(1, "python.exe", 20000, command).is_ours, command
+
+
+def test_markers_do_not_match_a_bare_interpreter() -> None:
+    """A marker broad enough to catch any python would make gpu-kill unsafe to run."""
+    assert not GpuProcess(1, "python.exe", 20000, "python.exe").is_ours
+
+
 @pytest.mark.gpu
 def test_sysmem_fallback_is_disabled_on_this_machine() -> None:
     """Required setting on Windows — see docs/windows-setup.md and ADR 0003.

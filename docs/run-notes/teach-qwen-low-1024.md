@@ -164,3 +164,23 @@ only the second.
 
 A field the earlier run never recorded is deliberately not a mismatch — otherwise shipping the
 guard onto a job that was already 22% finished would have refused the very run it protects.
+
+## Stopped 2026-09-18 21:15 UTC, at 1,400 rows
+
+Stopped deliberately so the machine could be shut down, not by a failure: no `FAILED` file, no
+`DONE`, 23.3% complete. Resume with the command above.
+
+Stopping exposed a bug worth recording. `uv run task gpu-kill` reported *"no s1decide process is
+holding GPU memory"* while our own run held 23,169 MiB. The detached command line is
+
+```
+…\uv\python\cpython-3.11-windows-x86_64-none\python.exe -m data.build.teach_overnight --items … --limit 6000
+```
+
+and none of `s1decide`, `task.exe` or `uv run task` appears in it: the interpreter is uv's shared
+install rather than the project venv, the working directory is not part of a command line, and
+`data.build.*` is not named after the project. The safety check designed to kill only our own
+trees could not see our own tree — at the one moment it would be needed, after a wedge. The run
+was stopped by verifying the pid against the module name and calling `kill_process_tree`
+directly; `OUR_MARKERS` now includes the module entry points, with the real command line as a
+regression test.

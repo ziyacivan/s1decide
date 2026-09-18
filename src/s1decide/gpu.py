@@ -39,7 +39,29 @@ _PID_IN_INSTANCE = re.compile(r"pid_(\d+)_")
 MIN_REPORTED_MIB = 64
 
 #: Substrings that mark a GPU process as one of ours rather than the user's.
-OUR_MARKERS: tuple[str, ...] = ("s1decide", "task.exe", "uv run task")
+#:
+#: The module entry points are here because the first three were not enough. A detached teacher
+#: run's command line is
+#: ``…\uv\python\cpython-3.11-…\python.exe -m data.build.teach_overnight --items … --limit 6000``:
+#: the interpreter lives in uv's shared install rather than the project venv, the working
+#: directory never appears, and ``data.build.*`` contains none of the words the project is named
+#: after. So `gpu-kill` reported "no s1decide process is holding GPU memory" while our own run
+#: held 23,169 MiB — the exact situation it exists for, at the one moment it would be needed.
+#:
+#: Matching stays deliberately narrow. `kill_s1decide_gpu_processes` only ever touches what
+#: matches, and a marker broad enough to catch someone else's python is worse than a marker that
+#: misses ours: a missed process costs a manual kill, a wrong one costs their work.
+OUR_MARKERS: tuple[str, ...] = (
+    "s1decide",
+    "task.exe",
+    "uv run task",
+    "data.build.teach",
+    "data.build.balance",
+    "eval.run_eval",
+    "eval.latency_bench",
+    "train.sft_lora",
+    "train.grpo_calibration",
+)
 
 
 @dataclass(frozen=True)
