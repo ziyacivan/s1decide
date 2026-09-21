@@ -351,6 +351,26 @@ Approved 2026-09-17 including the ~30 GB download and overnight GPU time, on the
 - **Target 4,000–6,000 rows.** Keep exact-agreement and ±1-neighbour only; record agreement rate,
   ±1 rate, drop rate, both teacher IDs and revisions, both prompt hashes, and the reasoning
   setting.
+
+  **Built and measured on the pilot, 2026-09-22** — `uv run task teach-fold`, implemented in
+  `data/build/agree.py`. On the 100 pilot rows the two teachers agree exactly 55.0% of the time
+  against a chance rate of 23.5% (Cohen's κ 0.412, quadratic-weighted κ 0.656), and the keep rule
+  retains **80%**. Scaled to 6,000 rows that is roughly **4,800 kept, 1,200 dropped** — inside the
+  target band, at its top. The measurement and what it costs are in
+  [`docs/research/teacher-agreement-2026-09-22.md`](research/teacher-agreement-2026-09-22.md).
+
+  Two things that came out of building it, both of which change what the model card must say:
+
+  - **The teachers differ by a threshold, not by noise.** Teacher 2 puts half its mass at "none"
+    and sits 0.24 levels low. One-level disagreements therefore resolve to **teacher 1's level**,
+    not the minimum, which would have compounded that skew — 49% of kept rows would have been
+    "none" against 39%. Every kept row carries both teachers' levels, so the rule is reversible
+    without re-labelling.
+  - **The kept set is skewed to the bottom of the scale.** 39% "none", 8% "moderate". A `Score`
+    corpus this thin in the middle is a known v0.1 shortfall alongside `Score` being 2.7% of the
+    mix, and the model card states it rather than letting a reader assume a balanced ordinal set.
+
+  Runnable now on the pilot; run on the real legs the moment leg 2 finishes, at no GPU cost.
 - **Run overnight**, logging VRAM peak and wall time. **Close Unsloth Studio first.**
 - Amendment B's leakage guard applies to every labelled state.
 

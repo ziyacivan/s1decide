@@ -800,6 +800,20 @@ def task_teach(argv: list[str]) -> int:
     return teach_main(argv)
 
 
+@register("teach-fold", "Fold two teacher runs into Score rows, keeping only agreement")
+def task_teach_fold(argv: list[str]) -> int:
+    """Combine two teachers' labels into `Score` rows.
+
+    Exact agreement and one-level disagreement are kept; two or more levels apart is dropped,
+    because one teacher is wrong and nothing here can say which. See
+    `docs/research/teacher-agreement-2026-09-22.md` for what that costs.
+    """
+    ensure_repo_on_path()
+    from data.build.agree import main as fold_main
+
+    return fold_main(argv)
+
+
 @register("setup", "uv sync the project environment")
 def task_setup(argv: list[str]) -> int:
     """Sync the environment with ``uv``. Extra arguments are passed to ``uv sync``."""
