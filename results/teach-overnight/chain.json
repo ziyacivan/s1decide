@@ -1,5 +1,5 @@
 {
-  "started": "2026-09-18T16:13:21+00:00",
+  "updated": "2026-09-22T19:41:29+00:00",
   "plan": [
     {
       "teacher": "qwen-low-1024",
@@ -12,5 +12,40 @@
       "run_id": "teach-gptoss-medium-1024"
     }
   ],
-  "legs": []
+  "legs": [
+    {
+      "teacher": "qwen-low-1024",
+      "batch_size": 4,
+      "run_id": "teach-qwen-low-1024",
+      "summary": {
+        "run_id": "teach-qwen-low-1024",
+        "finished": "2026-09-22T19:41:29+00:00",
+        "rows_total": 6000,
+        "rows_this_run": 4636,
+        "rows_resumed": 1364,
+        "elapsed_seconds": 76904.9,
+        "setting": {
+          "model": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+          "label": "qwen-low-1024",
+          "effort": "low",
+          "max_new_tokens": 1024,
+          "revision": null,
+          "quantization": "nf4-bf16",
+          "effort_description": "native effort=low, max_new_tokens=1024"
+        },
+        "committed": 5956,
+        "uncommitted": 44,
+        "truncation_rate": 0.007333333333333333,
+        "hit_cap_rate": 0.0075,
+        "trace_tokens": {
+          "n": 6000,
+          "mean": 570.151,
+          "p90": 806.0,
+          "max": 1024.0
+        },
+        "tokens_per_second": 44.482289164929675
+      }
+    }
+  ],
+  "rows": 6000
 }

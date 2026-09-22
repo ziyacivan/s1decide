@@ -16,6 +16,8 @@
     "5 - decisive: stated unambiguously and central to the state"
   ],
   "batch_size": 4,
+  "items_digest": "1c8ca0b707de26ebe975aacea547eae8672a29009b21a4d7fa556f03d18ad04b",
+  "items_count": 6000,
   "kernels": {
     "packages": {
       "fla": true,
@@ -38,7 +40,5 @@
       "triton_kernels requires triton>=3.8, which has no Windows wheel; MXFP4 models therefore dequantize to bf16 and will not fit on a 24 GB card"
     ]
   },
-  "started": "2026-09-18T16:13:35+00:00",
-  "items_digest": "1c8ca0b707de26ebe975aacea547eae8672a29009b21a4d7fa556f03d18ad04b",
-  "items_count": 6000
+  "started": "2026-09-21T22:19:26+00:00"
 }

@@ -184,3 +184,36 @@ trees could not see our own tree — at the one moment it would be needed, after
 was stopped by verifying the pid against the module name and calling `kill_process_tree`
 directly; `OUR_MARKERS` now includes the module entry points, with the real command line as a
 regression test.
+
+## Leg 1 finished 2026-09-22 19:41 UTC — and leg 2 died on the handover
+
+Leg 1 completed all 6,000 rows: 76,905 s of GPU time across three sessions, 4,636 rows in the
+final one and 1,364 resumed. Truncation settled at 0.79%, unchanged between 3,000 and 6,000 rows,
+so the 1,024-token cap was the right size.
+
+Leg 2 then failed immediately, loading its model:
+
+```
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 254.00 MiB.
+GPU 0 has a total capacity of 24.00 GiB of which 0 bytes is free.
+Of the allocated memory 19.45 GiB is allocated by PyTorch, and 3.76 GiB is reserved but unallocated.
+```
+
+The chain runs both legs in one process and leg 1's 27B was still resident. Two causes, and
+fixing either alone would not have been enough: the `work` closure holds a reference to the
+model, so it outlives `run()`'s locals and a `del` of the caller's names frees nothing; and
+PyTorch's caching allocator does not hand freed blocks back to the driver by itself.
+
+`release_teacher` now runs in a `finally` around the job, moving the model to the meta device
+through the object — `Module.to()` moves parameters in place, which is what detaches the storage
+while the closure still holds the reference — then collecting and emptying the cache. A
+gpu-marked test asserts reserved memory actually falls; the CPU tests cover that it runs at all
+and that it runs when the job raises.
+
+**Nothing was lost.** Separate run directories per leg meant leg 1's 6,000 rows were already
+checkpointed and its `DONE` written before leg 2 ever started. Leg 2 was relaunched standalone
+with the same config the plan specifies (`gptoss-medium-1024`, batch 16, 6,000 rows) and is
+running at 0.77 rows/s, faster than the pilot's 0.628.
+
+The failure mode is worth naming: it costs nothing when it happens on the *first* leg and a whole
+night when it happens on the second, because it fails after the expensive work is done.

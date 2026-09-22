@@ -30,3 +30,106 @@ W0918 19:13:26.447000 13208 .venv\Lib\site-packages\torch\distributed\elastic\mu
 The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
 Loading weights:   0%|          | 0/851 [00:00<?, ?it/s]Loading weights:   0%|          | 1/851 [00:01<14:28,  1.02s/it]Loading weights:   3%|▎         | 26/851 [00:01<00:26, 31.20it/s]Loading weights:   6%|▌         | 47/851 [00:01<00:13, 57.60it/s]Loading weights:   8%|▊         | 67/851 [00:01<00:09, 82.16it/s]Loading weights:  11%|█         | 90/851 [00:01<00:07, 107.36it/s]Loading weights:  13%|█▎        | 109/851 [00:01<00:06, 120.56it/s]Loading weights:  15%|█▍        | 127/851 [00:01<00:05, 129.64it/s]Loading weights:  17%|█▋        | 147/851 [00:01<00:04, 143.69it/s]Loading weights:  20%|█▉        | 169/851 [00:01<00:04, 161.66it/s]Loading weights:  22%|██▏       | 188/851 [00:02<00:04, 163.82it/s]Loading weights:  24%|██▍       | 207/851 [00:02<00:03, 165.08it/s]Loading weights:  27%|██▋       | 227/851 [00:02<00:03, 166.40it/s]Loading weights:  30%|██▉       | 253/851 [00:02<00:03, 185.91it/s]Loading weights:  32%|███▏      | 275/851 [00:02<00:02, 193.58it/s]Loading weights:  35%|███▍      | 295/851 [00:02<00:02, 188.22it/s]Loading weights:  37%|███▋      | 315/851 [00:02<00:02, 184.92it/s]Loading weights:  40%|████      | 341/851 [00:02<00:02, 195.31it/s]Loading weights:  42%|████▏     | 361/851 [00:02<00:02, 180.72it/s]Loading weights:  45%|████▌     | 384/851 [00:03<00:02, 192.13it/s]Loading weights:  48%|████▊     | 408/851 [00:03<00:02, 195.72it/s]Loading weights:  51%|█████     | 433/851 [00:03<00:02, 197.73it/s]Loading weights:  53%|█████▎    | 453/851 [00:03<00:02, 183.20it/s]Loading weights:  55%|█████▌    | 472/851 [00:03<00:02, 177.47it/s]Loading weights:  58%|█████▊    | 492/851 [00:03<00:02, 173.49it/s]Loading weights:  61%|██████    | 518/851 [00:03<00:01, 185.32it/s]Loading weights:  64%|██████▎   | 542/851 [00:03<00:01, 194.34it/s]Loading weights:  66%|██████▌   | 562/851 [00:03<00:01, 192.23it/s]Loading weights:  68%|██████▊   | 582/851 [00:04<00:01, 176.30it/s]Loading weights:  71%|███████   | 600/851 [00:04<00:01, 171.64it/s]Loading weights:  73%|███████▎  | 623/851 [00:04<00:01, 179.07it/s]Loading weights:  75%|███████▌  | 642/851 [00:04<00:01, 180.72it/s]Loading weights:  78%|███████▊  | 663/851 [00:04<00:01, 185.37it/s]Loading weights:  80%|████████  | 682/851 [00:04<00:00, 171.74it/s]Loading weights:  84%|████████▎ | 711/851 [00:04<00:00, 192.23it/s]Loading weights:  86%|████████▌ | 731/851 [00:04<00:00, 181.70it/s]Loading weights:  89%|████████▊ | 754/851 [00:05<00:00, 183.86it/s]Loading weights:  92%|█████████▏| 779/851 [00:05<00:00, 190.79it/s]Loading weights:  94%|█████████▍| 799/851 [00:05<00:00, 173.70it/s]Loading weights:  97%|█████████▋| 822/851 [00:05<00:00, 182.82it/s]Loading weights:  99%|█████████▉| 841/851 [00:05<00:00, 175.60it/s]Loading weights: 100%|██████████| 851/851 [00:05<00:00, 152.29it/s]
 The following generation flags are not valid and may be ignored: ['top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+
+=== spawned 2026-09-21T22:19:21+00:00: ['C:\\Users\\yusuf\\Documents\\Github\\s1decide\\.venv\\Scripts\\python.exe', '-m', 'data.build.teach_overnight', '--items', 'data/processed/teach_items.jsonl', '--limit', '6000']
+=== qwen-low-1024 -> teach-qwen-low-1024
+Skipping import of cpp extensions due to incompatible torch version. Please upgrade to torch >= 2.11.0 (found 2.10.0+cu130).
+W0922 01:19:24.829000 12696 .venv\Lib\site-packages\torch\distributed\elastic\multiprocessing\redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
+Loading weights:   0%|          | 0/851 [00:00<?, ?it/s]Loading weights:   0%|          | 1/851 [00:02<36:11,  2.55s/it]Loading weights:   1%|1         | 12/851 [00:02<02:17,  6.12it/s]Loading weights:   3%|2         | 23/851 [00:02<01:02, 13.18it/s]Loading weights:   4%|3         | 31/851 [00:02<00:43, 18.94it/s]Loading weights:   5%|4         | 40/851 [00:03<00:30, 26.25it/s]Loading weights:   6%|5         | 48/851 [00:03<00:26, 30.66it/s]Loading weights:   6%|6         | 55/851 [00:03<00:22, 35.86it/s]Loading weights:   8%|7         | 66/851 [00:03<00:16, 47.79it/s]Loading weights:   9%|9         | 79/851 [00:03<00:12, 60.12it/s]Loading weights:  11%|#         | 90/851 [00:03<00:11, 64.46it/s]Loading weights:  12%|#1        | 99/851 [00:03<00:13, 57.08it/s]Loading weights:  14%|#3        | 115/851 [00:04<00:09, 76.05it/s]Loading weights:  15%|#4        | 125/851 [00:04<00:10, 67.51it/s]Loading weights:  16%|#5        | 134/851 [00:04<00:09, 72.05it/s]Loading weights:  17%|#7        | 146/851 [00:04<00:09, 78.24it/s]Loading weights:  18%|#8        | 155/851 [00:04<00:09, 72.07it/s]Loading weights:  20%|#9        | 168/851 [00:04<00:08, 84.96it/s]Loading weights:  21%|##        | 178/851 [00:04<00:07, 84.98it/s]Loading weights:  22%|##2       | 188/851 [00:05<00:10, 62.23it/s]Loading weights:  24%|##3       | 201/851 [00:05<00:08, 75.48it/s]Loading weights:  25%|##4       | 211/851 [00:05<00:08, 75.86it/s]Loading weights:  26%|##6       | 224/851 [00:05<00:07, 82.92it/s]Loading weights:  28%|##7       | 235/851 [00:05<00:07, 82.43it/s]Loading weights:  29%|##8       | 244/851 [00:05<00:07, 82.20it/s]Loading weights:  30%|##9       | 253/851 [00:05<00:08, 70.39it/s]Loading weights:  31%|###       | 263/851 [00:05<00:07, 75.67it/s]Loading weights:  32%|###2      | 274/851 [00:06<00:06, 83.43it/s]Loading weights:  33%|###3      | 283/851 [00:06<00:07, 71.42it/s]Loading weights:  34%|###4      | 293/851 [00:06<00:07, 75.44it/s]Loading weights:  36%|###5      | 305/851 [00:06<00:06, 81.22it/s]Loading weights:  37%|###6      | 314/851 [00:06<00:07, 71.56it/s]Loading weights:  39%|###8      | 328/851 [00:06<00:06, 84.03it/s]Loading weights:  40%|####      | 341/851 [00:06<00:06, 82.86it/s]Loading weights:  41%|####1     | 350/851 [00:07<00:07, 69.68it/s]Loading weights:  42%|####2     | 360/851 [00:07<00:06, 76.04it/s]Loading weights:  43%|####3     | 369/851 [00:07<00:06, 73.52it/s]Loading weights:  45%|####5     | 383/851 [00:07<00:05, 83.25it/s]Loading weights:  46%|####6     | 392/851 [00:07<00:05, 77.44it/s]Loading weights:  47%|####7     | 400/851 [00:07<00:06, 66.20it/s]Loading weights:  49%|####8     | 413/851 [00:07<00:05, 77.95it/s]Loading weights:  50%|####9     | 422/851 [00:08<00:05, 79.60it/s]Loading weights:  51%|#####     | 433/851 [00:08<00:04, 85.34it/s]Loading weights:  52%|#####1    | 442/851 [00:08<00:04, 84.06it/s]Loading weights:  53%|#####2    | 451/851 [00:08<00:05, 68.91it/s]Loading weights:  55%|#####4    | 464/851 [00:08<00:05, 74.55it/s]Loading weights:  55%|#####5    | 472/851 [00:08<00:05, 70.85it/s]Loading weights:  56%|#####6    | 480/851 [00:08<00:05, 69.95it/s]Loading weights:  58%|#####7    | 490/851 [00:08<00:04, 76.13it/s]Loading weights:  59%|#####9    | 503/851 [00:09<00:04, 79.14it/s]Loading weights:  60%|######    | 514/851 [00:09<00:04, 83.75it/s]Loading weights:  61%|######1   | 523/851 [00:09<00:04, 73.18it/s]Loading weights:  63%|######3   | 539/851 [00:09<00:03, 82.30it/s]Loading weights:  64%|######4   | 548/851 [00:09<00:04, 70.38it/s]Loading weights:  66%|######5   | 558/851 [00:09<00:03, 75.46it/s]Loading weights:  67%|######6   | 570/851 [00:09<00:03, 81.59it/s]Loading weights:  68%|######8   | 579/851 [00:10<00:03, 72.56it/s]Loading weights:  69%|######8   | 587/851 [00:10<00:03, 71.60it/s]Loading weights:  70%|#######   | 597/851 [00:10<00:03, 77.06it/s]Loading weights:  72%|#######1  | 609/851 [00:10<00:03, 78.27it/s]Loading weights:  73%|#######2  | 620/851 [00:10<00:02, 85.00it/s]Loading weights:  74%|#######3  | 629/851 [00:10<00:03, 73.93it/s]Loading weights:  75%|#######4  | 638/851 [00:10<00:03, 70.15it/s]Loading weights:  76%|#######6  | 649/851 [00:11<00:02, 78.85it/s]Loading weights:  78%|#######7  | 662/851 [00:11<00:02, 86.30it/s]Loading weights:  79%|#######9  | 673/851 [00:11<00:02, 84.26it/s]Loading weights:  80%|########  | 682/851 [00:11<00:02, 68.92it/s]Loading weights:  81%|########1 | 691/851 [00:11<00:02, 71.80it/s]Loading weights:  82%|########2 | 702/851 [00:11<00:01, 77.41it/s]Loading weights:  84%|########4 | 715/851 [00:11<00:01, 84.19it/s]Loading weights:  85%|########5 | 725/851 [00:11<00:01, 81.09it/s]Loading weights:  86%|########6 | 734/851 [00:12<00:01, 75.34it/s]Loading weights:  87%|########7 | 743/851 [00:12<00:01, 78.30it/s]Loading weights:  89%|########8 | 754/851 [00:12<00:01, 81.58it/s]Loading weights:  90%|########9 | 765/851 [00:12<00:01, 81.34it/s]Loading weights:  91%|######### | 774/851 [00:12<00:00, 78.62it/s]Loading weights:  92%|#########1| 782/851 [00:12<00:00, 75.36it/s]Loading weights:  93%|#########2| 790/851 [00:12<00:00, 63.02it/s]Loading weights:  94%|#########4| 804/851 [00:13<00:00, 76.27it/s]Loading weights:  95%|#########5| 812/851 [00:13<00:00, 69.03it/s]Loading weights:  96%|#########6| 820/851 [00:13<00:00, 71.27it/s]Loading weights:  97%|#########7| 828/851 [00:13<00:00, 71.02it/s]Loading weights:  98%|#########8| 836/851 [00:13<00:00, 60.55it/s]Loading weights:  99%|#########9| 843/851 [00:13<00:00, 54.58it/s]Loading weights: 100%|##########| 851/851 [00:13<00:00, 61.73it/s]
+The following generation flags are not valid and may be ignored: ['top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+=== gptoss-medium-1024 -> teach-gptoss-medium-1024
+  openai/gpt-oss-20b: no sdpa kernel, falling back to eager
+C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\kernels\_versions.py:87: UserWarning: Future versions of `kernels` (>=0.14) will require specifying a kernel version or revision.See: https://huggingface.co/docs/kernels/migration
+  warnings.warn(
+Fetching 42 files:   0%|          | 0/42 [00:00<?, ?it/s]Fetching 42 files: 100%|##########| 42/42 [00:00<00:00, 3500.95it/s]
+Loading weights:   0%|          | 0/411 [00:00<?, ?it/s]Loading weights:   0%|          | 1/411 [00:00<04:48,  1.42it/s]Loading weights:   0%|          | 2/411 [00:01<04:55,  1.39it/s]Loading weights:   1%|1         | 6/411 [00:01<01:28,  4.58it/s]Loading weights:   5%|5         | 21/411 [00:01<00:19, 19.69it/s]Loading weights:   6%|6         | 26/411 [00:02<00:18, 21.10it/s]Loading weights:   9%|9         | 38/411 [00:02<00:11, 33.87it/s]Loading weights:  11%|#         | 44/411 [00:02<00:11, 32.68it/s]Loading weights:  13%|#3        | 55/411 [00:02<00:08, 43.09it/s]Loading weights:  15%|#4        | 61/411 [00:02<00:09, 38.72it/s]Loading weights:  18%|#7        | 72/411 [00:02<00:06, 48.78it/s]Loading weights:  19%|#8        | 78/411 [00:03<00:07, 42.68it/s]Loading weights:  22%|##1       | 89/411 [00:03<00:06, 52.36it/s]Loading weights:  23%|##3       | 96/411 [00:03<00:06, 47.12it/s]Loading weights:  26%|##5       | 106/411 [00:03<00:05, 54.18it/s]Loading weights:  27%|##7       | 113/411 [00:03<00:06, 48.00it/s]Loading weights:  30%|##9       | 123/411 [00:03<00:05, 55.41it/s]Loading weights:  32%|###1      | 130/411 [00:04<00:05, 48.79it/s]Loading weights:  34%|###4      | 140/411 [00:04<00:04, 55.92it/s]Loading weights:  36%|###5      | 147/411 [00:04<00:05, 49.21it/s]Loading weights:  38%|###8      | 157/411 [00:04<00:04, 56.40it/s]Loading weights:  40%|###9      | 164/411 [00:04<00:04, 49.50it/s]Loading weights:  42%|####2     | 174/411 [00:04<00:04, 56.63it/s]Loading weights:  44%|####4     | 181/411 [00:04<00:04, 49.33it/s]Loading weights:  47%|####6     | 192/411 [00:05<00:03, 56.79it/s]Loading weights:  48%|####8     | 199/411 [00:05<00:04, 50.23it/s]Loading weights:  51%|#####     | 208/411 [00:05<00:03, 55.60it/s]Loading weights:  52%|#####2    | 214/411 [00:05<00:04, 45.63it/s]Loading weights:  55%|#####4    | 226/411 [00:05<00:03, 55.37it/s]Loading weights:  56%|#####6    | 232/411 [00:06<00:05, 35.42it/s]Loading weights:  59%|#####8    | 242/411 [00:06<00:03, 42.33it/s]Loading weights:  60%|######    | 248/411 [00:06<00:05, 28.39it/s]Loading weights:  63%|######3   | 259/411 [00:07<00:08, 17.88it/s]Loading weights:  64%|######3   | 261/411 [00:07<00:04, 33.08it/s]
+Traceback (most recent call last):
+  File "C:\Users\yusuf\Documents\Github\s1decide\data\build\teach_run.py", line 151, in load_teacher
+    model = _load().eval()
+            ^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\data\build\teach_run.py", line 141, in _load
+    return AutoModelForCausalLM.from_pretrained(setting.model, **merged)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\transformers\models\auto\auto_factory.py", line 387, in from_pretrained
+    return model_class.from_pretrained(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\transformers\modeling_utils.py", line 4089, in from_pretrained
+    model = cls(config, *model_args, **model_kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\transformers\models\gpt_oss\modeling_gpt_oss.py", line 595, in __init__
+    super().__init__(config)
+  File "C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\transformers\modeling_utils.py", line 1255, in __init__
+    self.config._attn_implementation_internal = self._check_and_adjust_attn_implementation(
+                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\transformers\modeling_utils.py", line 1865, in _check_and_adjust_attn_implementation
+    applicable_attn_implementation = self.get_correct_attn_implementation(
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\transformers\modeling_utils.py", line 1921, in get_correct_attn_implementation
+    raise e
+  File "C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\transformers\modeling_utils.py", line 1918, in get_correct_attn_implementation
+    self._sdpa_can_dispatch(is_init_check)
+  File "C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\transformers\modeling_utils.py", line 1710, in _sdpa_can_dispatch
+    raise ValueError(
+ValueError: GptOssForCausalLM does not support an attention implementation through torch.nn.functional.scaled_dot_product_attention yet. Please request the support for this architecture: https://github.com/huggingface/transformers/issues/28005. If you believe this error is a bug, please open an issue in Transformers GitHub repository and load your model with the argument `attn_implementation="eager"` meanwhile. Example: `model = AutoModel.from_pretrained("openai/whisper-tiny", attn_implementation="eager")`
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\yusuf\Documents\Github\s1decide\data\build\teach_overnight.py", line 130, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\data\build\teach_overnight.py", line 124, in main
+    payload = run_chain(OVERNIGHT_PLAN, root / args.items, args.limit, root, force=args.force)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\data\build\teach_overnight.py", line 76, in run_chain
+    summary = run(setting, items, directory, leg["batch_size"], force=force)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\data\build\teach_run.py", line 347, in run
+    model, tokenizer = load_teacher(setting)
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\data\build\teach_run.py", line 160, in load_teacher
+    model = _load().eval()
+            ^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\data\build\teach_run.py", line 141, in _load
+    return AutoModelForCausalLM.from_pretrained(setting.model, **merged)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\transformers\models\auto\auto_factory.py", line 387, in from_pretrained
+    return model_class.from_pretrained(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\transformers\modeling_utils.py", line 4132, in from_pretrained
+    loading_info, disk_offload_index = cls._load_pretrained_model(model, state_dict, checkpoint_files, load_config)
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\transformers\modeling_utils.py", line 4252, in _load_pretrained_model
+    loading_info, disk_offload_index = convert_and_load_state_dict_in_model(
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\transformers\core_model_loading.py", line 1235, in convert_and_load_state_dict_in_model
+    realized_value = mapping.convert(
+                     ^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\transformers\core_model_loading.py", line 732, in convert
+    collected_tensors = self.materialize_tensors()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\transformers\core_model_loading.py", line 652, in materialize_tensors
+    tensors = [future.result() for future in tensors if future.result() is not None]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\transformers\core_model_loading.py", line 652, in <listcomp>
+    tensors = [future.result() for future in tensors if future.result() is not None]
+                                                        ^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\concurrent\futures\_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "C:\Users\yusuf\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\transformers\core_model_loading.py", line 801, in _job
+    return _materialize_copy(tensor, device, dtype)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\transformers\core_model_loading.py", line 787, in _materialize_copy
+    tensor = tensor.to(device=device, dtype=dtype)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 254.00 MiB. GPU 0 has a total capacity of 24.00 GiB of which 0 bytes is free. Of the allocated memory 19.45 GiB is allocated by PyTorch, and 3.76 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

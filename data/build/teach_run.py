@@ -34,7 +34,7 @@ from data.build.teach import (
 from s1decide.jobs import JobPaths, check_resume_meta, job_status, run_job, spawn_detached
 from s1decide.kernels import kernel_report
 
-__all__ = ["TEACHERS", "load_teacher", "main", "teacher_rows"]
+__all__ = ["TEACHERS", "load_teacher", "main", "release_teacher", "teacher_rows"]
 
 #: The candidates, as approved 2026-09-17. Teacher 1 is fixed; teacher 2 is chosen from the
 #: pilot on tractability — loads, throughput, truncation — never on agreement (ADR 0005).
@@ -311,6 +311,51 @@ def items_digest(items: Sequence[dict[str, Any]]) -> str:
     return digest.hexdigest()
 
 
+def release_teacher(*held: Any) -> int:
+    """Give a teacher's weights back to the driver before the next one is loaded.
+
+    The overnight chain runs both legs in one process. Leg 1 finished 6,000 rows and leg 2 died
+    loading its model with "0 bytes is free ... 19.45 GiB is allocated by PyTorch, and 3.76 GiB
+    is reserved by PyTorch but unallocated" — leg 1's 27B was still resident. Two separate
+    reasons, and dropping either one is not enough:
+
+    * the `work` closure keeps a reference to the model, so it stays alive after `run()`'s locals
+      would otherwise have died, and a `del` of the caller's names frees nothing;
+    * PyTorch's caching allocator does not return freed blocks to the driver on its own, so even
+      once the references are gone the next `cudaMalloc` still fails.
+
+    A failing leg costs a whole night here, and it fails *after* the previous leg has finished,
+    which is the most expensive moment for it to happen.
+
+    Args:
+        held: Every object that might hold device memory — the model, the tokenizer, and the
+            closure that captured them.
+
+    Returns:
+        Bytes still reserved afterwards, or 0 when there is no CUDA device. Returned rather than
+        logged so a test can assert on it.
+    """
+    import contextlib
+    import gc
+
+    for item in held:
+        if hasattr(item, "to"):
+            # Best effort: dropping the references below is what actually frees the memory.
+            with contextlib.suppress(Exception):
+                item.to("meta")
+    held = ()
+    gc.collect()
+    try:
+        import torch
+    except ImportError:  # pragma: no cover - torch is a declared dependency
+        return 0
+    if not torch.cuda.is_available():
+        return 0
+    torch.cuda.empty_cache()
+    torch.cuda.synchronize()
+    return int(torch.cuda.memory_reserved())
+
+
 def run(
     setting: TeacherSetting,
     items: Sequence[dict[str, Any]],
@@ -355,15 +400,18 @@ def run(
         }
         return rows
 
-    summary = run_job(
-        directory,
-        list(items),
-        work,
-        key=lambda item: item["id"],
-        batch_size=batch_size,
-        meta=meta,
-        force=force,
-    )
+    try:
+        summary = run_job(
+            directory,
+            list(items),
+            work,
+            key=lambda item: item["id"],
+            batch_size=batch_size,
+            meta=meta,
+            force=force,
+        )
+    finally:
+        release_teacher(model, tokenizer, work)
 
     rows = [
         json.loads(line)
