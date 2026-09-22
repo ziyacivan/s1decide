@@ -1,0 +1,37 @@
+
+=== spawned 2026-09-22T19:42:44+00:00: ['C:\\Users\\yusuf\\Documents\\Github\\s1decide\\.venv\\Scripts\\python.exe', '-m', 'data.build.teach_run', '--teacher', 'gptoss-medium-1024', '--items', 'data/processed/teach_items.jsonl', '--run-id', 'teach-gptoss-medium-1024', '--batch-size', '16', '--limit', '6000']
+Skipping import of cpp extensions due to incompatible torch version. Please upgrade to torch >= 2.11.0 (found 2.10.0+cu130).
+W0922 22:42:57.209000 9876 .venv\Lib\site-packages\torch\distributed\elastic\multiprocessing\redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+  openai/gpt-oss-20b: no sdpa kernel, falling back to eager
+C:\Users\yusuf\Documents\Github\s1decide\.venv\Lib\site-packages\kernels\_versions.py:87: UserWarning: Future versions of `kernels` (>=0.14) will require specifying a kernel version or revision.See: https://huggingface.co/docs/kernels/migration
+  warnings.warn(
+Fetching 42 files:   0%|          | 0/42 [00:00<?, ?it/s]Fetching 42 files: 100%|##########| 42/42 [00:00<00:00, 4200.71it/s]
+Loading weights:   0%|          | 0/411 [00:00<?, ?it/s]Loading weights:   0%|          | 1/411 [00:00<03:57,  1.73it/s]Loading weights:   0%|          | 2/411 [00:00<02:53,  2.36it/s]Loading weights:   2%|1         | 7/411 [00:01<00:42,  9.58it/s]Loading weights:   6%|5         | 23/411 [00:01<00:11, 33.35it/s]Loading weights:  10%|9         | 41/411 [00:01<00:06, 55.41it/s]Loading weights:  13%|#3        | 55/411 [00:01<00:05, 65.87it/s]Loading weights:  18%|#8        | 74/411 [00:01<00:04, 80.54it/s]Loading weights:  22%|##2       | 92/411 [00:01<00:03, 88.60it/s]Loading weights:  26%|##6       | 108/411 [00:01<00:03, 90.52it/s]Loading weights:  31%|###       | 126/411 [00:02<00:02, 96.27it/s]Loading weights:  35%|###4      | 142/411 [00:02<00:02, 100.90it/s]Loading weights:  39%|###8      | 159/411 [00:02<00:02, 107.09it/s]Loading weights:  43%|####2     | 176/411 [00:02<00:02, 108.46it/s]Loading weights:  47%|####7     | 194/411 [00:02<00:02, 107.86it/s]Loading weights:  51%|#####1    | 210/411 [00:02<00:01, 106.33it/s]Loading weights:  55%|#####5    | 228/411 [00:03<00:01, 107.36it/s]Loading weights:  59%|#####8    | 242/411 [00:03<00:01, 104.09it/s]Loading weights:  64%|######3   | 261/411 [00:03<00:01, 89.65it/s] Loading weights:  67%|######7   | 276/411 [00:03<00:01, 94.34it/s]Loading weights:  70%|######9   | 286/411 [00:03<00:01, 70.85it/s]Loading weights:  72%|#######1  | 295/411 [00:04<00:02, 50.96it/s]Loading weights:  75%|#######5  | 310/411 [00:04<00:01, 62.14it/s]Loading weights:  77%|#######7  | 318/411 [00:04<00:01, 56.58it/s]Loading weights:  80%|#######9  | 327/411 [00:04<00:01, 59.39it/s]Loading weights:  81%|########1 | 334/411 [00:04<00:01, 52.85it/s]Loading weights:  84%|########3 | 345/411 [00:05<00:01, 59.49it/s]Loading weights:  86%|########5 | 352/411 [00:05<00:01, 53.57it/s]Loading weights:  88%|########8 | 362/411 [00:05<00:00, 58.89it/s]Loading weights:  90%|########9 | 369/411 [00:05<00:00, 51.49it/s]Loading weights:  92%|#########2| 379/411 [00:05<00:00, 58.07it/s]Loading weights:  94%|#########3| 386/411 [00:05<00:00, 50.46it/s]Loading weights:  96%|#########6| 395/411 [00:05<00:00, 56.75it/s]Loading weights:  98%|#########7| 402/411 [00:06<00:00, 48.98it/s]Loading weights: 100%|##########| 411/411 [00:06<00:00, 66.08it/s]
+{
+  "run_id": "teach-gptoss-medium-1024",
+  "finished": "2026-09-22T22:12:29+00:00",
+  "rows_total": 6000,
+  "rows_this_run": 6000,
+  "rows_resumed": 0,
+  "elapsed_seconds": 8961.01,
+  "setting": {
+    "model": "openai/gpt-oss-20b",
+    "label": "gptoss-medium-1024",
+    "effort": "medium",
+    "max_new_tokens": 1024,
+    "revision": null,
+    "quantization": "nf4-bf16",
+    "effort_description": "native effort=medium, max_new_tokens=1024"
+  },
+  "committed": 5972,
+  "uncommitted": 28,
+  "truncation_rate": 0.004666666666666667,
+  "hit_cap_rate": 0.004666666666666667,
+  "trace_tokens": {
+    "n": 6000,
+    "mean": 231.21483333333333,
+    "p90": 392.0,
+    "max": 1024.0
+  },
+  "tokens_per_second": 154.81391048553678
+}

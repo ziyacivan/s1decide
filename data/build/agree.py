@@ -235,13 +235,17 @@ def fold_teachers(
             agreement = "within_one"
         # A one-level disagreement is resolved to teacher 1's level. This is a default, not a
         # finding, and it is reversible because both levels are written onto the row — but it is
-        # not arbitrary either. On the 100-row pilot the two teachers put their mass in
-        # different places: teacher 1 spread across the scale (.31 .24 .14 .20 .11) while
-        # teacher 2 put half of everything at "none" (.50 .11 .14 .07 .18), a mean 0.24 levels
-        # lower, and was the lower of the two on 14 of the 20 rows they were far apart on.
-        # Taking the minimum would compound that skew into the corpus; taking teacher 1's keeps
-        # the marginal closer to the rubric's intent. See
-        # docs/research/teacher-agreement-2026-09-22.md.
+        # not arbitrary either. Measured over all 4,804 kept rows, the four candidate rules give
+        # "none" shares of: teacher 1 41.0%, minimum 51.3%, maximum 38.3%, teacher 2 48.6%. The
+        # minimum produces a corpus over half "none"; the maximum has the flattest bottom but
+        # imports teacher 2's polarisation, hollowing level 3 to reach it. Teacher 1's level
+        # keeps the shape closest to the better-spread teacher, which is what the rubric asks
+        # for. See docs/research/teacher-agreement-2026-09-22.md.
+        #
+        # An earlier version of this comment justified the rule by teacher 2 sitting 0.24 levels
+        # low. That was a 100-row artifact: at 6,000 rows the gap is 0.08, and on the adjacent
+        # disagreements this branch actually decides, teacher 2 is the *higher* one more often
+        # (1,010 against 795). The rule survives; that reason for it did not.
         #
         # `parse_level` already returns a 0-based index, so this is an `answer_idx` and needs no
         # arithmetic. Subtracting one here produced `answer_idx: -1` on every level-0 row, and

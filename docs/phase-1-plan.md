@@ -352,25 +352,34 @@ Approved 2026-09-17 including the ~30 GB download and overnight GPU time, on the
   ±1 rate, drop rate, both teacher IDs and revisions, both prompt hashes, and the reasoning
   setting.
 
-  **Built and measured on the pilot, 2026-09-22** — `uv run task teach-fold`, implemented in
-  `data/build/agree.py`. On the 100 pilot rows the two teachers agree exactly 55.0% of the time
-  against a chance rate of 23.5% (Cohen's κ 0.412, quadratic-weighted κ 0.656), and the keep rule
-  retains **80%**. Scaled to 6,000 rows that is roughly **4,800 kept, 1,200 dropped** — inside the
-  target band, at its top. The measurement and what it costs are in
+  **DONE 2026-09-23.** Both legs labelled 6,000 rows; `uv run task teach-fold` produced
+  **4,804 `Score` rows** into `data/processed/score_teacher.jsonl`, inside the target band. The
+  report is `results/teach-qwen-low-1024-fold/fold.json`; the measurement and what it costs are in
   [`docs/research/teacher-agreement-2026-09-22.md`](research/teacher-agreement-2026-09-22.md).
 
-  Two things that came out of building it, both of which change what the model card must say:
+  | | |
+  |---|---|
+  | compared | 5,928 (72 rows lost to a teacher that never committed) |
+  | kept | **4,804 (81.0%)** — 2,999 exact, 1,805 within one level |
+  | dropped | 1,124 two or more levels apart |
+  | exact agreement | 50.6% against a chance rate of 24.7% |
+  | Cohen's κ / weighted κ | **0.344 / 0.650** |
+  | provenance | every row licensed; cc-by-4.0 1,839, apache-2.0 1,269, cc-by-3.0 905, mit 791 |
 
-  - **The teachers differ by a threshold, not by noise.** Teacher 2 puts half its mass at "none"
-    and sits 0.24 levels low. One-level disagreements therefore resolve to **teacher 1's level**,
-    not the minimum, which would have compounded that skew — 49% of kept rows would have been
-    "none" against 39%. Every kept row carries both teachers' levels, so the rule is reversible
-    without re-labelling.
-  - **The kept set is skewed to the bottom of the scale.** 39% "none", 8% "moderate". A `Score`
-    corpus this thin in the middle is a known v0.1 shortfall alongside `Score` being 2.7% of the
+  Three things that came out of it, all of which change what the model card must say:
+
+  - **Trust the weighted κ from a pilot, not the raw one.** The 100-row pilot predicted the
+    weighted κ to 0.006 and the keep rate to one point, but overstated Cohen's κ by 17%
+    (0.412 against 0.344). The statistic most sensitive to the marginals is the one a small
+    pilot flatters, and it is also the one people quote.
+  - **The teachers differ in shape, not by a shift.** Teacher 2 is polarised — heavier at both
+    ends, thinner in the middle. One-level disagreements resolve to **teacher 1's level**: over
+    the kept rows the minimum would make 51.3% of the corpus "none" against 41.0%. Every kept row
+    carries both levels, so the rule is reversible without re-labelling.
+  - **The kept set is skewed to the bottom.** 41% "none", 10.6% "moderate". A `Score` corpus this
+    thin in the middle is a known v0.1 shortfall alongside `Score` being a small share of the
     mix, and the model card states it rather than letting a reader assume a balanced ordinal set.
-
-  Runnable now on the pilot; run on the real legs the moment leg 2 finishes, at no GPU cost.
+    Filtering to agreement is also filtering to *easy*, which is its own bias.
 - **Run overnight**, logging VRAM peak and wall time. **Close Unsloth Studio first.**
 - Amendment B's leakage guard applies to every labelled state.
 

@@ -56,9 +56,9 @@ def test_rows_only_one_teacher_saw_are_counted_as_missing() -> None:
 def test_a_one_level_disagreement_resolves_to_teacher_one() -> None:
     """Pinning the documented default, in both directions, so a change to it is deliberate.
 
-    Not symmetry for its own sake: teacher 2 put half its mass at "none" on the pilot and sat
-    0.24 levels lower on average, so resolving to the minimum would fold that skew into the
-    corpus. Both levels stay on the row, so this is reversible without re-labelling.
+    Measured over the 4,804 kept rows of the real run, resolving to the minimum instead would
+    make 51.3% of the corpus "none" against 41.0% for this rule. Both levels stay on the row, so
+    the choice is reversible without re-labelling.
     """
     assert fold_teachers({"a": 2}, {"a": 3})[0]["a"]["answer_idx"] == 2
     assert fold_teachers({"a": 3}, {"a": 2})[0]["a"]["answer_idx"] == 3
