@@ -902,17 +902,24 @@ def task_test_gpu(argv: list[str]) -> int:
 def task_push(argv: list[str]) -> int:
     """The only way commits reach `main`, which requires a green `ci` (see `s1decide.push`).
 
-    ``--timeout SECONDS`` (default 2700) and ``--interval SECONDS`` (default 45) tune the wait.
+    ``--timeout SECONDS`` (default 2700) and ``--interval SECONDS`` (20 with a GitHub token, 45
+    without: the unauthenticated API allows 60 requests an hour) tune the wait.
     """
     import argparse
 
-    from s1decide.push import push_through_gate
+    from s1decide.push import github_token, push_through_gate
 
     parser = argparse.ArgumentParser(prog="task push")
     parser.add_argument("--timeout", type=float, default=45 * 60)
-    parser.add_argument("--interval", type=float, default=45.0)
+    parser.add_argument(
+        "--interval",
+        type=float,
+        default=None,
+        help="seconds between polls (20 with a token, else 45)",
+    )
     args = parser.parse_args(argv)
-    return push_through_gate(repo_root(), timeout=args.timeout, interval=args.interval)
+    interval = args.interval or (20.0 if github_token() else 45.0)
+    return push_through_gate(repo_root(), timeout=args.timeout, interval=interval)
 
 
 @register("lint", "Run ruff check and ruff format --check")

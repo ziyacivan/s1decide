@@ -324,7 +324,8 @@ v0.2 is a scope, not a commitment to rent anything.
    - refuses unless `HEAD` fast-forwards `origin/main` (rebase first otherwise);
    - pushes `HEAD` to `origin/wip` (forced — `wip` is a scratch lane, not history);
    - polls the GitHub check-runs API for `ci` on that exact commit (no `gh`; a token in
-     `GITHUB_TOKEN`/`GH_TOKEN` is used if set);
+     `GITHUB_TOKEN`/`GH_TOKEN` is used if set, read from the user environment on Windows when
+     the session predates it);
    - on green, pushes the same SHA to `main`; on red or timeout, prints the failing tests'
      annotations and leaves `main` alone.
    Docs-only commits go through the same gate — a CI run for docs is cheap. The hard rule on

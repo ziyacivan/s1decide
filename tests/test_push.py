@@ -151,3 +151,10 @@ def test_nothing_to_do_when_main_is_already_there() -> None:
     git = FakeGit(head=BASE)
     assert gate(git, ["success"]) == 0
     assert git.pushes() == []
+
+
+def test_a_token_in_the_process_environment_wins(monkeypatch) -> None:
+    from s1decide.push import github_token
+
+    monkeypatch.setenv("GITHUB_TOKEN", "from-process")
+    assert github_token() == "from-process"

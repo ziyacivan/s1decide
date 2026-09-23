@@ -19,6 +19,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 import time
 import urllib.request
 from collections.abc import Callable, Sequence
@@ -30,6 +31,7 @@ __all__ = [
     "check_state",
     "failure_messages",
     "fetch_json",
+    "github_token",
     "parse_github_remote",
     "push_through_gate",
 ]
@@ -84,10 +86,37 @@ def check_state(payload: dict[str, Any], name: str = CHECK_NAME) -> str:
     return "success" if latest.get("conclusion") == "success" else "failure"
 
 
+def github_token() -> str | None:
+    """``GITHUB_TOKEN`` or ``GH_TOKEN``, from the process or, on Windows, the user environment.
+
+    A variable set with ``setx`` or the Settings dialog reaches only processes started after
+    it, so a long-lived shell or agent session never sees it in ``os.environ``. The user-scope
+    value in ``HKCU\\Environment`` is read as a fallback. The token is never printed.
+    """
+    for name in ("GITHUB_TOKEN", "GH_TOKEN"):
+        if os.environ.get(name):
+            return os.environ[name]
+    if sys.platform == "win32":
+        import winreg
+
+        try:
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as key:
+                for name in ("GITHUB_TOKEN", "GH_TOKEN"):
+                    try:
+                        value, _ = winreg.QueryValueEx(key, name)
+                    except FileNotFoundError:
+                        continue
+                    if value:
+                        return str(value)
+        except OSError:
+            return None
+    return None
+
+
 def fetch_json(url: str) -> Any:
-    """GET a GitHub API URL and decode it, authenticated if a token is in the environment."""
+    """GET a GitHub API URL and decode it, authenticated if a token is available."""
     request = urllib.request.Request(url, headers={"Accept": "application/vnd.github+json"})
-    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    token = github_token()
     if token:
         request.add_header("Authorization", f"Bearer {token}")
     with urllib.request.urlopen(request, timeout=30) as response:
