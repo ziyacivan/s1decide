@@ -79,6 +79,38 @@ audit, and finding that out before the GPU-hours is the point.
 No teacher model has been used for synthetic labels yet; when one is, it will be an open-weight
 model, and its licence and the prompt hash are recorded here.
 
+## Teacher-labelled `Score` rows
+
+4,804 rows in `train` under family `score_teacher`, produced by two open-weight models labelling
+the same five-level rubric independently and keeping only the rows they agreed on. Neither is a
+reference model and neither saw the other's answer.
+
+| | |
+|---|---|
+| teacher 1 | `unsloth/Qwen3.8-27B-unsloth-bnb-4bit`, native effort low, 1,024-token cap, nf4 |
+| teacher 2 | `openai/gpt-oss-20b`, effort medium, 1,024-token cap, MXFP4 |
+| both licences | Apache-2.0, run locally, no hosted API touched (CLAUDE.md hard rule) |
+| rows compared | 5,928 of 6,000 (72 lost to a teacher that never committed) |
+| kept | 4,804 — 2,999 exact agreement, 1,805 one level apart |
+| dropped | 1,124 two or more levels apart |
+| agreement | 50.6% exact against 24.7% by chance; Cohen's κ 0.344, weighted κ 0.650 |
+
+**Exact agreement becomes a hard target. One level apart becomes a soft target split equally
+across the two levels.** Adjacent levels are where a five-level rubric is genuinely ambiguous
+rather than where it failed, and both teachers' levels stay on the row so the rule can be changed
+without re-labelling. The split is equal because nothing measured justifies a tilt: on the
+adjacent disagreements teacher 2 was the higher one 1,010 times and the lower 795, so there is no
+consistently more reliable side.
+
+The licence on each row is the licence of the **state**, inherited from the source it was drawn
+from; the labels are ours. States come only from train-eligible sources (ADR 0005 rule a).
+
+Two things a consumer should know. The kept set is skewed to the bottom of the scale — 41% of
+rows are "none" and 10.6% "moderate" — and filtering to agreement is also filtering to *easy*,
+which is a bias and not a quality guarantee. Neither teacher is ground truth; two models agreeing
+is a lower bound on the error rate of the pair. Full measurement in
+[`docs/research/teacher-agreement-2026-09-22.md`](research/teacher-agreement-2026-09-22.md).
+
 ## File format guarantees
 
 Every split is UTF-8 JSONL with LF line endings, one JSON object per line, and these hold for
@@ -95,6 +127,15 @@ every row:
 - **Options within a question are distinct** after case-folding; rows that collide are dropped
   at build time rather than producing a question with two right answers.
 - **`state` is non-empty** and `answer_idx` is always a valid index into `options`.
+- **Option order is shuffled for `Choice` and fixed for `Noul` and `Score`.** A `Noul`'s labels
+  are always `("no", "yes")` so index 1 always means true. A `Score`'s options are its ordinal
+  scale in order, lowest first, because an expected level and an ordinal loss are both arithmetic
+  over positions. Shuffling exists to stop a model learning a positional prior; on an ordinal
+  scale the positional prior is the task.
+- **`target_type` and `target`, on teacher-labelled `Score` rows only.** `target_type` is
+  `"hard"` or `"soft"`; `target` is a distribution over the options, in the same order, summing
+  to 1. On a hard row it puts all its mass on `answer_idx`. Consumers that ignore both fields and
+  read `answer_idx` get a valid label on every row.
 
 You can therefore read a split with any of these and get the same rows:
 

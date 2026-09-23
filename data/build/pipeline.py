@@ -40,7 +40,16 @@ from data.build.synthetic import generate_ordinal_control
 
 from s1decide.tokens import MAX_SINGLE_TOKEN_OPTIONS
 
-__all__ = ["BuildConfig", "build", "expand_high_cardinality", "shuffle_options", "split_by_state"]
+__all__ = [
+    "TEACHER_SCORE_FAMILY",
+    "TEACHER_SCORE_FILE",
+    "BuildConfig",
+    "build",
+    "expand_high_cardinality",
+    "shuffle_options",
+    "split_by_state",
+    "teacher_score_rows",
+]
 
 #: Negative candidates emitted per high-cardinality example in stage 1, alongside the positive.
 #: Negatives kept per stage-1 question **outside training**. ``None`` means the full fan-out:
@@ -88,11 +97,27 @@ def state_hash(state: str) -> str:
     return hashlib.blake2b(state.strip().encode("utf-8"), digest_size=16).hexdigest()
 
 
-def shuffle_options(row: dict[str, Any], rng: random.Random) -> dict[str, Any]:
-    """Shuffle a question's options, moving ``answer_idx`` with them.
+#: Question types whose option order carries meaning and is therefore never shuffled.
+#:
+#: `Noul` because its labels are fixed as ``("no", "yes")`` so that index 1 always means true.
+#: `Score` because it *is* an ordering: locked decision 3 defines it as an ordinal Choice
+#: reporting an expected level, ADR 0007's loss penalises ``E[|k - y|]``, and both are arithmetic
+#: over positions. Until 2026-09-23 `Score` was shuffled with everything else, which produced
+#: option lists like ``["none", "strong", "slight", "decisive", "moderate"]`` — 116 different
+#: orderings in the first 400 rows — and made an expected level a number computed over a
+#: scrambled axis.
+#:
+#: Shuffling exists to stop a model learning a positional prior. For an ordinal scale the
+#: positional prior *is* the task, and the per-option bias in vector scaling is what handles a
+#: position effect that survives training.
+ORDERED_QTYPES: frozenset[str] = frozenset({"noul", "score"})
 
-    Noul is left alone: its labels are fixed as ``("no", "yes")`` so that index 1 always means
-    true, and shuffling them would break that contract.
+
+def shuffle_options(row: dict[str, Any], rng: random.Random) -> dict[str, Any]:
+    """Shuffle a question's options, moving ``answer_idx`` and any soft ``target`` with them.
+
+    Question types in :data:`ORDERED_QTYPES` are left alone, because their option order means
+    something.
 
     Args:
         row: A normalised question row.
@@ -101,15 +126,21 @@ def shuffle_options(row: dict[str, Any], rng: random.Random) -> dict[str, Any]:
     Returns:
         A new row with options permuted.
     """
-    if row["qtype"] == "noul" or len(row["options"]) < 2:
+    if row["qtype"] in ORDERED_QTYPES or len(row["options"]) < 2:
         return row
     order = list(range(len(row["options"])))
     rng.shuffle(order)
-    return {
+    shuffled = {
         **row,
         "options": tuple(row["options"][i] for i in order),
         "answer_idx": order.index(row["answer_idx"]),
     }
+    # A soft target is a distribution over option *positions*, so it has to travel with them.
+    # Leaving it behind desynchronised it from `answer_idx` on 289 of the first 400 teacher rows
+    # before this line existed — a row whose hard label and soft target named different options.
+    if isinstance(row.get("target"), list):
+        shuffled["target"] = [row["target"][i] for i in order]
+    return shuffled
 
 
 def expand_high_cardinality(
@@ -262,6 +293,90 @@ def _normalised(source: Source, raw: Iterable[dict[str, Any]]) -> list[dict[str,
     return rows
 
 
+#: Where the teacher fold writes its `Score` rows, relative to ``data/processed``.
+TEACHER_SCORE_FILE = "score_teacher.jsonl"
+
+#: The family teacher-labelled `Score` rows join the corpus under.
+#:
+#: Its own family rather than the family each state came from, because the *label* is what a
+#: family groups: these rows are two open-weight models agreeing on a rubric, and their failure
+#: modes are shared with each other rather than with the intent classifier the state came from.
+#: Family-balanced sampling and per-family reporting both then say something true.
+TEACHER_SCORE_FAMILY = "score_teacher"
+
+
+def teacher_score_rows(path: Path) -> list[dict[str, Any]]:
+    """Read the teacher-labelled `Score` rows and put them in corpus schema.
+
+    Two targets come out of the fold, and they are not the same kind of evidence. Where both
+    teachers named the same level the label is as good as this pipeline can make it, and the row
+    carries a hard target. Where they were one level apart the truth is genuinely between two
+    adjacent levels — that is where an ordinal rubric is ambiguous, not where it failed — and the
+    row carries a **soft** target split across the two.
+
+    The split is equal. Nothing measured justifies anything else: over the kept rows the two
+    teachers disagree in both directions on adjacent levels (teacher 2 higher on 1,010, lower on
+    795), so there is no consistent "more reliable side" to tilt toward, and inventing a tilt
+    would encode a preference the data does not support. `answer_idx` stays teacher 1's level so
+    that a consumer ignoring the soft target still gets the documented default.
+
+    Args:
+        path: The fold's output file. A missing file yields no rows rather than raising — the
+            corpus builds without teacher labels, it is just smaller.
+
+    Returns:
+        Rows in corpus schema, each with ``target_type`` and, for soft rows, ``target``.
+    """
+    if not path.is_file():
+        return []
+    rows: list[dict[str, Any]] = []
+    for line in path.read_text(encoding="utf-8").split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        raw = json.loads(line)
+        state = clean_text(raw["state"])
+        instructions = clean_text(raw["instructions"])
+        options = tuple(clean_text(o) for o in raw["options"])
+        if not state or not instructions or len(options) < 2:
+            continue
+        levels = raw.get("teacher_levels", {})
+        first, second = levels.get("first"), levels.get("second")
+        soft = raw.get("agreement") == "within_one" and first is not None and second is not None
+        target = [0.0] * len(options)
+        if soft:
+            target[int(first)] = 0.5
+            target[int(second)] = 0.5
+        else:
+            target[int(raw["answer_idx"])] = 1.0
+        rows.append(
+            {
+                "id": str(raw["id"]),
+                "family": TEACHER_SCORE_FAMILY,
+                "state": state,
+                "state_hash": state_hash(state),
+                "qtype": "score",
+                "instructions": instructions,
+                "options": options,
+                "answer_idx": int(raw["answer_idx"]),
+                # The licence travels with the *state*, which is what is licensed; the labels are
+                # ours. The fold resolved it per row against the training split, so ADR 0004's
+                # gate sees a real licence here rather than a default.
+                "source": str(raw.get("source", "?")),
+                "loaded_from": TEACHER_SCORE_FAMILY,
+                "license": str(raw.get("license", "?")),
+                "role": "train",
+                "stage": None,
+                "parent_id": str(raw.get("parent_id") or raw["id"]),
+                "target_type": "soft" if soft else "hard",
+                "target": target,
+                "teacher_levels": {"first": first, "second": second},
+                "agreement": raw.get("agreement"),
+            }
+        )
+    return rows
+
+
 def build(config: BuildConfig | None = None) -> dict[str, Any]:
     """Run the whole pipeline and write ``data/processed/``.
 
@@ -321,6 +436,33 @@ def build(config: BuildConfig | None = None) -> dict[str, Any]:
         "note": synthetic_source.note,
     }
     rows.extend(synthetic_rows)
+
+    # Teacher-labelled `Score` rows, if the fold has produced them. They join *before* the split
+    # so the state-hash partition and the leakage guard see them like any other row: a state that
+    # is also in the corpus elsewhere must land in the same split, and that has to be enforced
+    # rather than assumed because these states were drawn from the training split in the first
+    # place.
+    teacher_rows = teacher_score_rows(out_dir / TEACHER_SCORE_FILE)
+    if teacher_rows:
+        soft = sum(1 for row in teacher_rows if row["target_type"] == "soft")
+        per_source[TEACHER_SCORE_FAMILY] = {
+            "repo": TEACHER_SCORE_FAMILY,
+            "canonical_repo": TEACHER_SCORE_FAMILY,
+            "license": "per-row, inherited from the state's source",
+            "role": "train",
+            "primitive": "score",
+            "rows_loaded": len(teacher_rows),
+            "rows_kept": len(teacher_rows),
+            "hard_targets": len(teacher_rows) - soft,
+            "soft_targets": soft,
+            "note": (
+                "Two open-weight teachers labelling a five-level rubric, kept where they agreed "
+                "exactly or within one level. Exact agreement is a hard target; one level apart "
+                "is a soft target split equally across the two levels. See "
+                "docs/research/teacher-agreement-2026-09-22.md."
+            ),
+        }
+        rows.extend(teacher_rows)
 
     # Split *before* expanding. `split_by_state` depends only on role and state hash, both of
     # which a stage-1 row inherits from its parent, so the answer is the same either way — but

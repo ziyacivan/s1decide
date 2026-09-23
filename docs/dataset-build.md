@@ -3,13 +3,13 @@
 <!-- GENERATED from data/processed/manifest.json by data/build/report.py.
      Rebuild with: uv run task data -->
 
-**444,477 rows**, seed `20260917`. Licence reasoning and the eval-only rules are in [dataset-card.md](dataset-card.md); this file is the counts.
+**449,281 rows**, seed `20260917`. Licence reasoning and the eval-only rules are in [dataset-card.md](dataset-card.md); this file is the counts.
 
 ## Splits
 
 | split | rows | purpose |
 |---|---|---|
-| `train` | 85,790 | S1 training |
+| `train` | 90,594 | S1 training |
 | `val` | 117,767 | calibration fitting and model selection |
 | `test` | 114,563 | Tier-1 in-distribution report |
 | `eval` | 126,357 | Tier-1 held-out families and OOD sets |
@@ -35,6 +35,7 @@ A family in `eval` only is either a **held-out family** (in-distribution, never 
 | ordinal_control | `apache-2.0` | train | score | 726 | 92 | 82 | — |
 | pubmedqa | `mit` | heldout | noul | — | — | — | 890 |
 | sciq | `cc-by-nc-3.0` | ood | choice | — | — | — | 991 |
+| score_teacher | `per-row, inherited from the state's source` | train | score | 4,804 | — | — | — |
 
 ## Sources
 
@@ -55,6 +56,7 @@ A family in `eval` only is either a **held-out family** (in-distribution, never 
 | anli | `facebook/anli` | same | 1,000 | 1,000 | OOD. Non-commercial, so the licence gate makes training on it impossible. |
 | sciq | `allenai/sciq` | same | 991 | 991 | OOD. Non-commercial, as above. |
 | ordinal_control | `s1decide/ordinal_control` | same | 900 | 900 | Rule-labelled ordinal control set, generated here (ADR 0005 rule c). No model in the loop, so its labels are exact. |
+| score_teacher | `score_teacher` | same | 4,804 | 4,804 | Two open-weight teachers labelling a five-level rubric, kept where they agreed exactly or within one level. Exact agreement is a hard target; one level apart is a soft target split equally across the two levels. See docs/research/teacher-agreement-2026-09-22.md. |
 
 ## Two-stage expansion
 
@@ -72,12 +74,10 @@ Stage-1 questions keep the positive plus **6 negatives** in `train` only, chosen
 
 | group | rows | raw share | effective share | target | oversample |
 |---|---|---|---|---|---|
-| `choice` | 10,413 | 12.1% | **32.4%** | 30% | 2.47x |
-| `noul` | 9,922 | 11.6% | **27.0%** | 25% | 2.16x |
-| `score` | 726 | 0.8% | **2.7%** | 10% | 3.00x |
-| `stage1` | 64,729 | 75.5% | **37.8%** | 35% | 0.46x |
-
-> **`score` could not reach its 10% target.** It would need 11.8x oversampling against a natural share of 0.8%, and the cap is 3x. Past that a small set is being memorised rather than learned. The fix is more data, not a bigger weight.
+| `choice` | 10,413 | 11.5% | **30.0%** | 30% | 2.61x |
+| `noul` | 9,922 | 11.0% | **25.0%** | 25% | 2.28x |
+| `score` | 5,530 | 6.1% | **10.0%** | 10% | 1.64x |
+| `stage1` | 64,729 | 71.4% | **35.0%** | 35% | 0.49x |
 
 ### Per primitive, stage and family
 
@@ -85,35 +85,36 @@ Stage-1 questions keep the positive plus **6 negatives** in `train` only, chosen
 
 | primitive | stage | family | rows before | rows after | raw | effective |
 |---|---|---|---|---|---|---|
-| `noul` | genuine | `go_emotions` | 6,340 | 6,340 | 7.4% | **13.5%** |
-| `noul` | genuine | `mmlu_noul` | 3,582 | 3,582 | 4.2% | **13.5%** |
-| `noul` | stage-1 | `banking77` | 243,705 | 22,155 | 25.8% | **7.6%** |
-| `noul` | stage-1 | `massive_tr` | 57,240 | 6,678 | 7.8% | **7.6%** |
-| `noul` | stage-1 | `massive_de` | 57,780 | 6,741 | 7.9% | **7.6%** |
-| `noul` | stage-1 | `clinc_oos` | 485,465 | 22,505 | 26.2% | **7.6%** |
-| `noul` | stage-1 | `massive_en` | 57,000 | 6,650 | 7.8% | **7.6%** |
-| `choice` | genuine | `banking77` | 3,165 | 3,165 | 3.7% | **5.4%** |
-| `choice` | genuine | `clinc_oos` | 3,215 | 3,215 | 3.7% | **5.4%** |
-| `choice` | genuine | `massive_en` | 950 | 950 | 1.1% | **5.4%** |
-| `choice` | genuine | `massive_tr` | 954 | 954 | 1.1% | **5.4%** |
-| `choice` | genuine | `massive_de` | 963 | 963 | 1.1% | **5.4%** |
-| `choice` | genuine | `mmlu` | 1,166 | 1,166 | 1.4% | **5.4%** |
-| `score` | genuine | `ordinal_control` | 726 | 726 | 0.8% | **2.7%** |
+| `noul` | genuine | `go_emotions` | 6,340 | 6,340 | 7.0% | **12.5%** |
+| `noul` | genuine | `mmlu_noul` | 3,582 | 3,582 | 4.0% | **12.5%** |
+| `noul` | stage-1 | `massive_en` | 57,000 | 6,650 | 7.3% | **7.0%** |
+| `noul` | stage-1 | `massive_tr` | 57,240 | 6,678 | 7.4% | **7.0%** |
+| `noul` | stage-1 | `massive_de` | 57,780 | 6,741 | 7.4% | **7.0%** |
+| `noul` | stage-1 | `banking77` | 243,705 | 22,155 | 24.5% | **7.0%** |
+| `noul` | stage-1 | `clinc_oos` | 485,465 | 22,505 | 24.8% | **7.0%** |
+| `choice` | genuine | `banking77` | 3,165 | 3,165 | 3.5% | **5.0%** |
+| `choice` | genuine | `mmlu` | 1,166 | 1,166 | 1.3% | **5.0%** |
+| `choice` | genuine | `clinc_oos` | 3,215 | 3,215 | 3.5% | **5.0%** |
+| `choice` | genuine | `massive_en` | 950 | 950 | 1.0% | **5.0%** |
+| `choice` | genuine | `massive_tr` | 954 | 954 | 1.1% | **5.0%** |
+| `choice` | genuine | `massive_de` | 963 | 963 | 1.1% | **5.0%** |
+| `score` | genuine | `ordinal_control` | 726 | 726 | 0.8% | **5.0%** |
+| `score` | genuine | `score_teacher` | 4,804 | 4,804 | 5.3% | **5.0%** |
 
 
 ## Licences present
 
 | source | licence | verdict | rows |
 |---|---|---|---|
-| `AmazonScience/massive` | `CC-BY-4.0` | train | 189,649 |
-| `PolyAI/banking77` | `CC-BY-4.0` | train | 90,450 |
+| `AmazonScience/massive` | `CC-BY-4.0` | train | 190,122 |
+| `PolyAI/banking77` | `CC-BY-4.0` | train | 91,816 |
 | `allenai/sciq` | `cc-by-nc-3.0` | eval-only | 991 |
-| `cais/mmlu` | `MIT` | train | 6,081 |
-| `clinc/clinc_oos` | `CC-BY-3.0` | train | 145,040 |
+| `cais/mmlu` | `MIT` | train | 6,872 |
+| `clinc/clinc_oos` | `CC-BY-3.0` | train | 145,945 |
 | `facebook/anli` | `CC-BY-NC-4.0` | eval-only | 1,000 |
-| `google-research-datasets/go_emotions` | `Apache-2.0` | train | 8,000 |
+| `google-research-datasets/go_emotions` | `Apache-2.0` | train | 8,794 |
 | `qiaojin/PubMedQA` | `MIT` | train | 890 |
-| `s1decide/ordinal_control` | `Apache-2.0` | train | 900 |
+| `s1decide/ordinal_control` | `Apache-2.0` | train | 1,375 |
 | `tau/commonsense_qa` | `MIT` | train | 1,476 |
 
 Every row in `train` and `val` carries a licence from the ADR 0004 allowlist; the build fails otherwise, before anything is written.
