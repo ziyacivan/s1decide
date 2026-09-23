@@ -304,3 +304,10 @@ def test_every_run_writes_a_report_with_coverage_beside_the_loss(tmp_path) -> No
     assert "KL(target" in report
     if "loss.png" in report and "not drawn" not in report:
         assert (tmp_path / "loss.png").is_file()
+
+
+def test_a_row_over_the_cap_is_dropped_and_counted(tokenizer) -> None:
+    stats: dict[str, int] = {}
+    long_row = {**score_row(), "state": "word " * 3000}
+    assert build_examples([long_row], tokenizer, TrainConfig(max_seq_len=1024), stats) == []
+    assert stats == {"dropped_over_cap": 1}

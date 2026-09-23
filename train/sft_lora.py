@@ -192,7 +192,10 @@ def select_rows(rows: Sequence[dict[str, Any]], config: TrainConfig) -> list[dic
 
 
 def build_examples(
-    rows: Sequence[dict[str, Any]], tokenizer: Any, config: TrainConfig
+    rows: Sequence[dict[str, Any]],
+    tokenizer: Any,
+    config: TrainConfig,
+    stats: dict[str, int] | None = None,
 ) -> list[dict[str, Any]]:
     """Render every row the way inference will, and attach its option tokens and target.
 
@@ -200,6 +203,8 @@ def build_examples(
         rows: Corpus rows.
         tokenizer: The model's tokenizer.
         config: Sequence cap and sampling seed.
+        stats: If given, ``stats["dropped_over_cap"]`` counts rows longer than the cap. They are
+            dropped, never truncated, and a drop is reported, never silent.
 
     Returns:
         Examples with ``input_ids``, ``label_token_ids``, ``target`` and ``qtype``.
@@ -221,8 +226,10 @@ def build_examples(
         prompt = rendered.prefix + rendered.suffixes[0]
         input_ids = tokenizer.encode(prompt, add_special_tokens=False)
         if len(input_ids) > config.max_seq_len:
-            # Skipped, never truncated: cutting a prompt moves the answer position, and the
+            # Dropped, never truncated: cutting a prompt moves the answer position, and the
             # model would be trained to answer at a place it is never read at.
+            if stats is not None:
+                stats["dropped_over_cap"] = stats.get("dropped_over_cap", 0) + 1
             continue
         labels = list(rendered.labels[0])
         target = row.get("target")
@@ -441,10 +448,13 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         for line in (root / "data/processed/train.jsonl").read_text(encoding="utf-8").split("\n")
         if line.strip()
     ]
+    render_stats: dict[str, int] = {"dropped_over_cap": 0}
     if config.selection == "longest":
-        examples = longest_examples(build_examples(rows, tokenizer, config), config.limit)
+        examples = longest_examples(
+            build_examples(rows, tokenizer, config, render_stats), config.limit
+        )
     elif config.selection == "stratified":
-        examples = build_examples(select_rows(rows, config), tokenizer, config)
+        examples = build_examples(select_rows(rows, config), tokenizer, config, render_stats)
         if config.limit:
             examples = examples[: config.limit]
     else:
@@ -532,6 +542,7 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         },
         # What the optimiser saw, repeats included. In one-pass mode this equals the selection.
         "rows_seen": len(seen),
+        "rows_dropped_over_cap": render_stats["dropped_over_cap"],
         # Activation memory follows the longest row actually trained on, not the cap.
         "max_row_tokens": max(len(item["input_ids"]) for item in seen),
         "coverage": coverage(seen),
