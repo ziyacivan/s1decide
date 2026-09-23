@@ -1,0 +1,77 @@
+# CPU gate for every push and pull request: lint once, the CPU test suite on Windows and Linux.
+#
+# The red push on 2026-09-23 got through because a pipeline swallowed an exit code. This is the
+# fix: a check that runs whether or not anyone remembers to, and that `main` requires.
+#
+# CPU only. GPU tests (`-m gpu`) and anything that needs model weights or the built corpus skip
+# themselves on a fresh clone; `data/processed/` is gitignored apart from the manifest.
+#
+# Branch protection should require the single `ci` job below, not the matrix legs: its name
+# does not change when the matrix does.
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PYTHONUTF8: "1"
+  HF_HUB_ENABLE_HF_TRANSFER: "0"
+  HF_HUB_DISABLE_SYMLINKS_WARNING: "1"
+  # Nothing in the CPU suite may download a model; a test that tries should skip, not fetch.
+  HF_HUB_OFFLINE: "1"
+  UV_PYTHON: "3.11"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      # ruff only, at the version uv.lock pins: linting does not need the torch stack.
+      - run: uvx ruff@0.16.8 check .
+      - run: uvx ruff@0.16.8 format --check .
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      # torch cu130 plus its nvidia wheels is several GB; the stock Ubuntu image is tight.
+      - name: Free disk space (Linux)
+        if: runner.os == 'Linux'
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install (locked)
+        run: uv sync --locked
+
+      - name: CPU test suite
+        run: uv run task test
+
+  # The one stable name for branch protection to require.
+  ci:
+    if: always()
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All gates passed
+        shell: bash
+        run: |
+          [ "${{ needs.lint.result }}" = "success" ] && [ "${{ needs.test.result }}" = "success" ]

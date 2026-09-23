@@ -140,9 +140,42 @@ def check_figures_fresh(root: Path) -> list[str]:
         source = root / spec.source.format(**sources)
         if not image.is_file():
             stale.append(f"{spec.name} (missing)")
-        elif source.is_file() and image.stat().st_mtime < source.stat().st_mtime:
+        elif source.is_file() and _changed_at(root, image) < _changed_at(root, source):
             stale.append(f"{spec.name} (older than {spec.source.format(**sources)})")
     return stale
+
+
+def _changed_at(root: Path, path: Path) -> float:
+    """When ``path`` last changed: its last commit time if committed and clean, else its mtime.
+
+    Modification times alone do not survive a clone: checkout writes files in whatever order it
+    likes, so a fresh CI checkout found a figure "older" than the JSON committed beside it. A
+    file with uncommitted changes falls back to its mtime, which is what a local edit means.
+    """
+    import subprocess
+
+    rel = path.relative_to(root).as_posix()
+    try:
+        dirty = subprocess.run(
+            ["git", "status", "--porcelain", "--", rel],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+        if not dirty:
+            stamp = subprocess.run(
+                ["git", "log", "-1", "--format=%ct", "--", rel],
+                cwd=root,
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+            if stamp:
+                return float(stamp)
+    except (OSError, subprocess.CalledProcessError):
+        pass
+    return path.stat().st_mtime
 
 
 def latest_latency_run(results: Path) -> Path:
