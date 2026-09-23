@@ -7,6 +7,7 @@ from outside whether it is alive, and does it stop rather than loop when it brea
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import subprocess
@@ -257,10 +258,8 @@ def test_the_log_records_what_was_spawned(tmp_path) -> None:
         pytest.importorskip("psutil")
         import psutil
 
-        try:
+        with contextlib.suppress(psutil.NoSuchProcess):
             psutil.Process(pid).kill()
-        except psutil.NoSuchProcess:
-            pass
 
 
 def test_job_paths_are_all_inside_the_run_directory(tmp_path) -> None:

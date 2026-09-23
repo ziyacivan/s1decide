@@ -121,7 +121,7 @@ def fill_slots(readme: str, blocks: dict[str, str]) -> str:
         pattern = re.compile(rf"(<!--{marker}-->)(.*?)(<!--/{marker}-->)", re.S)
         if not pattern.search(readme):
             raise ValueError(f"README has no <!--{name}--> block to fill")
-        readme = pattern.sub(lambda m: m.group(1) + contents + m.group(3), readme)
+        readme = pattern.sub(lambda m, c=contents: m.group(1) + c + m.group(3), readme)
     return readme
 
 

@@ -34,6 +34,9 @@ __all__ = [
     "TrainConfig",
     "build_examples",
     "collate",
+    "coverage",
+    "format_coverage",
+    "is_prequantized",
     "load_config",
     "main",
     "select_rows",
@@ -213,10 +216,63 @@ def build_examples(
                 "label_token_ids": list(allowed_token_ids(tokenizer, labels)),
                 "target": [float(v) for v in target],
                 "qtype": row["qtype"],
+                "family": row.get("family", "?"),
+                "stage1": row.get("stage") == 1,
+                "soft": row["qtype"] == "score" and row.get("target_type") == "soft",
+                "n_options": len(labels),
             }
         )
     random.Random(config.seed).shuffle(examples)
     return examples
+
+
+def coverage(examples: Sequence[dict[str, Any]]) -> dict[str, dict[str, int]]:
+    """Count what a run actually trained on: primitive, family, target type, option count.
+
+    A falling loss says nothing about which code paths produced it. The first smoke run fell to
+    4e-7 on 200 banking77 rows and no `Score` row at all; this table is what makes that visible
+    in the report instead of only in hindsight.
+
+    Args:
+        examples: Output of :func:`build_examples`, after any ``limit``.
+
+    Returns:
+        ``by_qtype`` (``noul`` split into genuine and ``noul/stage1``), ``by_family``,
+        ``by_target`` (hard/soft) and ``by_option_count``, each sorted by key.
+    """
+    tables: dict[str, dict[str, int]] = {
+        "by_qtype": {},
+        "by_family": {},
+        "by_target": {},
+        "by_option_count": {},
+    }
+    for ex in examples:
+        keys = {
+            "by_qtype": "noul/stage1" if ex.get("stage1") else ex["qtype"],
+            "by_family": ex.get("family", "?"),
+            "by_target": "soft" if ex.get("soft") else "hard",
+            "by_option_count": str(ex.get("n_options", len(ex["label_token_ids"]))),
+        }
+        for table, key in keys.items():
+            tables[table][key] = tables[table].get(key, 0) + 1
+    tables["by_option_count"] = dict(
+        sorted(tables["by_option_count"].items(), key=lambda kv: int(kv[0]))
+    )
+    return {
+        name: dict(sorted(t.items())) if name != "by_option_count" else t
+        for name, t in tables.items()
+    }
+
+
+def format_coverage(cov: dict[str, dict[str, int]]) -> str:
+    """Render :func:`coverage` as Markdown tables, one per dimension, for run notes."""
+    lines: list[str] = []
+    for name, table in cov.items():
+        total = sum(table.values()) or 1
+        lines += [f"| {name.removeprefix('by_')} | rows | share |", "|---|---|---|"]
+        lines += [f"| {k} | {v} | {v / total:.1%} |" for k, v in table.items()]
+        lines.append("")
+    return "\n".join(lines)
 
 
 def collate(batch: Sequence[dict[str, Any]], pad_token_id: int) -> dict[str, Any]:
@@ -244,8 +300,12 @@ def collate(batch: Sequence[dict[str, Any]], pad_token_id: int) -> dict[str, Any
     }
 
 
-def _batch_loss(model: Any, batch: dict[str, Any], config: TrainConfig) -> Any:
-    """Masked-option loss at the answer position, ordinal where the row is a `Score`."""
+def _batch_loss(model: Any, batch: dict[str, Any], config: TrainConfig) -> tuple[Any, list[float]]:
+    """Masked-option loss at the answer position, ordinal where the row is a `Score`.
+
+    Returns the batch mean for the backward pass and each row's own loss, so the summary can
+    show the curve per primitive rather than one number that a single family can carry.
+    """
     import torch
 
     from train.ordinal_loss import ordinal_loss
@@ -258,6 +318,7 @@ def _batch_loss(model: Any, batch: dict[str, Any], config: TrainConfig) -> Any:
     answer_logits = out.logits[:, -1, :].float()
 
     total = answer_logits.new_zeros(())
+    per_row: list[float] = []
     for i, (ids, target, qtype) in enumerate(
         zip(batch["label_token_ids"], batch["target"], batch["qtype"], strict=True)
     ):
@@ -265,15 +326,17 @@ def _batch_loss(model: Any, batch: dict[str, Any], config: TrainConfig) -> Any:
         row = answer_logits[i, index].unsqueeze(0)
         distribution = torch.tensor([target], device=device, dtype=row.dtype)
         if qtype == "score":
-            total = total + ordinal_loss(
+            loss = ordinal_loss(
                 row,
                 distribution,
                 lambda_distance=config.lambda_distance,
                 mu_unimodality=config.mu_unimodality,
             )
         else:
-            total = total + ordinal_loss(row, distribution, lambda_distance=0.0)
-    return total / len(batch["qtype"])
+            loss = ordinal_loss(row, distribution, lambda_distance=0.0)
+        per_row.append(float(loss.detach()))
+        total = total + loss
+    return total / len(batch["qtype"]), per_row
 
 
 def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
@@ -306,7 +369,7 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
     if not examples:
         raise RuntimeError("no training examples survived rendering; check max_seq_len")
 
-    model = _load_model(config)
+    model, loader = _load_model(config)
     pad_token_id = tokenizer.pad_token_id or tokenizer.eos_token_id or 0
 
     optimiser = torch.optim.AdamW(
@@ -316,6 +379,7 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         torch.cuda.reset_peak_memory_stats()
 
     losses: list[float] = []
+    seen_losses: dict[str, list[float]] = {}
     tokens = 0
     started = time.perf_counter()
     model.train()
@@ -330,9 +394,11 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
             cursor += config.batch_size
             batch = collate(chunk, pad_token_id)
             tokens += int(batch["attention_mask"].sum())
-            loss = _batch_loss(model, batch, config) / config.grad_accum
-            loss.backward()
-            losses.append(float(loss.detach()) * config.grad_accum)
+            loss, per_row = _batch_loss(model, batch, config)
+            (loss / config.grad_accum).backward()
+            losses.append(float(loss.detach()))
+            for item, value in zip(chunk, per_row, strict=True):
+                seen_losses.setdefault(item["qtype"], []).append(value)
         optimiser.step()
         if step % 10 == 0:
             print(f"  step {step:4d}  loss {losses[-1]:.4f}", flush=True)
@@ -350,6 +416,17 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         "loss_mean_last_10": sum(losses[-10:]) / max(1, len(losses[-10:])),
         "elapsed_seconds": round(elapsed, 2),
         "tokens_per_second": round(tokens / elapsed, 1) if elapsed else None,
+        "loss_curve": [round(v, 5) for v in losses],
+        "loss_by_qtype": {
+            qtype: {
+                "rows": len(values),
+                "mean_first_10": sum(values[:10]) / len(values[:10]),
+                "mean_last_10": sum(values[-10:]) / len(values[-10:]),
+            }
+            for qtype, values in sorted(seen_losses.items())
+        },
+        "coverage": coverage(examples),
+        "loader": loader,
         "vram_peak_bytes": peak,
         "vram_peak_gib": round(peak / 1024**3, 3),
         "kernels": kernel_report(),
@@ -370,15 +447,46 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
     return summary
 
 
-def _load_model(config: TrainConfig) -> Any:
+def is_prequantized(hf_config: Any) -> bool:
+    """Whether a checkpoint ships its own quantization config and must not be quantized again.
+
+    Args:
+        hf_config: A ``transformers`` config, as ``AutoConfig.from_pretrained`` returns it.
+
+    Returns:
+        True for e.g. ``unsloth/*-bnb-4bit``, whose config carries ``quantization_config``.
+    """
+    return getattr(hf_config, "quantization_config", None) is not None
+
+
+def _load_model(config: TrainConfig) -> tuple[Any, dict[str, Any]]:
     """Load through Unsloth where it can, and fall back to plain peft where it cannot.
 
     CLAUDE.md pins Unsloth Core as the training backend, and that is what a real run uses. The
     fallback exists for the small pipeline-proving model, which Unsloth may not recognise: the
     point of that run is to prove the *data and loss* path, and refusing to run it because a
     0.8B is not in a support matrix would remove the cheapest check in the project.
+
+    Returns ``(model, loader)``: ``loader`` records which path ran, whether the checkpoint was
+    pre-quantized, and why Unsloth was skipped if it was — the first 27B attempt left no trace of
+    which path had failed.
+
+    A checkpoint that ships its own ``quantization_config`` (``unsloth/*-bnb-4bit``) is loaded
+    with **no** quantization request on top: asking for 4-bit again is what produced
+    ``A inner dim (5120) does not match weight (1)`` on the first 27B attempt, the same failure
+    ``engine/hf.py`` and ``data/build/teach_run.py`` already guard against.
     """
+    import copy
+
     import torch
+    from transformers import AutoConfig
+
+    from s1decide.engine.hf import force_quantized_model_dtype
+
+    hf_config = AutoConfig.from_pretrained(config.model, local_files_only=True)
+    prequantized = is_prequantized(hf_config)
+    quantize = config.load_in_4bit and not prequantized
+    loader: dict[str, Any] = {"prequantized": prequantized, "quantize_on_load": quantize}
 
     try:
         from unsloth import FastLanguageModel
@@ -386,32 +494,60 @@ def _load_model(config: TrainConfig) -> Any:
         model, _ = FastLanguageModel.from_pretrained(
             model_name=config.model,
             max_seq_length=config.max_seq_len,
-            load_in_4bit=config.load_in_4bit,
+            load_in_4bit=quantize,
             dtype=torch.bfloat16,
+            local_files_only=True,
         )
-        return FastLanguageModel.get_peft_model(
+        if prequantized:
+            loader["dtype_fix"] = force_quantized_model_dtype(model, torch.bfloat16)
+        loader["path"] = "unsloth"
+        model = FastLanguageModel.get_peft_model(
             model,
             r=config.rank,
             lora_alpha=config.lora_alpha,
             use_gradient_checkpointing="unsloth",
             random_state=config.seed,
         )
+        return model, loader
     except Exception as exc:
-        print(f"  unsloth path unavailable ({type(exc).__name__}); using transformers + peft")
+        loader["unsloth_error"] = f"{type(exc).__name__}: {exc}"[:500]
+        print(f"  unsloth path unavailable ({loader['unsloth_error']}); using transformers + peft")
+        # A half-built 27B from the failed attempt would otherwise still hold the card, and
+        # the fallback would then OOM for a reason that has nothing to do with training.
+        import gc
+
+        model = None
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
         from peft import LoraConfig, get_peft_model
         from transformers import AutoModelForCausalLM
 
-        kwargs: dict[str, Any] = {"dtype": torch.bfloat16, "local_files_only": True}
-        if config.load_in_4bit:
+        kwargs: dict[str, Any] = {
+            "dtype": torch.bfloat16,
+            "local_files_only": True,
+            "attn_implementation": "sdpa",
+        }
+        if quantize:
             from s1decide.engine.hf import nf4_config
 
             kwargs["quantization_config"] = nf4_config()
+        if config.load_in_4bit:
             kwargs["device_map"] = {"": 0}
+        if prequantized and getattr(hf_config, "vision_config", None) is not None:
+            # The text tower is built from `text_config`, which does not carry the parent's
+            # quantization config; same fix as engine/hf.py.
+            text_config = copy.deepcopy(hf_config.get_text_config())
+            text_config.quantization_config = hf_config.quantization_config
+            kwargs["config"] = text_config
         model = AutoModelForCausalLM.from_pretrained(config.model, **kwargs)
+        if prequantized:
+            loader["dtype_fix"] = force_quantized_model_dtype(model, torch.bfloat16)
         if not config.load_in_4bit and torch.cuda.is_available():
             model = model.to("cuda")
         model.gradient_checkpointing_enable()
         model.enable_input_require_grads()
+        loader["path"] = "transformers+peft"
         return get_peft_model(
             model,
             LoraConfig(
@@ -420,7 +556,7 @@ def _load_model(config: TrainConfig) -> Any:
                 target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
                 task_type="CAUSAL_LM",
             ),
-        )
+        ), loader
 
 
 def main(argv: Sequence[str] | None = None) -> int:

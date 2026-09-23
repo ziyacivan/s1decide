@@ -197,3 +197,46 @@ def test_no_limit_means_the_whole_corpus() -> None:
 
     rows = corpus_rows()
     assert len(select_rows(rows, TrainConfig(limit=None))) == len(rows)
+
+
+def test_coverage_counts_every_dimension_a_smoke_report_needs() -> None:
+    from train.sft_lora import coverage, format_coverage
+
+    examples = [
+        {"qtype": "choice", "family": "banking77", "n_options": 8, "label_token_ids": [0] * 8},
+        {"qtype": "noul", "family": "go_emotions", "n_options": 2, "label_token_ids": [0, 1]},
+        {
+            "qtype": "noul",
+            "family": "banking77",
+            "stage1": True,
+            "n_options": 2,
+            "label_token_ids": [0, 1],
+        },
+        {
+            "qtype": "score",
+            "family": "teacher",
+            "soft": True,
+            "n_options": 5,
+            "label_token_ids": [0] * 5,
+        },
+    ]
+    cov = coverage(examples)
+    assert cov["by_qtype"] == {"choice": 1, "noul": 1, "noul/stage1": 1, "score": 1}
+    assert cov["by_family"] == {"banking77": 2, "go_emotions": 1, "teacher": 1}
+    assert cov["by_target"] == {"hard": 3, "soft": 1}
+    # Numeric order, not string order: "10" must not sort before "2".
+    assert list(cov["by_option_count"]) == ["2", "5", "8"]
+    table = format_coverage(cov)
+    assert "| noul/stage1 | 1 | 25.0% |" in table
+    assert "| soft | 1 | 25.0% |" in table
+
+
+def test_a_prequantized_checkpoint_is_not_quantized_again() -> None:
+    """The first 27B attempt died on `inner dim (5120) does not match weight (1)` for this."""
+    from types import SimpleNamespace
+
+    from train.sft_lora import is_prequantized
+
+    assert is_prequantized(SimpleNamespace(quantization_config={"quant_method": "bitsandbytes"}))
+    assert not is_prequantized(SimpleNamespace(quantization_config=None))
+    assert not is_prequantized(SimpleNamespace())
