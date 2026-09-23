@@ -205,3 +205,62 @@ def test_a_checkpoint_carries_optimiser_schedule_and_position(tmp_path) -> None:
 
     fresh = torch.optim.AdamW([torch.nn.Parameter(torch.ones(3))], lr=2e-5)
     fresh.load_state_dict(state["optimizer"])  # loads back into a new optimiser
+
+
+def test_a_resume_may_change_the_eval_batch_and_nothing_else() -> None:
+    from dataclasses import asdict
+
+    from train.sft_lora import check_resume_config
+
+    saved = asdict(TrainConfig(learning_rate=2e-5, eval_batch_size=8))
+    check_resume_config(saved, TrainConfig(learning_rate=2e-5, eval_batch_size=4, resume_from="x"))
+    with pytest.raises(ValueError, match="learning_rate"):
+        check_resume_config(saved, TrainConfig(learning_rate=1e-4, eval_batch_size=8))
+
+
+def test_a_resume_restores_adapter_optimiser_and_schedule(tmp_path) -> None:
+    """Round trip on CPU with a tiny PEFT model: what a checkpoint saves is what a resume loads."""
+    torch = pytest.importorskip("torch")
+    peft = pytest.importorskip("peft")
+    from train.sft_lora import lr_multiplier, resume_training_state, save_training_state
+
+    class Tiny(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.q_proj = torch.nn.Linear(4, 4)
+
+        def forward(self, x):
+            return self.q_proj(x)
+
+    def build(seed: int):
+        torch.manual_seed(seed)
+        model = peft.get_peft_model(Tiny(), peft.LoraConfig(r=2, target_modules=["q_proj"]))
+        params = [p for p in model.parameters() if p.requires_grad]
+        optimiser = torch.optim.AdamW(params, lr=2e-5)
+        scheduler = torch.optim.lr_scheduler.LambdaLR(
+            optimiser, lambda s: lr_multiplier(s, 100, 3, "cosine")
+        )
+        return model, optimiser, scheduler
+
+    config = TrainConfig(learning_rate=2e-5)
+    model, optimiser, scheduler = build(0)
+    for _ in range(4):
+        model(torch.ones(1, 4)).sum().backward()
+        optimiser.step()
+        scheduler.step()
+        optimiser.zero_grad()
+    checkpoint = tmp_path / "rows-000032"
+    model.save_pretrained(str(checkpoint))
+    save_training_state(checkpoint, optimiser, scheduler, 32, config)
+
+    fresh, fresh_opt, fresh_sched = build(1)  # different init: the resume must overwrite it
+    step, rows = resume_training_state(checkpoint, fresh, fresh_opt, fresh_sched, config)
+    assert (step, rows) == (4, 32)
+    trained = {k: v for k, v in model.state_dict().items() if "lora_" in k}
+    restored = {k: v for k, v in fresh.state_dict().items() if "lora_" in k}
+    assert trained.keys() == restored.keys()
+    assert all(torch.equal(trained[k], restored[k]) for k in trained)
+    assert fresh_sched.last_epoch == 4
+    assert fresh_sched.get_last_lr() == pytest.approx(scheduler.get_last_lr())
+    first = next(iter(fresh_opt.state.values()))
+    assert int(first["step"]) == 4

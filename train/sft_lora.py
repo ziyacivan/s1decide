@@ -41,6 +41,7 @@ __all__ = [
     "adapter_file_keys",
     "build_examples",
     "check_lora_layout",
+    "check_resume_config",
     "collate",
     "coverage",
     "expected_lora_layout",
@@ -51,6 +52,7 @@ __all__ = [
     "lr_multiplier",
     "main",
     "plan_steps",
+    "resume_training_state",
     "save_training_state",
     "select_rows",
     "train",
@@ -101,6 +103,9 @@ class TrainConfig:
         eval_stage1_questions: Stage-1 questions in the slice.
         eval_negatives: Negatives kept per stage-1 question, weighted back.
         eval_batch_size: Rows per forward pass during evaluation.
+        resume_from: A checkpoint directory (``results/<run>/checkpoints/rows-NNNNNN``) to continue
+            from: adapter, optimiser, schedule and position. Every other field must match the
+            checkpoint's config except those in :data:`RESUME_MAY_CHANGE`.
     """
 
     hardware: str = "rtx3090_windows"
@@ -129,6 +134,7 @@ class TrainConfig:
     eval_stage1_questions: int = 300
     eval_negatives: int = 16
     eval_batch_size: int = 8
+    resume_from: str | None = None
     extra: dict[str, Any] = field(default_factory=dict)
 
 
@@ -498,6 +504,63 @@ def save_training_state(
     return target
 
 
+#: Config fields a resume may change. Everything else would make the continuation a different run;
+#: `eval_batch_size` is the owner's approved remedy for an evaluation slowdown (2026-09-24).
+RESUME_MAY_CHANGE: frozenset[str] = frozenset({"eval_batch_size", "resume_from", "extra"})
+
+
+def check_resume_config(saved: dict[str, Any], current: TrainConfig) -> None:
+    """Refuse a resume whose config differs from the checkpoint's beyond :data:`RESUME_MAY_CHANGE`.
+
+    Raises:
+        ValueError: Naming every field that differs.
+    """
+    now = asdict(current)
+    differs = sorted(
+        key
+        for key in set(saved) | set(now)
+        if key not in RESUME_MAY_CHANGE and saved.get(key) != now.get(key)
+    )
+    if differs:
+        detail = ", ".join(f"{k}: {saved.get(k)!r} -> {now.get(k)!r}" for k in differs)
+        raise ValueError(f"cannot resume: config changed since the checkpoint ({detail})")
+
+
+def resume_training_state(
+    checkpoint: Path, model: Any, optimiser: Any, scheduler: Any, config: TrainConfig
+) -> tuple[int, int]:
+    """Load a checkpoint's adapter weights, optimiser and schedule into a freshly built run.
+
+    Args:
+        checkpoint: A ``rows-NNNNNN`` directory written by the trainer.
+        model: The PEFT model, already built with the same adapter layout.
+        optimiser: The freshly built optimiser.
+        scheduler: The freshly built scheduler.
+        config: The resuming run's config.
+
+    Returns:
+        ``(optimiser steps done, rows done)``.
+
+    Raises:
+        ValueError: If the config differs beyond what a resume may change.
+    """
+    import torch
+    from peft import set_peft_model_state_dict
+    from safetensors.torch import load_file
+
+    state = torch.load(checkpoint / "trainer_state.pt", weights_only=False)
+    check_resume_config(state["config"], config)
+    result = set_peft_model_state_dict(
+        model, load_file(str(checkpoint / "adapter_model.safetensors"))
+    )
+    unexpected = list(getattr(result, "unexpected_keys", []) or [])
+    if unexpected:
+        raise ValueError(f"checkpoint has adapter weights the model does not: {unexpected[:5]}")
+    optimiser.load_state_dict(state["optimizer"])
+    scheduler.load_state_dict(state["scheduler"])
+    return int(state["optimizer_steps_done"]), int(state["rows_done"])
+
+
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     return [
         json.loads(line) for line in path.read_text(encoding="utf-8").split("\n") if line.strip()
@@ -640,11 +703,24 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
     scheduler = torch.optim.lr_scheduler.LambdaLR(
         optimiser, lambda step: lr_multiplier(step, steps, warmup_steps, config.lr_schedule)
     )
+    start_step, rows_offset, resumed = 0, 0, None
+    if config.resume_from:
+        start_step, rows_offset = resume_training_state(
+            Path(config.resume_from), model, optimiser, scheduler, config
+        )
+        resumed = {"from": config.resume_from, "step": start_step, "rows": rows_offset}
+        print(f"  resumed from {config.resume_from} at step {start_step}, row {rows_offset}")
     if torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
 
     checkpoints: list[dict[str, Any]] = []
     stop_reasons: list[str] = []
+    if resumed and (out_dir / "evals.jsonl").is_file():
+        # The stop rule reads the whole history ("two consecutive checkpoints"), not only the
+        # evaluations this process ran.
+        checkpoints = [
+            entry for entry in _read_jsonl(out_dir / "evals.jsonl") if entry["rows"] <= rows_offset
+        ]
 
     def evaluate(rows_done: int) -> None:
         from train.periodic_eval import eval_metrics, predict_logits
@@ -692,7 +768,7 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         save_training_state(path, optimiser, scheduler, rows_done, config)
 
     progress_path = out_dir / "progress.jsonl"
-    if config.eval_every_rows:
+    if config.eval_every_rows and not resumed:
         evaluate(0)
 
     losses: list[float] = []
@@ -701,9 +777,11 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
     tokens = 0
     started = time.perf_counter()
     model.train()
-    cursor = 0
-    rows_done = 0
-    for step in range(steps):
+    # On a resume the draw sequence is the same seeded sequence; its first `rows_offset` rows were
+    # trained by the earlier process, so this one starts after them.
+    cursor = rows_offset
+    rows_done = rows_offset
+    for step in range(start_step, steps):
         optimiser.zero_grad(set_to_none=True)
         for _ in range(config.grad_accum):
             chunk = examples[cursor : cursor + config.batch_size]
@@ -729,7 +807,7 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
                 )
         optimiser.step()
         scheduler.step()
-        before, rows_done = rows_done, len(seen)
+        before, rows_done = rows_done, rows_offset + len(seen)
         if step % 10 == 0:
             print(f"  step {step:4d}  loss {losses[-1]:.4f}", flush=True)
         if step % 25 == 0 or step == steps - 1:
@@ -771,7 +849,7 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
             )
             print(f"  stopping at {rows_done} rows: {stop_reasons}", flush=True)
             break
-    if one_pass and len(seen) != len(examples) and not stop_reasons:
+    if one_pass and rows_offset + len(seen) != len(examples) and not stop_reasons:
         raise RuntimeError(f"one pass saw {len(seen)} rows of {len(examples)} selected")
 
     elapsed = time.perf_counter() - started
@@ -817,6 +895,7 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         "eval_slice": eval_report or None,
         "checkpoint_evals": [c["rows"] for c in checkpoints],
         "stopped": stop_reasons or None,
+        "resumed": resumed,
         "loader": loader,
         "vram_peak_bytes": peak,
         "vram_peak_gib": round(peak / 1024**3, 3),
