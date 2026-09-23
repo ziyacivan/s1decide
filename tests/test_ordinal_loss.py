@@ -120,6 +120,27 @@ def test_a_two_humped_distribution_is_penalised() -> None:
     assert two_humped > unimodal
 
 
+@pytest.mark.parametrize(
+    ("p", "expected"),
+    [
+        # The common case on a five-level scale: both humps sit on the endpoints.
+        ([0.5, 0.0, 0.0, 0.0, 0.5], 0.5),
+        ([0.6, 0.05, 0.05, 0.05, 0.25], 0.25),
+        ([0.25, 0.05, 0.05, 0.05, 0.6], 0.25),
+        # An endpoint hump beside an interior one, still two modes.
+        ([0.4, 0.05, 0.05, 0.4, 0.1], 0.4),
+    ],
+)
+def test_two_modes_at_the_ends_of_the_scale_are_penalised(p, expected) -> None:
+    """ADR 0007: bimodality on a 5-level scale usually sits at the two ends.
+
+    A peak test that only looks at interior positions scores every one of these zero, because
+    levels 0 and 4 have only one neighbour. The penalty is the mass of every mode but the
+    largest, so the value is known by hand.
+    """
+    assert float(unimodality_penalty(torch.tensor([p]))) == pytest.approx(expected, abs=1e-6)
+
+
 def test_the_shape_penalty_is_off_by_default() -> None:
     """A prior that is on by default is one nobody measured."""
     row = logits([4.0, -2.0, -2.0, -2.0, 4.0])

@@ -22,6 +22,14 @@ L = CE(p, y) + λ · E_{k~p}[ |k − y| ]   ( + μ · unimodality penalty, optio
 - The **unimodality penalty** is optional and off by default: it penalises local maxima at
   non-adjacent positions, i.e. a distribution that says "probably 1, possibly 4, definitely not
   2 or 3". On an ordinal scale that shape is usually a symptom rather than a belief.
+
+  **Bimodality on a five-level scale usually sits at the two ends:** mass on "none" and on
+  "decisive" with a hollow in between, the shape a polarised teacher (teacher 2, in the fold)
+  produces. Levels 0 and 4 have only one neighbour each, so a peak test that looks only at
+  interior positions scores that shape a perfect zero. The penalty pads both ends below zero,
+  which lets an endpoint count as a mode. `tests/test_ordinal_loss.py` pins the ends-bimodal
+  shape by value (`test_two_modes_at_the_ends_of_the_scale_are_penalised`), symmetric and
+  asymmetric, with an exact-zero hollow included.
 - **λ ≈ 0.3** to start, selected on `val` by QWK and MAE **together with ECE** — a λ that
   improves the ordinal metrics by making the model overconfident is not an improvement, and
   looking at the three together is what catches it.
