@@ -120,9 +120,14 @@ carries `quantization_measured`.
 
 Teacher 2's representation **depends on the `kernels` package**, which the runs recorded as
 present and which is **not in `uv.lock`**: without it the same load dequantizes the experts to
-bf16 (~42 GB) and cannot fit this card, so the completed runs can only have been MXFP4. The
-`kernels` version they used was not recorded. Reproducing teacher 2 from a fresh clone needs
-`kernels` added to the lock.
+bf16 (~42 GB) and cannot fit this card, so the completed runs can only have been MXFP4.
+
+**The completed teacher-2 runs did not record the `kernels` version.** It is now pinned at
+`kernels==0.12.0` in the `teachers` extra (`uv sync --extra teachers`) — **0.12.0 is inferred,
+not measured**: it is the version installed on 2026-09-18, before those runs, and 0.17.1 is known
+to break transformers 5.5. Every run since 2026-09-24 records installed package versions in its
+meta (`kernels.versions`), and a teacher run now refuses an MXFP4 checkpoint when `kernels` is
+missing rather than dequantizing it into a different teacher.
 
 **Exact agreement becomes a hard target. One level apart becomes a soft target split equally
 across the two levels.** Adjacent levels are where a five-level rubric is genuinely ambiguous

@@ -50,6 +50,7 @@ __all__ = [
     "pending_items",
     "rebuild_summary",
     "release_teacher",
+    "require_quantization_support",
     "teacher_rows",
 ]
 
@@ -115,6 +116,34 @@ TEACHERS: dict[str, TeacherSetting] = {
 }
 
 
+def require_quantization_support(config: Any) -> None:
+    """Refuse a checkpoint whose quantization this environment would silently undo.
+
+    An MXFP4 checkpoint (gpt-oss) stays MXFP4 only when the `kernels` package is installed;
+    without it transformers dequantizes to bf16 — for gpt-oss-20b ~42 GB, which then fails on a
+    24 GB card with an OOM that says nothing about the cause. The completed teacher-2 runs had
+    `kernels`; a teacher run without it would not be the same teacher.
+
+    Raises:
+        RuntimeError: For an MXFP4 checkpoint when `kernels` is not importable.
+    """
+    import importlib.util
+
+    quant = getattr(config, "quantization_config", None)
+    method = (
+        quant.get("quant_method")
+        if isinstance(quant, dict)
+        else getattr(quant, "quant_method", None)
+    )
+    method = str(getattr(method, "value", method)) if method is not None else None
+    if method == "mxfp4" and importlib.util.find_spec("kernels") is None:
+        raise RuntimeError(
+            "MXFP4 checkpoint but the `kernels` package is not installed: it would be "
+            "dequantized to bf16 and would not be the teacher the dataset card describes. "
+            "Install the pinned version with `uv sync --extra teachers`."
+        )
+
+
 def load_teacher(setting: TeacherSetting) -> tuple[Any, Any]:
     """Load a teacher for generation, text-only and 4-bit where it is not already quantized.
 
@@ -141,6 +170,7 @@ def load_teacher(setting: TeacherSetting) -> tuple[Any, Any]:
     from transformers import AutoConfig
 
     config = AutoConfig.from_pretrained(setting.model, local_files_only=True)
+    require_quantization_support(config)
     if getattr(config, "quantization_config", None) is None:
         kwargs["quantization_config"] = nf4_config()
     elif getattr(config, "vision_config", None) is not None:

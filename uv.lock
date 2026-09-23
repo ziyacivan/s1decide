@@ -608,6 +608,20 @@ wheels = [
 ]
 
 [[package]]
+name = "kernels"
+version = "0.12.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "huggingface-hub" },
+    { name = "packaging" },
+    { name = "pyyaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/55/e7/fc300f86fbe8ff869745cc4c4b685f85519806b88c9b5cc80b774f7a21bf/kernels-0.12.0.tar.gz", hash = "sha256:df233e7cda223e40577221fee176e811696c95b803c2ad3714a5021f87266da6", size = 56666, upload-time = "2026-01-24T12:22:56.076Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/04/26/c6da76e89bb86996faaf35e5ed67981d0f31d094bd9f3586a0ef6294efee/kernels-0.12.0-py3-none-any.whl", hash = "sha256:c8034d2f8dc707b699c814646650256adfc04451a6b489d49614081d28e7605b", size = 55054, upload-time = "2026-01-24T12:22:54.93Z" },
+]
+
+[[package]]
 name = "kiwisolver"
 version = "1.5.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1513,6 +1527,9 @@ server = [
     { name = "fastapi" },
     { name = "uvicorn" },
 ]
+teachers = [
+    { name = "kernels" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -1529,6 +1546,7 @@ requires-dist = [
     { name = "datasets", specifier = "==4.3.0" },
     { name = "fastapi", marker = "extra == 'server'", specifier = ">=0.115" },
     { name = "huggingface-hub", specifier = ">=1.8.0" },
+    { name = "kernels", marker = "extra == 'teachers'", specifier = "==0.12.0" },
     { name = "llama-cpp-python", marker = "extra == 'llamacpp'", specifier = ">=0.3.0" },
     { name = "matplotlib", marker = "extra == 'plots'", specifier = ">=3.9" },
     { name = "numpy", specifier = ">=2.2,<3" },
@@ -1546,7 +1564,7 @@ requires-dist = [
     { name = "unsloth-zoo", specifier = "==2026.9.1" },
     { name = "uvicorn", marker = "extra == 'server'", specifier = ">=0.32" },
 ]
-provides-extras = ["llamacpp", "server", "plots"]
+provides-extras = ["llamacpp", "teachers", "server", "plots"]
 
 [package.metadata.requires-dev]
 dev = [
