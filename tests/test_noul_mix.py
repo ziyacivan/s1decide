@@ -288,6 +288,9 @@ MIN_EVAL_ROWS_PER_PRIMITIVE = 300
 def _genuine_eval_rows(split: str) -> dict[str, int]:
     """Non-stage-1 rows per primitive in one split, excluding rule-labelled families."""
     path = repo_root() / "data" / "processed" / f"{split}.jsonl"
+    if not path.is_file():
+        # The strict xfail used to absorb this on a fresh clone; without it, skip like the rest.
+        pytest.skip("no built corpus; run `uv run task data`")
     counts: dict[str, int] = {"choice": 0, "score": 0, "noul": 0}
     for line in path.read_text(encoding="utf-8").split("\n"):
         if not line.strip():
@@ -300,23 +303,13 @@ def _genuine_eval_rows(split: str) -> dict[str, int]:
     return counts
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Score has no non-rule-based evaluation rows yet: all 4,804 teacher-labelled rows landed "
-        "in train, so val and test hold only ordinal_control, whose labels come from a rule. "
-        "Score accuracy on a teacher rubric is therefore unmeasurable and Score calibration would "
-        "be fitted on the control set. Closed by the queued second teacher run over 600 val and "
-        "600 test states (docs/phase-1-plan.md); remove this marker when it lands."
-    ),
-)
 @pytest.mark.parametrize("split", ["val", "test"])
 def test_every_primitive_has_a_real_evaluation_set(split: str) -> None:
     """A primitive with no genuine eval rows cannot appear in the model card with a number.
 
-    Strict xfail on purpose: when the second teacher run lands this starts passing, the suite
-    fails on the unexpected pass, and the marker has to be removed deliberately rather than the
-    gap quietly closing unnoticed.
+    Was a strict xfail until teacher run 2 (2026-09-23) added 468 val and 491 test `Score` rows
+    from the val/test partitions; the unexpected pass failed the suite and the marker was
+    removed deliberately.
     """
     counts = _genuine_eval_rows(split)
     below = {k: v for k, v in counts.items() if v < MIN_EVAL_ROWS_PER_PRIMITIVE}

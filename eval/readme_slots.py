@@ -126,21 +126,33 @@ def fill_slots(readme: str, blocks: dict[str, str]) -> str:
 
 
 def check_figures_fresh(root: Path) -> list[str]:
-    """Every figure must be newer than the JSON behind it.
+    """Every figure must have been drawn from the current content of the JSON behind it.
+
+    Judged by the source digest `task figures` records in ``docs/figures/digests.json``. File
+    times are only a fallback for a figure with no recorded digest: a regenerated figure whose
+    input did not change is byte-identical and keeps its old commit time, so a time comparison
+    calls it stale for ever once its source is recommitted.
 
     Returns:
         The names of stale figures, empty when all are current.
     """
-    from eval.figures import FIGURES, resolve_sources
+    from eval.figures import DIGESTS_FILE, FIGURES, resolve_sources, source_digest
 
     sources = resolve_sources(root)
+    digests_path = root / "docs" / "figures" / DIGESTS_FILE
+    digests = json.loads(digests_path.read_text(encoding="utf-8")) if digests_path.is_file() else {}
     stale = []
     for spec in FIGURES:
         image = root / "docs" / "figures" / f"{spec.name}.png"
         source = root / spec.source.format(**sources)
         if not image.is_file():
             stale.append(f"{spec.name} (missing)")
-        elif source.is_file() and _changed_at(root, image) < _changed_at(root, source):
+        elif not source.is_file():
+            continue
+        elif spec.name in digests:
+            if digests[spec.name] != source_digest(source):
+                stale.append(f"{spec.name} (drawn from an older {spec.source.format(**sources)})")
+        elif _changed_at(root, image) < _changed_at(root, source):
             stale.append(f"{spec.name} (older than {spec.source.format(**sources)})")
     return stale
 

@@ -3,15 +3,15 @@
 <!-- GENERATED from data/processed/manifest.json by data/build/report.py.
      Rebuild with: uv run task data -->
 
-**449,281 rows**, seed `20260917`. Licence reasoning and the eval-only rules are in [dataset-card.md](dataset-card.md); this file is the counts.
+**450,240 rows**, seed `20260917`. Licence reasoning and the eval-only rules are in [dataset-card.md](dataset-card.md); this file is the counts.
 
 ## Splits
 
 | split | rows | purpose |
 |---|---|---|
 | `train` | 90,594 | S1 training |
-| `val` | 117,767 | calibration fitting and model selection |
-| `test` | 114,563 | Tier-1 in-distribution report |
+| `val` | 118,235 | calibration fitting and model selection |
+| `test` | 115,054 | Tier-1 in-distribution report |
 | `eval` | 126,357 | Tier-1 held-out families and OOD sets |
 
 ## Families
@@ -35,7 +35,7 @@ A family in `eval` only is either a **held-out family** (in-distribution, never 
 | ordinal_control | `apache-2.0` | train | score | 726 | 92 | 82 | — |
 | pubmedqa | `mit` | heldout | noul | — | — | — | 890 |
 | sciq | `cc-by-nc-3.0` | ood | choice | — | — | — | 991 |
-| score_teacher | `per-row, inherited from the state's source` | train | score | 4,804 | — | — | — |
+| score_teacher | `per-row, inherited from the state's source` | train | score | 4,804 | 468 | 491 | — |
 
 ## Sources
 
@@ -57,6 +57,7 @@ A family in `eval` only is either a **held-out family** (in-distribution, never 
 | sciq | `allenai/sciq` | same | 991 | 991 | OOD. Non-commercial, as above. |
 | ordinal_control | `s1decide/ordinal_control` | same | 900 | 900 | Rule-labelled ordinal control set, generated here (ADR 0005 rule c). No model in the loop, so its labels are exact. |
 | score_teacher | `score_teacher` | same | 4,804 | 4,804 | Two open-weight teachers labelling a five-level rubric, kept where they agreed exactly or within one level. Exact agreement is a hard target; one level apart is a soft target split equally across the two levels. See docs/research/teacher-agreement-2026-09-22.md. |
+| score_teacher_eval | `score_teacher` | same | 959 | 959 | Teacher run 2: the same two teachers, rubric, cap and agreement rule, over states drawn from the val and test partitions. The state-hash split places them there; the build fails if one lands in train. |
 
 ## Two-stage expansion
 
@@ -106,13 +107,13 @@ Stage-1 questions keep the positive plus **6 negatives** in `train` only, chosen
 
 | source | licence | verdict | rows |
 |---|---|---|---|
-| `AmazonScience/massive` | `CC-BY-4.0` | train | 190,122 |
-| `PolyAI/banking77` | `CC-BY-4.0` | train | 91,816 |
+| `AmazonScience/massive` | `CC-BY-4.0` | train | 190,214 |
+| `PolyAI/banking77` | `CC-BY-4.0` | train | 92,103 |
 | `allenai/sciq` | `cc-by-nc-3.0` | eval-only | 991 |
-| `cais/mmlu` | `MIT` | train | 6,872 |
-| `clinc/clinc_oos` | `CC-BY-3.0` | train | 145,945 |
+| `cais/mmlu` | `MIT` | train | 7,061 |
+| `clinc/clinc_oos` | `CC-BY-3.0` | train | 146,156 |
 | `facebook/anli` | `CC-BY-NC-4.0` | eval-only | 1,000 |
-| `google-research-datasets/go_emotions` | `Apache-2.0` | train | 8,794 |
+| `google-research-datasets/go_emotions` | `Apache-2.0` | train | 8,974 |
 | `qiaojin/PubMedQA` | `MIT` | train | 890 |
 | `s1decide/ordinal_control` | `Apache-2.0` | train | 1,375 |
 | `tau/commonsense_qa` | `MIT` | train | 1,476 |

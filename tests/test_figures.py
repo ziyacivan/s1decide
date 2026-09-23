@@ -93,3 +93,15 @@ def test_the_benchmark_issue_template_asks_for_the_json_not_a_paste(root) -> Non
     template = (root / ".github" / "ISSUE_TEMPLATE" / "benchmark.md").read_text(encoding="utf-8")
     for required in ("latency.json", "GPU", "Commit hash", "doctor"):
         assert required in template, f"the benchmark template does not ask for {required}"
+
+
+def test_every_figure_records_the_digest_of_its_source(root) -> None:
+    """Freshness is judged by content; a figure without a recorded digest falls back to file
+    times, which cannot tell a regenerated-but-identical figure from a stale one."""
+    import json
+
+    from eval.figures import DIGESTS_FILE, FIGURES
+
+    digests = json.loads((root / "docs" / "figures" / DIGESTS_FILE).read_text(encoding="utf-8"))
+    assert set(digests) == {spec.name for spec in FIGURES}
+    assert all(len(value) == 64 for value in digests.values())

@@ -399,4 +399,27 @@ def build_all(root: Path | None = None) -> list[Path]:
         encoding="utf-8",
         newline="\n",
     )
+    # What each figure was drawn from, by content. Freshness is judged against this rather than
+    # file times: a regenerated figure whose input did not change is byte-identical, keeps its
+    # old commit time, and would otherwise look stale forever next to a newer source.
+    (out / DIGESTS_FILE).write_text(
+        json.dumps(
+            {spec.name: source_digest(root / spec.source.format(**sources)) for spec in FIGURES},
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
     return written
+
+
+#: Per-figure digest of the source it was drawn from, next to the figures.
+DIGESTS_FILE = "digests.json"
+
+
+def source_digest(path: Path) -> str:
+    """SHA-256 of a figure's source file, as the figure-freshness check compares it."""
+    import hashlib
+
+    return hashlib.sha256(path.read_bytes()).hexdigest()

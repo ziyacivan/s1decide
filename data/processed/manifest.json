@@ -1,10 +1,10 @@
 {
   "seed": 20260917,
-  "rows": 449281,
+  "rows": 450240,
   "splits": {
-    "val": 117767,
+    "val": 118235,
     "train": 90594,
-    "test": 114563,
+    "test": 115054,
     "eval": 126357
   },
   "by_family": {
@@ -72,7 +72,9 @@
       "eval": 991
     },
     "score_teacher": {
-      "train": 4804
+      "train": 4804,
+      "val": 468,
+      "test": 491
     }
   },
   "by_primitive": {
@@ -105,7 +107,7 @@
         "total": 1304,
         "stage1": 0,
         "genuine": 1304,
-        "genuine_share": 0.011382383492052409,
+        "genuine_share": 0.011333808472543328,
         "genuine_by_family": {
           "banking77": 416,
           "clinc_oos": 392,
@@ -119,19 +121,20 @@
         "total": 113177,
         "stage1": 111804,
         "genuine": 1373,
-        "genuine_share": 0.011984672189101193,
+        "genuine_share": 0.011933526865645697,
         "genuine_by_family": {
           "go_emotions": 911,
           "mmlu_noul": 462
         }
       },
       "score": {
-        "total": 82,
+        "total": 573,
         "stage1": 0,
-        "genuine": 82,
-        "genuine_share": 0.0007157633791014551,
+        "genuine": 573,
+        "genuine_share": 0.004980270134024024,
         "genuine_by_family": {
-          "ordinal_control": 82
+          "ordinal_control": 82,
+          "score_teacher": 491
         }
       }
     },
@@ -176,7 +179,7 @@
         "total": 1380,
         "stage1": 0,
         "genuine": 1380,
-        "genuine_share": 0.01171805344451332,
+        "genuine_share": 0.011671670825051803,
         "genuine_by_family": {
           "banking77": 419,
           "clinc_oos": 393,
@@ -190,19 +193,20 @@
         "total": 116295,
         "stage1": 115006,
         "genuine": 1289,
-        "genuine_share": 0.010945341224621498,
+        "genuine_share": 0.010902017169196938,
         "genuine_by_family": {
           "go_emotions": 749,
           "mmlu_noul": 540
         }
       },
       "score": {
-        "total": 92,
+        "total": 560,
         "stage1": 0,
-        "genuine": 92,
-        "genuine_share": 0.0007812035629675546,
+        "genuine": 560,
+        "genuine_share": 0.004736330189876094,
         "genuine_by_family": {
-          "ordinal_control": 92
+          "ordinal_control": 92,
+          "score_teacher": 468
         }
       }
     }
@@ -585,6 +589,18 @@
       "hard_targets": 2999,
       "soft_targets": 1805,
       "note": "Two open-weight teachers labelling a five-level rubric, kept where they agreed exactly or within one level. Exact agreement is a hard target; one level apart is a soft target split equally across the two levels. See docs/research/teacher-agreement-2026-09-22.md."
+    },
+    "score_teacher_eval": {
+      "repo": "score_teacher",
+      "canonical_repo": "score_teacher",
+      "license": "per-row, inherited from the state's source",
+      "role": "train",
+      "primitive": "score",
+      "rows_loaded": 959,
+      "rows_kept": 959,
+      "hard_targets": 595,
+      "soft_targets": 364,
+      "note": "Teacher run 2: the same two teachers, rubric, cap and agreement rule, over states drawn from the val and test partitions. The state-hash split places them there; the build fails if one lands in train."
     }
   },
   "two_stage_parents_expanded": 13600,
@@ -592,22 +608,22 @@
     "AmazonScience/massive": {
       "license": "CC-BY-4.0",
       "verdict": "train",
-      "rows": 190122,
+      "rows": 190214,
       "splits": {
         "train": 23409,
-        "val": 23790,
-        "test": 20923,
+        "val": 23833,
+        "test": 20972,
         "eval": 122000
       }
     },
     "PolyAI/banking77": {
       "license": "CC-BY-4.0",
       "verdict": "train",
-      "rows": 91816,
+      "rows": 92103,
       "splits": {
-        "val": 32682,
+        "val": 32824,
         "train": 26686,
-        "test": 32448
+        "test": 32593
       }
     },
     "allenai/sciq": {
@@ -621,21 +637,21 @@
     "cais/mmlu": {
       "license": "MIT",
       "verdict": "train",
-      "rows": 6872,
+      "rows": 7061,
       "splits": {
-        "test": 615,
-        "val": 718,
+        "test": 703,
+        "val": 819,
         "train": 5539
       }
     },
     "clinc/clinc_oos": {
       "license": "CC-BY-3.0",
       "verdict": "train",
-      "rows": 145945,
+      "rows": 146156,
       "splits": {
         "train": 26625,
-        "val": 59736,
-        "test": 59584
+        "val": 59833,
+        "test": 59698
       }
     },
     "facebook/anli": {
@@ -649,11 +665,11 @@
     "google-research-datasets/go_emotions": {
       "license": "Apache-2.0",
       "verdict": "train",
-      "rows": 8794,
+      "rows": 8974,
       "splits": {
         "train": 7134,
-        "test": 911,
-        "val": 749
+        "test": 1006,
+        "val": 834
       }
     },
     "qiaojin/PubMedQA": {
