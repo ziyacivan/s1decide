@@ -948,16 +948,39 @@ def task_data(argv: list[str]) -> int:
     return 0
 
 
-register_not_implemented(
-    "smoke",
-    "200-sample end-to-end run: data -> tiny LoRA -> eval, <= 5 min on a 3090",
-    "needs `data` and `train` first",
-)
-register_not_implemented(
-    "train",
-    "Stage-1 QLoRA SFT from a train/configs/*.yaml config",
-    "Phase 1 training-engineer work; needs train/sft_lora.py",
-)
+@register("smoke", "200-sample end-to-end run: data -> tiny LoRA -> eval, <= 5 min on a 3090")
+def task_smoke(argv: list[str]) -> int:
+    """Prove the training pipeline on a small same-family model, then optionally on the 27B.
+
+    Two stages on purpose (ADR 0002). The small model exercises the whole data and loss path in
+    minutes, so a wrong option token or a target that does not line up with its options fails
+    before a 27B is ever loaded. `--27b` then makes exactly one QLoRA attempt at seq 1024,
+    batch 1, rank 8; if it OOMs the answer is the h100_linux config, not a smaller retry.
+    """
+    import argparse
+
+    ensure_repo_on_path()
+    from train.sft_lora import main as train_main
+
+    parser = argparse.ArgumentParser(prog="task smoke")
+    parser.add_argument("--27b", dest="big", action="store_true", help="also try the 27B once")
+    args = parser.parse_args(argv)
+
+    root = repo_root()
+    rc = train_main(["--cfg", str(root / "train/configs/smoke_small.yaml")])
+    if rc != 0 or not args.big:
+        return rc
+    print("=== small model passed; one 27B attempt ===", flush=True)
+    return train_main(["--cfg", str(root / "train/configs/smoke_27b.yaml")])
+
+
+@register("train", "Stage-1 QLoRA SFT from a train/configs/*.yaml config")
+def task_train(argv: list[str]) -> int:
+    """Run `train/sft_lora.py` against a config. Arguments are passed straight through."""
+    ensure_repo_on_path()
+    from train.sft_lora import main as train_main
+
+    return train_main(argv)
 
 
 @register("eval", "Run an evaluation and write results/<run_id>/metrics.json")

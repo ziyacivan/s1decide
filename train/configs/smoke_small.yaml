@@ -1,0 +1,19 @@
+# Stage 0 of the smoke run: prove the pipeline, not the model.
+#
+# A 0.8B of the same family renders the same prompts through the same tokenizer conventions, so a
+# wrong option token, a mis-rendered suffix or a target that does not line up with its options
+# fails here in minutes instead of after a 27B has been loaded. It is not expected to learn
+# anything in 50 steps and its loss is not a result.
+hardware: rtx3090_windows
+model: Qwen/Qwen3.5-0.8B
+run_id: smoke-small
+max_steps: 50
+rank: 8
+lora_alpha: 16
+learning_rate: 2.0e-4
+batch_size: 2
+grad_accum: 1
+max_seq_len: 1024
+limit: 200
+lambda_distance: 0.3
+load_in_4bit: false

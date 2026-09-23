@@ -1,0 +1,18 @@
+# Stage 1 of the smoke run: exactly one 27B QLoRA attempt on the 3090.
+#
+# seq 1024, batch 1, rank 8 — the smallest configuration that still exercises the real model.
+# If this OOMs it is not retried with smaller numbers: the answer is that S1 proper needs the
+# h100_linux config, and sft_h100.yaml is ready for it.
+hardware: rtx3090_windows
+model: unsloth/Qwen3.8-27B-unsloth-bnb-4bit
+run_id: smoke-27b
+max_steps: 20
+rank: 8
+lora_alpha: 16
+learning_rate: 1.0e-4
+batch_size: 1
+grad_accum: 1
+max_seq_len: 1024
+limit: 40
+lambda_distance: 0.3
+load_in_4bit: true

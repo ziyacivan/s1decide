@@ -1,0 +1,17 @@
+# S1 proper, on a rented H100 80GB. Not runnable on this machine and the loader refuses it.
+#
+# Prepared in advance so that "the 27B did not fit" is a decision with somewhere to go rather
+# than a dead end at the end of a smoke run.
+hardware: h100_linux
+model: unsloth/Qwen3.8-27B-unsloth-bnb-4bit
+run_id: s1-h100
+max_steps: 2000
+rank: 16
+lora_alpha: 32
+learning_rate: 1.0e-4
+batch_size: 4
+grad_accum: 4
+max_seq_len: 2048
+limit: null
+lambda_distance: 0.3
+load_in_4bit: true

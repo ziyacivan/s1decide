@@ -1,0 +1,55 @@
+{
+  "run_id": "smoke-small",
+  "config": {
+    "hardware": "rtx3090_windows",
+    "model": "Qwen/Qwen3.5-0.8B",
+    "run_id": "smoke-small",
+    "max_steps": 50,
+    "rank": 8,
+    "lora_alpha": 16,
+    "learning_rate": 0.0002,
+    "batch_size": 2,
+    "grad_accum": 1,
+    "max_seq_len": 1024,
+    "limit": 200,
+    "lambda_distance": 0.3,
+    "mu_unimodality": 0.0,
+    "load_in_4bit": false,
+    "seed": 20260923,
+    "extra": {}
+  },
+  "examples": 200,
+  "steps": 50,
+  "loss_first": 1.2299253940582275,
+  "loss_last": 0.011374790221452713,
+  "loss_mean_first_10": 1.2176211029291153,
+  "loss_mean_last_10": 0.7467613049782813,
+  "elapsed_seconds": 7.86,
+  "tokens_per_second": 1683.9,
+  "vram_peak_bytes": 3933664256.0,
+  "vram_peak_gib": 3.664,
+  "kernels": {
+    "packages": {
+      "fla": true,
+      "causal_conv1d": false,
+      "triton": true,
+      "triton_kernels": false,
+      "kernels": true
+    },
+    "gated_deltanet": {
+      "chunk_gated_delta_rule": "accelerated",
+      "fused_recurrent_gated_delta_rule": "accelerated",
+      "causal_conv1d_fn": "torch",
+      "causal_conv1d_update": "torch"
+    },
+    "fast_path_all": false,
+    "attention": "sdpa",
+    "notes": [
+      "2 of 4 gated-deltanet kernels are accelerated, but transformers reports is_fast_path_available=False because it is an all() over the four; the 'falling back to torch' warning in the log understates what is active",
+      "causal-conv1d has no Windows wheel and fails to build; its two functions use the torch path (a 4-wide depthwise convolution, the cheap part)",
+      "triton_kernels requires triton>=3.8, which has no Windows wheel; MXFP4 models therefore dequantize to bf16 and will not fit on a 24 GB card"
+    ]
+  },
+  "logit_precision": "fp32",
+  "adapter": "C:\\Users\\yusuf\\Documents\\Github\\s1decide\\results\\smoke-small\\adapter"
+}
