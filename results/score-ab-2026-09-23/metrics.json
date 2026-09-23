@@ -1,0 +1,179 @@
+{
+  "model": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+  "adapter": "results/smoke-27b-attempt3/adapter",
+  "split": "val",
+  "rows": 468,
+  "calibration": "none \u2014 raw softmax of the masked option logits, both conditions",
+  "base_rate_control": {
+    "fitted_on": "train score_teacher rows",
+    "distribution": [
+      0.44816819317235634,
+      0.17974604496253122,
+      0.12114904246461282,
+      0.1242714404662781,
+      0.12666527893422147
+    ]
+  },
+  "adapter_layout": {
+    "expected": 256,
+    "adapted": 256,
+    "attention_layers": 16,
+    "mlp_layers": 64
+  },
+  "kernels": {
+    "packages": {
+      "fla": true,
+      "causal_conv1d": false,
+      "triton": true,
+      "triton_kernels": false,
+      "kernels": false
+    },
+    "gated_deltanet": {
+      "chunk_gated_delta_rule": "accelerated",
+      "fused_recurrent_gated_delta_rule": "accelerated",
+      "causal_conv1d_fn": "torch",
+      "causal_conv1d_update": "torch"
+    },
+    "fast_path_all": false,
+    "attention": "sdpa",
+    "notes": [
+      "2 of 4 gated-deltanet kernels are accelerated, but transformers reports is_fast_path_available=False because it is an all() over the four; the 'falling back to torch' warning in the log understates what is active",
+      "causal-conv1d has no Windows wheel and fails to build; its two functions use the torch path (a 4-wide depthwise convolution, the cheap part)",
+      "triton_kernels requires triton>=3.8, which has no Windows wheel; MXFP4 models therefore dequantize to bf16 and will not fit on a 24 GB card"
+    ]
+  },
+  "logit_precision": "fp32",
+  "zero_shot": {
+    "rows": 468,
+    "soft_rows": 182,
+    "accuracy": 0.5918803418803419,
+    "accuracy_hard_rows": 0.7202797202797203,
+    "soft_rows_argmax_on_a_teacher_level": 0.7087912087912088,
+    "qwk": 0.8108346202079036,
+    "mae_argmax": 0.4829059829059829,
+    "mae_expected_level": 0.593429136023065,
+    "kl": 0.7411997922258745,
+    "kl_median": 0.5469105354304559,
+    "ece": 0.050823338535620606,
+    "brier": 0.5037655613564761,
+    "brier_base_rate": 0.7435248920444656,
+    "bss": 0.3224630853026653,
+    "mean_confidence": 0.6043799283086453,
+    "predicted_level_distribution": [
+      0.5021367521367521,
+      0.14316239316239315,
+      0.20512820512820512,
+      0.10897435897435898,
+      0.0405982905982906
+    ]
+  },
+  "adapter_applied": {
+    "rows": 468,
+    "soft_rows": 182,
+    "accuracy": 0.5213675213675214,
+    "accuracy_hard_rows": 0.7132867132867133,
+    "soft_rows_argmax_on_a_teacher_level": 0.6373626373626373,
+    "qwk": 0.7642091836734693,
+    "mae_argmax": 0.6239316239316239,
+    "mae_expected_level": 0.6666469135248443,
+    "kl": 0.7644346272568092,
+    "kl_median": 0.5941980876314865,
+    "ece": 0.10071640597220399,
+    "brier": 0.5753447188159434,
+    "brier_base_rate": 0.7435248920444656,
+    "bss": 0.22619306364589653,
+    "mean_confidence": 0.5979404035053769,
+    "predicted_level_distribution": [
+      0.3782051282051282,
+      0.04487179487179487,
+      0.32264957264957267,
+      0.06623931623931624,
+      0.18803418803418803
+    ]
+  },
+  "deltas": {
+    "all": {
+      "rows": 468,
+      "kl_delta_mean": 0.02323483503093465,
+      "kl_delta_median": 0.0633931299148123,
+      "kl_delta_p10": -0.9248168722417927,
+      "kl_delta_p90": 0.9169198584485311,
+      "share_kl_improved": 0.405982905982906,
+      "right_to_wrong": 97,
+      "wrong_to_right": 64
+    },
+    "hard": {
+      "rows": 286,
+      "kl_delta_mean": 0.019516282815840176,
+      "kl_delta_median": 0.05990872159300868,
+      "kl_delta_p10": -0.8020342213538134,
+      "kl_delta_p90": 0.7295165879741696,
+      "share_kl_improved": 0.36713286713286714,
+      "right_to_wrong": 44,
+      "wrong_to_right": 42
+    },
+    "soft": {
+      "rows": 182,
+      "kl_delta_mean": 0.029078274226083105,
+      "kl_delta_median": 0.10519778251226986,
+      "kl_delta_p10": -1.0966254271247147,
+      "kl_delta_p90": 1.106721999033446,
+      "share_kl_improved": 0.46703296703296704,
+      "right_to_wrong": 53,
+      "wrong_to_right": 22
+    },
+    "by_answer_level": {
+      "0": {
+        "rows": 189,
+        "kl_delta_mean": 0.27263211766727335,
+        "kl_delta_median": 0.1542947596392033,
+        "kl_delta_p10": -0.07213345211763017,
+        "kl_delta_p90": 0.842840252656755,
+        "share_kl_improved": 0.1693121693121693,
+        "right_to_wrong": 32,
+        "wrong_to_right": 3
+      },
+      "1": {
+        "rows": 109,
+        "kl_delta_mean": 0.4321410279242358,
+        "kl_delta_median": 0.4175566179133231,
+        "kl_delta_p10": -0.40682185331842047,
+        "kl_delta_p90": 1.2005096387089302,
+        "share_kl_improved": 0.22018348623853212,
+        "right_to_wrong": 41,
+        "wrong_to_right": 9
+      },
+      "2": {
+        "rows": 51,
+        "kl_delta_mean": -0.049776958701878156,
+        "kl_delta_median": -0.1438319319846172,
+        "kl_delta_p10": -0.9335313870984998,
+        "kl_delta_p90": 0.6881283873013859,
+        "share_kl_improved": 0.5882352941176471,
+        "right_to_wrong": 9,
+        "wrong_to_right": 19
+      },
+      "3": {
+        "rows": 71,
+        "kl_delta_mean": -0.6153110329835737,
+        "kl_delta_median": -0.6347713783208396,
+        "kl_delta_p10": -1.4033363791758946,
+        "kl_delta_p90": 0.08379762536627777,
+        "share_kl_improved": 0.8450704225352113,
+        "right_to_wrong": 15,
+        "wrong_to_right": 11
+      },
+      "4": {
+        "rows": 48,
+        "kl_delta_mean": -0.8652339844322795,
+        "kl_delta_median": -0.7940835539390876,
+        "kl_delta_p10": -2.0862995695203947,
+        "kl_delta_p90": -0.01689649671788553,
+        "share_kl_improved": 0.9166666666666666,
+        "right_to_wrong": 0,
+        "wrong_to_right": 22
+      }
+    }
+  },
+  "vram_peak_gib": 22.349
+}
