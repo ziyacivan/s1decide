@@ -44,3 +44,41 @@ def test_a_missing_option_is_an_error_not_a_zero() -> None:
 def test_a_type_mismatch_is_an_error() -> None:
     with pytest.raises(ValueError, match="expected a noul"):
         from_laya_answer(row("noul", ["no", "yes"]), {"type": "choice", "probabilities": {}})
+
+
+def test_systemone_choice_options_default_to_null_descriptions() -> None:
+    from eval.external_http import to_systemone_question
+
+    r = row("choice", ["b", "a"])
+    assert to_systemone_question(r)["criteria"] == {"b": None, "a": None}
+    assert to_systemone_question(r, describe_options=True)["criteria"] == {"b": "b", "a": "a"}
+    assert to_systemone_question(row("noul", ["no", "yes"]))["type"] == "noul"
+
+
+def test_the_http_predictor_writes_our_option_order(tmp_path, monkeypatch) -> None:
+    import json
+
+    import eval.external_http as http
+
+    slice_path = tmp_path / "slice-val.jsonl"
+    rows = [
+        {**row("choice", ["b", "a"]), "id": "c1", "state": "s"},
+        {**row("noul", ["no", "yes"]), "id": "n1", "state": "s"},
+    ]
+    slice_path.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+
+    def fake_post(url, payload, timeout):
+        question = payload["questions"]["q"]
+        if question["type"] == "choice":
+            return {"answers": {"q": {"type": "choice", "probabilities": {"a": 0.25, "b": 0.75}}}}
+        return {"answers": {"q": {"type": "noul", "noul": 0.9}}}
+
+    monkeypatch.setattr(http, "_post", fake_post)
+    out = tmp_path / "predictions-val.jsonl"
+    http.main(
+        ["--url", "http://x", "--slice", str(slice_path), "--out", str(out), "--model-id", "m"]
+    )
+    got = [json.loads(x) for x in out.read_text(encoding="utf-8").splitlines()]
+    assert got[0]["probabilities"] == pytest.approx([0.75, 0.25])
+    assert got[1]["probabilities"] == pytest.approx([0.1, 0.9])
+    assert json.loads(out.with_suffix(".meta.json").read_text())["model_id"] == "m"
