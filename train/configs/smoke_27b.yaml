@@ -7,7 +7,7 @@
 # h100_linux config, and sft_h100.yaml is ready for it.
 hardware: rtx3090_windows
 model: unsloth/Qwen3.8-27B-unsloth-bnb-4bit
-run_id: smoke-27b
+run_id: smoke-27b-attempt3
 # One pass: steps = ceil(limit / batch_size), every selected row seen exactly once, so the
 # coverage table describes the rows actually trained on by construction.
 max_steps: null

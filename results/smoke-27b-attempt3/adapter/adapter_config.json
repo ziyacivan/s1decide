@@ -7,7 +7,7 @@
     "parent_library": "transformers.models.qwen3_5.modeling_qwen3_5",
     "unsloth_fixed": true
   },
-  "base_model_name_or_path": "Qwen/Qwen3.5-0.8B",
+  "base_model_name_or_path": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
   "bias": "none",
   "corda_config": null,
   "ensure_weight_tying": false,
