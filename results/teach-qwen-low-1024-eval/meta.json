@@ -40,5 +40,15 @@
       "triton_kernels requires triton>=3.8, which has no Windows wheel; MXFP4 models therefore dequantize to bf16 and will not fit on a 24 GB card"
     ]
   },
-  "started": "2026-09-23T17:29:15+00:00"
+  "started": "2026-09-23T17:29:15+00:00",
+  "quantization_measured": {
+    "value": "bnb-nf4",
+    "linear_classes": {
+      "Linear4bit": 352,
+      "Linear": 145
+    },
+    "allocated_after_load_gib": 19.955,
+    "source": "results/teacher-quant-2026-09-23/qwen-low-1024.json",
+    "added": "2026-09-23, after the run: setting.quantization was a default label, not a measurement. The probe reloads the teacher exactly as load_teacher does."
+  }
 }

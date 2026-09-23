@@ -1,0 +1,16 @@
+{
+  "teacher": "qwen-low-1024",
+  "model": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+  "label_in_setting": "nf4-bf16",
+  "allocated_after_load_gib": 19.955,
+  "linear_classes": {
+    "Linear4bit": 352,
+    "Linear": 145
+  },
+  "checkpoint_quant_method": "bitsandbytes",
+  "parameter_dtypes": {
+    "torch.bfloat16": 499,
+    "torch.uint8": 352
+  },
+  "measured_quantization": "bnb-nf4"
+}

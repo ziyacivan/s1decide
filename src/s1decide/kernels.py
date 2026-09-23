@@ -77,10 +77,13 @@ def kernel_report() -> dict[str, Any]:
             "causal-conv1d has no Windows wheel and fails to build; its two functions "
             "use the torch path (a 4-wide depthwise convolution, the cheap part)"
         )
-    if not packages.get("triton_kernels"):
+    if not packages.get("kernels"):
+        # Measured 2026-09-23 (results/teacher-quant-2026-09-23): with the `kernels` package,
+        # gpt-oss-20b keeps its 24 expert blocks in MXFP4 (12.8 GiB after load); without it
+        # transformers dequantizes them to bf16 (~42 GB), which cannot load on a 24 GB card.
         notes.append(
-            "triton_kernels requires triton>=3.8, which has no Windows wheel; MXFP4 "
-            "models therefore dequantize to bf16 and will not fit on a 24 GB card"
+            "the `kernels` package is absent: MXFP4 checkpoints dequantize to bf16 and a 20B "
+            "MoE will not fit on a 24 GB card; `kernels` is not in uv.lock"
         )
 
     return {

@@ -40,5 +40,16 @@
       "triton_kernels requires triton>=3.8, which has no Windows wheel; MXFP4 models therefore dequantize to bf16 and will not fit on a 24 GB card"
     ]
   },
-  "started": "2026-09-22T19:42:59+00:00"
+  "started": "2026-09-22T19:42:59+00:00",
+  "quantization_measured": {
+    "value": "mxfp4",
+    "linear_classes": {
+      "Linear": 97,
+      "Mxfp4GptOssExperts": 24
+    },
+    "allocated_after_load_gib": 12.818,
+    "source": "results/teacher-quant-2026-09-23/gptoss-medium-1024.json",
+    "added": "2026-09-23, after the run: setting.quantization was a default label, not a measurement. The probe reloads the teacher exactly as load_teacher does.",
+    "condition": "the run recorded the `kernels` package present (meta.kernels.packages.kernels); without it the same load dequantizes to bf16 (~42 GB) and cannot fit, so the completed run can only have held its experts in MXFP4. kernels version not recorded."
+  }
 }

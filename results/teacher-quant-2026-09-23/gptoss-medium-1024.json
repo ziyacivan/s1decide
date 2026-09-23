@@ -1,0 +1,15 @@
+{
+  "teacher": "gptoss-medium-1024",
+  "model": "openai/gpt-oss-20b",
+  "label_in_setting": "mxfp4-experts+bf16",
+  "allocated_after_load_gib": 12.818,
+  "linear_classes": {
+    "Linear": 97,
+    "Mxfp4GptOssExperts": 24
+  },
+  "checkpoint_quant_method": "mxfp4",
+  "parameter_dtypes": {
+    "torch.bfloat16": 363
+  },
+  "measured_quantization": "mxfp4"
+}

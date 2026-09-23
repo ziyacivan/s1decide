@@ -64,12 +64,16 @@ TEACHERS: dict[str, TeacherSetting] = {
     ),
     "gptoss-low": TeacherSetting(
         model="openai/gpt-oss-20b",
+        # Measured, not assumed: results/teacher-quant-2026-09-23/gptoss-medium-1024.json
+        quantization="mxfp4-experts+bf16",
         label="gptoss-low",
         effort="low",
         max_new_tokens=384,
     ),
     "gptoss-medium": TeacherSetting(
         model="openai/gpt-oss-20b",
+        # Measured, not assumed: results/teacher-quant-2026-09-23/gptoss-medium-1024.json
+        quantization="mxfp4-experts+bf16",
         label="gptoss-medium",
         effort="medium",
         max_new_tokens=384,
@@ -82,12 +86,16 @@ TEACHERS: dict[str, TeacherSetting] = {
     ),
     "gptoss-low-1024": TeacherSetting(
         model="openai/gpt-oss-20b",
+        # Measured, not assumed: results/teacher-quant-2026-09-23/gptoss-medium-1024.json
+        quantization="mxfp4-experts+bf16",
         label="gptoss-low-1024",
         effort="low",
         max_new_tokens=1024,
     ),
     "gptoss-medium-1024": TeacherSetting(
         model="openai/gpt-oss-20b",
+        # Measured, not assumed: results/teacher-quant-2026-09-23/gptoss-medium-1024.json
+        quantization="mxfp4-experts+bf16",
         label="gptoss-medium-1024",
         effort="medium",
         max_new_tokens=1024,

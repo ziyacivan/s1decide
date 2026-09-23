@@ -87,8 +87,8 @@ reference model and neither saw the other's answer.
 
 | | |
 |---|---|
-| teacher 1 | `unsloth/Qwen3.8-27B-unsloth-bnb-4bit`, native effort low, 1,024-token cap, nf4 |
-| teacher 2 | `openai/gpt-oss-20b`, effort medium, 1,024-token cap, MXFP4 |
+| teacher 1 | `unsloth/Qwen3.8-27B-unsloth-bnb-4bit`, native effort low, 1,024-token cap, **bitsandbytes nf4** (measured) |
+| teacher 2 | `openai/gpt-oss-20b`, effort medium, 1,024-token cap, **MXFP4 expert weights, bf16 attention and dense layers** (measured) |
 | both licences | Apache-2.0, run locally, no hosted API touched (CLAUDE.md hard rule) |
 | rows compared | 5,928 of 6,000 (72 lost to a teacher that never committed) |
 | kept | 4,804 — 2,999 exact agreement, 1,805 one level apart |
@@ -110,9 +110,19 @@ they must differ and the difference must name the requested value, or a run stop
 been told to reason at `xhigh`. The completed runs passed `low`, and the audit of the tokenizers
 they loaded shows it applied.
 
-**Open, not yet resolved:** this card records teacher 2 as MXFP4, while its runs' `meta.json` says
-`nf4-bf16` — the default label of the setting, not a measurement. Which one the loaded weights were
-has to be read from the model, and this line stays until it is.
+**Quantization, measured rather than labelled** —
+[`results/teacher-quant-2026-09-23/`](../results/teacher-quant-2026-09-23/). Each teacher was
+reloaded exactly as its runs loaded it and the classes of its weight-holding layers read back:
+teacher 1 is `Linear4bit` throughout its projections (bitsandbytes nf4); teacher 2 holds its
+expert blocks as `Mxfp4GptOssExperts` and its attention and dense layers as bf16 `Linear`. The
+runs' `meta.json` said `nf4-bf16` for both — a default label, not a measurement — and now also
+carries `quantization_measured`.
+
+Teacher 2's representation **depends on the `kernels` package**, which the runs recorded as
+present and which is **not in `uv.lock`**: without it the same load dequantizes the experts to
+bf16 (~42 GB) and cannot fit this card, so the completed runs can only have been MXFP4. The
+`kernels` version they used was not recorded. Reproducing teacher 2 from a fresh clone needs
+`kernels` added to the lock.
 
 **Exact agreement becomes a hard target. One level apart becomes a soft target split equally
 across the two levels.** Adjacent levels are where a five-level rubric is genuinely ambiguous
