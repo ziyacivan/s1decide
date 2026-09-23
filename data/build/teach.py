@@ -276,6 +276,8 @@ def build_teach_items(
     limit: int,
     seed: int = 20260917,
     min_chars: int = 40,
+    prefix: str = "teach",
+    exclude_families: Sequence[str] = (),
 ) -> list[dict[str, Any]]:
     """Pair train-eligible states with rubric questions, deterministically.
 
@@ -290,6 +292,11 @@ def build_teach_items(
         seed: Seeds the question assignment and the shuffle.
         min_chars: Skip states too short to grade; a four-word utterance has no ordinal
             structure to find and would only measure the rubric's tie-breaking.
+        prefix: Id prefix. A val or test batch must not collide with the training batch's ids,
+            because both end up in one corpus and resume matches by id.
+        exclude_families: Families to skip. Used to keep the rule-labelled control set out of a
+            teacher batch: its labels are exact by construction and a teacher would only add
+            noise to them.
 
     Returns:
         Items with ``id``, ``state``, ``question`` and ``family``, one per distinct state.
@@ -299,10 +306,11 @@ def build_teach_items(
     rng = random.Random(seed)
     seen: set[str] = set()
     pool: list[dict[str, Any]] = []
+    skip = set(exclude_families)
     for row in rows:
         state = str(row["state"]).strip()
         digest = str(row.get("state_hash") or state)
-        if digest in seen or len(state) < min_chars:
+        if digest in seen or len(state) < min_chars or row.get("family") in skip:
             continue
         seen.add(digest)
         pool.append({"state": state, "family": row.get("family", "?"), "hash": digest})
@@ -313,7 +321,7 @@ def build_teach_items(
         question = TEACH_QUESTIONS[index % len(TEACH_QUESTIONS)]
         items.append(
             {
-                "id": f"teach-{index:05d}-{entry['hash'][:8]}",
+                "id": f"{prefix}-{index:05d}-{entry['hash'][:8]}",
                 "state": entry["state"],
                 "question": question,
                 "family": entry["family"],

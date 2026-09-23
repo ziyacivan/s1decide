@@ -393,6 +393,56 @@ hash with our training data. Before any Tier-2 figure is reported:
 - state in the model card that `pngwn/system-one-decisions` is derived from sources we train on,
   so Tier 2 is **"external" in labelling, not in distribution**.
 
+## Queued — teacher run 2, `Score` evaluation rows (**after the smoke run, before S1 proper**)
+
+Queued 2026-09-23. **A gap, not a verification.** All 4,804 teacher-labelled `Score` rows landed
+in `train`, because the states were drawn from the training split in the first place. The
+consequence is that `Score` has **zero** genuine non-rule-based rows in `val` and `test`:
+
+| split | choice | score | noul |
+|---|---|---|---|
+| val | 1,380 | **0** | 1,289 |
+| test | 1,304 | **0** | 1,373 |
+
+What is left there is `ordinal_control`, 92 and 82 rows, whose labels come from a rule and are
+exact by construction. Three things follow and all three are unacceptable in a release: `Score`
+accuracy on a teacher rubric cannot be measured, `Score` calibration would be fitted on the
+control set, and the model card's `Score` row would describe a distribution the model is not
+deployed against.
+
+**Not fixable by carving eval rows out of the 4,804.** Those states are seen during training as
+`Choice` and `Noul` rows about the same text, so holding their `Score` rows back would measure
+memorised states.
+
+**The run.** 600 val states and 600 test states, drawn from the `val` and `test` partitions of
+the same source families, never from `train`. Same two teachers, same rubric, same 1,024-token
+cap, same agreement filter, same soft-target rule.
+
+Inputs are built and verified: `data/processed/teach_items_{val,test}.jsonl`, 600 rows each, zero
+id collision with the training batch, zero state overlap with it, zero overlap with each other,
+`ordinal_control` excluded. Families are banking77, clinc_oos, mmlu, go_emotions and the three
+MASSIVE locales.
+
+**Estimated wall time ≈ 6.2 h**, from the rates the first run measured rather than guessed:
+
+| | rate | 1,200 rows |
+|---|---|---|
+| teacher 1, qwen-low-1024 | 0.0596 rows/s (16.8 s/row) | 5.6 h |
+| teacher 2, gptoss-medium-1024 | 0.67 rows/s | 0.5 h |
+| two model loads | | ~0.1 h |
+
+At the measured 81% keep rate that yields roughly **486 `Score` rows per split**, clearing the
+300-row floor with room for the rate to be worse on a different state distribution.
+
+**Procedure:** pre-flight as before (Studio closed, no foreign VRAM holders, sysmem fallback off
+confirmed by `doctor`, Windows Update paused if it can be), `--detach`, run notes committed after
+the first checkpoint, watchers armed for DONE/FAILED/stall.
+
+The floor is enforced rather than remembered: `test_every_primitive_has_a_real_evaluation_set`
+asserts ≥ 300 genuine non-rule-based rows per primitive per evaluation split. It is a **strict**
+xfail today, so when this run lands the suite fails on the unexpected pass and the marker has to
+be removed deliberately.
+
 ## DONE 2026-09-23 — `Noul` quantization stability
 
 Queued 2026-09-18, run once leg 2 finished. **Result: the hypothesis is half right.** `Noul`

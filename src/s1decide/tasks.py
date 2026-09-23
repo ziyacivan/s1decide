@@ -751,19 +751,36 @@ def task_teach_items(argv: list[str]) -> int:
 
     parser = argparse.ArgumentParser(prog="task teach-items")
     parser.add_argument("--limit", type=int, default=8000)
-    parser.add_argument("--out", default="data/processed/teach_items.jsonl")
+    parser.add_argument("--out", default="")
+    parser.add_argument(
+        "--split",
+        default="train",
+        choices=("train", "val", "test"),
+        help="which partition to draw states from; val and test feed the Score eval batch",
+    )
+    parser.add_argument("--prefix", default="", help="id prefix; defaults to teach-<split>")
     args = parser.parse_args(argv)
 
     root = repo_root()
-    source = root / "data" / "processed" / "train.jsonl"
+    prefix = args.prefix or ("teach" if args.split == "train" else f"teach-{args.split}")
+    out_name = args.out or (
+        "data/processed/teach_items.jsonl"
+        if args.split == "train"
+        else f"data/processed/teach_items_{args.split}.jsonl"
+    )
+    source = root / "data" / "processed" / f"{args.split}.jsonl"
     if not source.is_file():
-        print("no training split; run `uv run task data` first", file=sys.stderr)
+        print(f"no {args.split} split; run `uv run task data` first", file=sys.stderr)
         return 1
     rows = [
         json.loads(line) for line in source.read_text(encoding="utf-8").split("\n") if line.strip()
     ]
-    items = build_teach_items(rows, limit=args.limit)
-    out = root / args.out
+    # The rule-labelled control set is excluded: its labels are exact by construction, so a
+    # teacher pass over it would replace certainty with two models' opinion of it.
+    items = build_teach_items(
+        rows, limit=args.limit, prefix=prefix, exclude_families=("ordinal_control",)
+    )
+    out = root / out_name
     out.write_text(
         "".join(json.dumps(item, ensure_ascii=False, sort_keys=True) + "\n" for item in items),
         encoding="utf-8",

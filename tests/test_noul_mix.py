@@ -269,3 +269,58 @@ def test_mmlu_noul_avoids_the_benchmark_split() -> None:
     source = next(s for s in SOURCES if s.family == "mmlu_noul")
     assert source.split != "test"
     assert source.split != "auxiliary_train", "auxiliary_train aggregates share-alike sources"
+
+
+# --- every primitive needs a real evaluation set --------------------------------
+
+#: Families whose labels come from a rule rather than from a model or a human annotation.
+#:
+#: They are exact by construction, which makes them a control and not a measurement: a model that
+#: scores well on `ordinal_control` has learned the rule, which is not the claim the model card
+#: makes for `Score`.
+RULE_BASED_FAMILIES: frozenset[str] = frozenset({"ordinal_control"})
+
+#: Genuine (non-stage-1) rows a primitive needs per evaluation split, from a non-rule-based
+#: family, before a number about it can be published.
+MIN_EVAL_ROWS_PER_PRIMITIVE = 300
+
+
+def _genuine_eval_rows(split: str) -> dict[str, int]:
+    """Non-stage-1 rows per primitive in one split, excluding rule-labelled families."""
+    path = repo_root() / "data" / "processed" / f"{split}.jsonl"
+    counts: dict[str, int] = {"choice": 0, "score": 0, "noul": 0}
+    for line in path.read_text(encoding="utf-8").split("\n"):
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        if row.get("stage") == 1 or row["family"] in RULE_BASED_FAMILIES:
+            continue
+        if row["qtype"] in counts:
+            counts[row["qtype"]] += 1
+    return counts
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "Score has no non-rule-based evaluation rows yet: all 4,804 teacher-labelled rows landed "
+        "in train, so val and test hold only ordinal_control, whose labels come from a rule. "
+        "Score accuracy on a teacher rubric is therefore unmeasurable and Score calibration would "
+        "be fitted on the control set. Closed by the queued second teacher run over 600 val and "
+        "600 test states (docs/phase-1-plan.md); remove this marker when it lands."
+    ),
+)
+@pytest.mark.parametrize("split", ["val", "test"])
+def test_every_primitive_has_a_real_evaluation_set(split: str) -> None:
+    """A primitive with no genuine eval rows cannot appear in the model card with a number.
+
+    Strict xfail on purpose: when the second teacher run lands this starts passing, the suite
+    fails on the unexpected pass, and the marker has to be removed deliberately rather than the
+    gap quietly closing unnoticed.
+    """
+    counts = _genuine_eval_rows(split)
+    below = {k: v for k, v in counts.items() if v < MIN_EVAL_ROWS_PER_PRIMITIVE}
+    assert not below, (
+        f"{split}: {below} genuine non-rule-based rows, "
+        f"need {MIN_EVAL_ROWS_PER_PRIMITIVE} per primitive"
+    )
