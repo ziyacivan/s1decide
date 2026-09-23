@@ -31,10 +31,25 @@ from data.build.teach import (
     write_summary,
 )
 
-from s1decide.jobs import JobPaths, check_resume_meta, job_status, run_job, spawn_detached
+from s1decide.jobs import (
+    JobPaths,
+    check_resume_meta,
+    job_status,
+    read_done_ids,
+    run_job,
+    spawn_detached,
+)
 from s1decide.kernels import kernel_report
 
-__all__ = ["TEACHERS", "load_teacher", "main", "release_teacher", "teacher_rows"]
+__all__ = [
+    "TEACHERS",
+    "load_teacher",
+    "main",
+    "pending_items",
+    "rebuild_summary",
+    "release_teacher",
+    "teacher_rows",
+]
 
 #: The candidates, as approved 2026-09-17. Teacher 1 is fixed; teacher 2 is chosen from the
 #: pilot on tractability — loads, throughput, truncation — never on agreement (ADR 0005).
@@ -339,10 +354,16 @@ def release_teacher(*held: Any) -> int:
     import gc
 
     for item in held:
+        moved = False
         if hasattr(item, "to"):
-            # Best effort: dropping the references below is what actually frees the memory.
             with contextlib.suppress(Exception):
                 item.to("meta")
+                moved = True
+        if not moved and hasattr(item, "parameters"):
+            # A bitsandbytes 4-bit model refuses `.to()`, and the suppress above hid that: on
+            # 2026-09-23 the 27B stayed resident and leg 2 died exactly as it had on 09-22.
+            # Replacing each tensor's storage frees it even while references to the module live.
+            _drop_storage(item)
     held = ()
     gc.collect()
     try:
@@ -354,6 +375,88 @@ def release_teacher(*held: Any) -> int:
     torch.cuda.empty_cache()
     torch.cuda.synchronize()
     return int(torch.cuda.memory_reserved())
+
+
+def _drop_storage(module: Any) -> None:
+    """Point every parameter and buffer of ``module`` at an empty CPU tensor, freeing its memory."""
+    import contextlib
+
+    try:
+        import torch
+    except ImportError:  # pragma: no cover - torch is a declared dependency
+        return
+    empty = torch.empty(0)
+    for tensor in [*module.parameters(), *module.buffers()]:
+        with contextlib.suppress(Exception):
+            tensor.data = empty
+
+
+def pending_items(directory: Path, items: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Items not yet in the job's checkpoint — the ones a resume would still label.
+
+    Args:
+        directory: The job directory (may not exist yet).
+        items: Everything the job was asked to label.
+
+    Returns:
+        The items whose id is not among the finished rows.
+    """
+    done = read_done_ids(JobPaths(directory)) if directory.is_dir() else set()
+    return [item for item in items if item["id"] not in done]
+
+
+def rebuild_summary(directory: Path, setting: TeacherSetting) -> dict[str, Any]:
+    """Recompute a finished job's summary from its rows and its progress log.
+
+    The progress log is appended once per batch and records elapsed time since that
+    invocation started, so its last line carries the timing of the invocation that finished
+    the job. Used when ``summary.json`` is missing or was overwritten.
+
+    Args:
+        directory: A job directory whose rows are complete.
+        setting: The teacher that produced them.
+
+    Returns:
+        The summary, also written to ``summary.json``.
+    """
+    paths = JobPaths(directory)
+    rows = [
+        json.loads(line)
+        for line in paths.rows.read_text(encoding="utf-8").split("\n")
+        if line.strip()
+    ]
+    last = [
+        json.loads(line)
+        for line in paths.progress.read_text(encoding="utf-8").split("\n")
+        if line.strip()
+    ][-1]
+    elapsed = float(last["elapsed_seconds"])
+    this_run = int(last["rows_this_run"])
+    committed = [r for r in rows if r["level"] is not None]
+    payload = {
+        "run_id": directory.name,
+        "finished": last["at"],
+        "rows_total": int(last["total_rows"]),
+        "rows_this_run": this_run,
+        "rows_resumed": int(last["rows_done"]) - this_run,
+        "elapsed_seconds": round(elapsed, 2),
+        "setting": setting.to_json(),
+        "committed": len(committed),
+        "uncommitted": len(rows) - len(committed),
+        "truncation_rate": sum(1 for r in rows if r["truncated"]) / max(1, len(rows)),
+        "hit_cap_rate": sum(1 for r in rows if r["hit_cap"]) / max(1, len(rows)),
+        "trace_tokens": trace_stats([r["trace_tokens"] for r in rows]),
+        # Tokens generated in the finishing invocation over its elapsed time: rows resumed from
+        # an earlier invocation are excluded, since their time is not in `elapsed`.
+        "tokens_per_second": (
+            sum(r["trace_tokens"] for r in rows[len(rows) - this_run :]) / elapsed
+            if elapsed
+            else None
+        ),
+        "rebuilt_from": "rows.jsonl + progress.jsonl",
+    }
+    write_summary(directory, payload)
+    return payload
 
 
 def run(
@@ -389,10 +492,23 @@ def run(
     }
     # Before the model load, not after: a refused resume should cost a second, not five minutes.
     check_resume_meta(directory, meta, force=force)
-    model, tokenizer = load_teacher(setting)
+    if not pending_items(directory, items):
+        # Nothing to label: do not load a 27B for zero rows, and do not touch meta, DONE or the
+        # summary. The first relaunch of the eval chain did both, and rewrote leg 1's summary
+        # with a zero elapsed time.
+        existing = directory / "summary.json"
+        if existing.is_file():
+            return json.loads(existing.read_text(encoding="utf-8"))
+        return rebuild_summary(directory, setting)
+
+    # The model lives in this dict and nowhere else, so clearing it drops the last reference
+    # before the caching allocator is emptied; `work` reads it through the dict rather than
+    # capturing it.
+    loaded: dict[str, Any] = {}
+    loaded["model"], loaded["tokenizer"] = load_teacher(setting)
 
     def work(batch: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
-        rows = teacher_rows(model, tokenizer, setting, batch)
+        rows = teacher_rows(loaded["model"], loaded["tokenizer"], setting, batch)
         rows[-1]["progress"] = {
             "teacher": setting.label,
             "truncated": sum(1 for r in rows if r["truncated"]),
@@ -411,7 +527,8 @@ def run(
             force=force,
         )
     finally:
-        release_teacher(model, tokenizer, work)
+        # Popped straight into the call: the argument tuple is then the only reference left.
+        release_teacher(*[loaded.pop(key) for key in list(loaded)])
 
     rows = [
         json.loads(line)

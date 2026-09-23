@@ -96,3 +96,114 @@ def test_releasing_a_teacher_returns_vram_to_the_driver() -> None:
     assert after <= before + 1024 * 1024, (
         f"reserved memory did not come back: {after} vs {before} before the model was loaded"
     )
+
+
+# --- 2026-09-23: the same OOM again, and why the first fix did not hold -----------------------
+#
+# The eval chain's leg 2 died with "19.46 GiB is allocated" exactly as on 09-22. Two reasons:
+# a bitsandbytes 4-bit model refuses `.to()`, and the suppress hid it; and `run()`'s own locals
+# still held the model when the cache was emptied. A relaunch then reloaded the 27B for zero
+# pending rows and rewrote leg 1's summary with a zero elapsed time.
+
+
+def test_a_module_that_refuses_to_move_still_has_its_storage_freed() -> None:
+    torch = pytest.importorskip("torch")
+
+    class FourBitLike(torch.nn.Linear):
+        def to(self, *args, **kwargs):
+            raise ValueError("`.to` is not supported for 4-bit models")
+
+    layer = FourBitLike(64, 64)
+    release_teacher(layer)  # the caller still holds `layer`, as run()'s frame did
+    assert all(p.numel() == 0 for p in layer.parameters())
+
+
+def _job(tmp_path, ids, done_ids):
+    import json
+
+    items = [{"id": i, "state": "s", "question": "q"} for i in ids]
+    rows = [
+        {"id": i, "level": 3, "truncated": False, "hit_cap": False, "trace_tokens": 100}
+        for i in done_ids
+    ]
+    directory = tmp_path / "job"
+    directory.mkdir()
+    (directory / "rows.jsonl").write_text(
+        "".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8"
+    )
+    return directory, items
+
+
+def test_pending_items_are_the_ones_without_a_row(tmp_path) -> None:
+    from data.build.teach_run import pending_items
+
+    directory, items = _job(tmp_path, ["a", "b", "c"], ["a", "c"])
+    assert [i["id"] for i in pending_items(directory, items)] == ["b"]
+    assert len(pending_items(tmp_path / "missing", items)) == 3
+
+
+def test_a_finished_job_is_not_reloaded_and_its_summary_is_not_touched(
+    tmp_path, monkeypatch
+) -> None:
+    import json
+
+    import data.build.teach_run as teach_run
+
+    directory, items = _job(tmp_path, ["a", "b"], ["a", "b"])
+    summary = {"run_id": "job", "elapsed_seconds": 19477.87, "tokens_per_second": 44.1}
+    (directory / "summary.json").write_text(json.dumps(summary), encoding="utf-8")
+
+    def no_load(_setting):
+        raise AssertionError("a finished job must not load its teacher")
+
+    monkeypatch.setattr(teach_run, "load_teacher", no_load)
+    monkeypatch.setattr(teach_run, "check_resume_meta", lambda *a, **k: None)
+    setting = next(iter(teach_run.TEACHERS.values()))
+    assert teach_run.run(setting, items, directory, batch_size=4) == summary
+    assert json.loads((directory / "summary.json").read_text(encoding="utf-8")) == summary
+    assert not (directory / "DONE").exists()
+
+
+def test_a_summary_is_rebuilt_from_rows_and_the_progress_log(tmp_path) -> None:
+    import json
+
+    import data.build.teach_run as teach_run
+
+    directory, _ = _job(tmp_path, ["a", "b"], ["a", "b"])
+    progress = {
+        "at": "2026-09-23T17:09:17+00:00",
+        "rows_this_run": 2,
+        "rows_done": 2,
+        "total_rows": 2,
+        "elapsed_seconds": 10.0,
+    }
+    (directory / "progress.jsonl").write_text(json.dumps(progress) + "\n", encoding="utf-8")
+    setting = next(iter(teach_run.TEACHERS.values()))
+    payload = teach_run.rebuild_summary(directory, setting)
+    assert payload["elapsed_seconds"] == 10.0
+    assert payload["tokens_per_second"] == pytest.approx(20.0)  # 2 rows x 100 tokens / 10 s
+    assert payload["committed"] == 2
+    assert payload["rebuilt_from"]
+
+
+@pytest.mark.gpu
+def test_vram_comes_back_from_a_module_that_refuses_to_move_while_still_referenced() -> None:
+    """The 09-23 failure on a real card: `.to()` refused, a caller reference alive."""
+    import torch
+
+    if not torch.cuda.is_available():
+        pytest.skip("no CUDA device")
+
+    class FourBitLike(torch.nn.Linear):
+        def to(self, *args, **kwargs):
+            raise ValueError("`.to` is not supported for 4-bit models")
+
+    torch.cuda.empty_cache()
+    before = torch.cuda.memory_reserved()
+    layer = FourBitLike(4096, 4096, device="cuda")  # ~64 MiB, held below
+    assert torch.cuda.memory_reserved() > before
+
+    after = release_teacher(layer)
+
+    assert after <= before + 1024 * 1024, f"reserved {after} vs {before} before loading"
+    del layer
