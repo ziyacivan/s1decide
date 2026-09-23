@@ -23,7 +23,12 @@ REQUIRED_TASKS = {
 }
 
 # Tasks that must fail loudly until the work behind them exists.
-NOT_IMPLEMENTED_TASKS = {"smoke", "train", "serve", "gguf"}
+#: Tasks that still fail loudly rather than doing nothing quietly.
+#:
+#: `smoke` and `train` left this set on 2026-09-23 when train/sft_lora.py landed. A task that
+#: has been implemented must be removed from here deliberately, which is what these tests are
+#: for: an implemented task that still claims to be a placeholder is a lie in `uv run task`.
+NOT_IMPLEMENTED_TASKS = {"serve", "gguf"}
 
 
 def test_every_documented_task_is_registered() -> None:
