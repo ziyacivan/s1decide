@@ -178,7 +178,9 @@ def _predict(slice_path: Path, checkpoint: str, out: Path, threads: int) -> Path
         "probabilities": "as shipped: Laya's post-hoc temperature per question type and option count",
         "state_passed_as": "the raw state string, as our model receives it",
     }
-    out.with_suffix(".meta.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+    out.with_suffix(".meta.json").write_text(
+        json.dumps(meta, indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
     print(json.dumps(meta, indent=2))
     return out
 

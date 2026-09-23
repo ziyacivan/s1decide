@@ -95,7 +95,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         "probabilities": "as served: the server's own calibration (Kev: one fitted temperature)",
         "state_passed_as": "the raw state string, as our model receives it",
     }
-    out.with_suffix(".meta.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+    out.with_suffix(".meta.json").write_text(
+        json.dumps(meta, indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
     print(json.dumps(meta, indent=2))
     return 0
 
