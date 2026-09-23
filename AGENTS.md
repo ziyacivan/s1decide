@@ -7,7 +7,8 @@ locked decisions and hard rules and takes precedence; this file defines
 
 ## Global agent protocol
 
-1. Read `CLAUDE.md`, then `docs/research/jev-landscape-2026-09-17.md`, then
+1. Read `CLAUDE.md`, then `docs/research/landscape-2026-09-24.md` and
+   `docs/research/jev-landscape-2026-09-17.md`, then
    the ADRs in `docs/adr/`, then `git log --oneline -20`.
 2. Announce which role below you are acting in. Stay in one role per task
    unless the task is explicitly cross-cutting.

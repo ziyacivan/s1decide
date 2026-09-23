@@ -24,7 +24,9 @@ parallel questions, (3) `/decide` HTTP server, (4) reproducible train/eval
 pipeline, (5) an eval report with calibration curves and a head-to-head against
 TypeSafe's public workflow evals.
 
-Read `docs/research/jev-landscape-2026-09-17.md` before any design decision.
+Read `docs/research/landscape-2026-09-24.md` (the open field, and this project's
+position in it) and `docs/research/jev-landscape-2026-09-17.md` (Jev itself, as of 17 Sep)
+before any design decision.
 It holds every known fact about Jev, the community replicas, and the papers we
 build on. Do not re-derive that context from memory; memory is stale.
 

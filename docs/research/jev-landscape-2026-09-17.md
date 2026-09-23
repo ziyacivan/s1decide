@@ -1,5 +1,9 @@
 # Jev / System One landscape — research snapshot (2026-09-17)
 
+> **Superseded for the open landscape by [`landscape-2026-09-24.md`](landscape-2026-09-24.md).**
+> Kept as the record of what was known on 17 Sep, and because ADRs 0001 and 0002 cite its
+> sections. For open projects, replicas and how this project is positioned, read the newer note.
+
 This file is the factual basis for the project. Everything here comes from public
 sources gathered on 17 Sep 2026. Treat vendor numbers as vendor numbers.
 When something below is contradicted by newer evidence, update this file and
