@@ -1,0 +1,82 @@
+{
+  "smoke-small": {
+    "run_id": "smoke-small",
+    "lambda": 0.3,
+    "choice": {
+      "rows": 19,
+      "soft_rows_first_10": 0,
+      "soft_rows_last_10": 0,
+      "raw_first_10": 0.614831,
+      "raw_last_10": 0.027788999999999998,
+      "floor_first_10": 0.0,
+      "floor_last_10": 0.0,
+      "excess_first_10": 0.614831,
+      "excess_last_10": 0.027788999999999998,
+      "min_excess": 0.00085
+    },
+    "noul": {
+      "rows": 46,
+      "soft_rows_first_10": 0,
+      "soft_rows_last_10": 0,
+      "raw_first_10": 1.06871,
+      "raw_last_10": 0.5505029999999999,
+      "floor_first_10": 0.0,
+      "floor_last_10": 0.0,
+      "excess_first_10": 1.06871,
+      "excess_last_10": 0.5505029999999999,
+      "min_excess": 0.0028
+    },
+    "score": {
+      "rows": 35,
+      "soft_rows_first_10": 4,
+      "soft_rows_last_10": 8,
+      "raw_first_10": 1.7564430000000002,
+      "raw_last_10": 2.494172,
+      "floor_first_10": 0.3372588722239781,
+      "floor_last_10": 0.6745177444479564,
+      "excess_first_10": 1.4191841277760218,
+      "excess_last_10": 1.8196542555520439,
+      "min_excess": 0.0574
+    }
+  },
+  "smoke-27b": {
+    "run_id": "smoke-27b",
+    "lambda": 0.3,
+    "choice": {
+      "rows": 9,
+      "soft_rows_first_10": 0,
+      "soft_rows_last_10": 0,
+      "raw_first_10": 0.0003566666666666667,
+      "raw_last_10": 0.0003566666666666667,
+      "floor_first_10": 0.0,
+      "floor_last_10": 0.0,
+      "excess_first_10": 0.0003566666666666667,
+      "excess_last_10": 0.0003566666666666667,
+      "min_excess": 5e-05
+    },
+    "noul": {
+      "rows": 24,
+      "soft_rows_first_10": 0,
+      "soft_rows_last_10": 0,
+      "raw_first_10": 0.507979,
+      "raw_last_10": 0.5616559999999999,
+      "floor_first_10": 0.0,
+      "floor_last_10": 0.0,
+      "excess_first_10": 0.507979,
+      "excess_last_10": 0.5616559999999999,
+      "min_excess": 0.0015
+    },
+    "score": {
+      "rows": 17,
+      "soft_rows_first_10": 4,
+      "soft_rows_last_10": 6,
+      "raw_first_10": 0.9847219999999999,
+      "raw_last_10": 1.211155,
+      "floor_first_10": 0.3372588722239781,
+      "floor_last_10": 0.5058883083359673,
+      "excess_first_10": 0.6474631277760219,
+      "excess_last_10": 0.7052666916640328,
+      "min_excess": 0.04763
+    }
+  }
+}
