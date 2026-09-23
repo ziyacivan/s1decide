@@ -1,0 +1,32 @@
+{
+  "qwen-low-1024": {
+    "model": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+    "applied": true,
+    "check": {
+      "requested": "low",
+      "contrast": "high",
+      "matches_template_default": false,
+      "effort_lines": [
+        "Reasoning effort is set to low. Keep your thinking brief and focused, moving directly to the conclusion without unnecessary elaboration.<|im_end|>"
+      ],
+      "diff_vs_contrast_sha256": "ce172c3527daeb7c3446111ad859db15aa0288c65f16f42947b680613cd46c15",
+      "diff_vs_default_sha256": "ce172c3527daeb7c3446111ad859db15aa0288c65f16f42947b680613cd46c15",
+      "render_sha256": "ff76ce2b386ddd39b26bdbbbf49490644da11d246ffc937496a1c990d5f1ceb6"
+    }
+  },
+  "gptoss-medium-1024": {
+    "model": "openai/gpt-oss-20b",
+    "applied": true,
+    "check": {
+      "requested": "medium",
+      "contrast": "high",
+      "matches_template_default": true,
+      "effort_lines": [
+        "Reasoning: medium"
+      ],
+      "diff_vs_contrast_sha256": "f3ba8dc6313ee37aaabfd4b0bac908a4bccd2c08553ae4a50091a0948aee5236",
+      "diff_vs_default_sha256": null,
+      "render_sha256": "93beb262d4ce6abfa312a52baf0d2705bda2d3497dc34688867106c0918c814c"
+    }
+  }
+}

@@ -92,23 +92,46 @@ class RunConfig:
         }
 
 
-def git_provenance() -> dict[str, Any]:
-    """Current commit and whether the tree is dirty — so a result can be reproduced."""
+def git_provenance(require_commit: bool = False) -> dict[str, Any]:
+    """Current commit and whether the tree is dirty — so a result can be reproduced.
+
+    Args:
+        require_commit: Raise when the commit hash cannot be read. True for every run whose
+            results are meant to be committed (any non-mock engine): a metric without the commit
+            that produced it cannot be reproduced, and used to be recorded as ``null`` silently.
+
+    Returns:
+        ``commit``, ``branch``, ``dirty``, and ``errors`` — each failed git call with its error
+        type — when any call failed.
+
+    Raises:
+        RuntimeError: If ``require_commit`` and the hash is unavailable.
+    """
+    errors: dict[str, str] = {}
 
     def git(*args: str) -> str | None:
         try:
             return subprocess.run(
                 ["git", *args], capture_output=True, text=True, timeout=30, check=True
             ).stdout.strip()
-        except (subprocess.SubprocessError, OSError):
+        except (subprocess.SubprocessError, OSError) as exc:
+            errors[" ".join(args)] = f"{type(exc).__name__}: {exc}"[:300]
             return None
 
     status = git("status", "--porcelain")
-    return {
+    out: dict[str, Any] = {
         "commit": git("rev-parse", "HEAD"),
         "branch": git("rev-parse", "--abbrev-ref", "HEAD"),
         "dirty": bool(status) if status is not None else None,
     }
+    if errors:
+        out["errors"] = errors
+    if require_commit and out["commit"] is None:
+        raise RuntimeError(
+            f"git commit hash unavailable ({errors}); a run meant to be committed must record "
+            "the commit it came from"
+        )
+    return out
 
 
 def default_run_id(config: RunConfig) -> str:
@@ -259,7 +282,7 @@ def report_from_predictions(
         "template": DEFAULT_TEMPLATE.name,
         "dataset": "pngwn/system-one-decisions",
         "dataset_license": "CC-BY-NC-4.0",
-        "git": git_provenance(),
+        "git": git_provenance(require_commit=config.engine != "mock"),
         "platform": f"{platform.system()} {platform.release()} · Python {platform.python_version()}",
         **(extra_meta or {}),
     }

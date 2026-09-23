@@ -93,19 +93,20 @@ def render_build_report(manifest: Mapping[str, Any]) -> str:
         "## Tier-2 leakage guard",
         "",
     ]
-    if leakage.get("checked"):
-        out += [
-            f"`pngwn/system-one-decisions` is eval-only (ADR 0004) but is *derived from* sources "
-            f"we now train on, so overlap is possible even though the datasets differ. Comparing "
-            f"**state hashes** against our {leakage['train_states']:,} training states finds "
-            f"**{leakage['leaked_rows']:,} of {leakage['external_rows']:,}** external rows "
-            f"({leakage['leaked_rows'] / max(1, leakage['external_rows']):.1%}) that must be "
-            f"dropped before any Tier-2 number is reported.",
-            "",
-            f"Affected families: {', '.join(f'`{f}`' for f in leakage['leaked_families']) or 'none'}.",
-        ]
-    else:
-        out.append(f"Not checked this build: {leakage.get('reason', 'unknown')}")
+    if not leakage.get("checked"):
+        # The pipeline raises before a manifest like this can exist; reaching here means an old
+        # manifest, and it must not be rendered as though the guard had run.
+        raise ValueError("manifest records an unchecked Tier-2 leakage guard; rebuild the data")
+    out += [
+        f"`pngwn/system-one-decisions` is eval-only (ADR 0004) but is *derived from* sources "
+        f"we now train on, so overlap is possible even though the datasets differ. Comparing "
+        f"**state hashes** against our {leakage['train_states']:,} training states finds "
+        f"**{leakage['leaked_rows']:,} of {leakage['external_rows']:,}** external rows "
+        f"({leakage['leaked_rows'] / max(1, leakage['external_rows']):.1%}) that must be "
+        f"dropped before any Tier-2 number is reported.",
+        "",
+        f"Affected families: {', '.join(f'`{f}`' for f in leakage['leaked_families']) or 'none'}.",
+    ]
 
     out += _effective_mix_section(manifest)
 

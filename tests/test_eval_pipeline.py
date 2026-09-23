@@ -365,3 +365,30 @@ def test_summary_writes_lf_and_utf8(tmp_path) -> None:
     path = write_summary(tmp_path)
     assert b"\r\n" not in path.read_bytes()
     path.read_text(encoding="utf-8")
+
+
+def test_a_git_failure_is_recorded_with_its_type(monkeypatch) -> None:
+    import subprocess
+
+    from eval.run_eval import git_provenance
+
+    def boom(*args, **kwargs):
+        raise FileNotFoundError("git not on PATH")
+
+    monkeypatch.setattr(subprocess, "run", boom)
+    meta = git_provenance()
+    assert meta["commit"] is None
+    assert "FileNotFoundError" in meta["errors"]["rev-parse HEAD"]
+
+
+def test_a_committed_run_without_a_commit_hash_fails(monkeypatch) -> None:
+    import subprocess
+
+    from eval.run_eval import git_provenance
+
+    def boom(*args, **kwargs):
+        raise FileNotFoundError("git not on PATH")
+
+    monkeypatch.setattr(subprocess, "run", boom)
+    with pytest.raises(RuntimeError, match="commit hash unavailable"):
+        git_provenance(require_commit=True)

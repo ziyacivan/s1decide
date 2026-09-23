@@ -141,7 +141,12 @@ def detect_profile(device_name: str | None = None) -> HardwareProfile:
             import torch
 
             device_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else ""
-        except Exception:
+        except Exception as exc:  # detection must not stop a run, but it must say why it failed
+            print(
+                f"hardware: device detection failed ({type(exc).__name__}: {exc}); "
+                "using the conservative 'unknown' profile",
+                file=sys.stderr,
+            )
             device_name = ""
 
     lowered = (device_name or "").lower()

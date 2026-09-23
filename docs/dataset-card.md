@@ -94,6 +94,25 @@ reference model and neither saw the other's answer.
 | kept | 4,804 — 2,999 exact agreement, 1,805 one level apart |
 | dropped | 1,124 two or more levels apart |
 | agreement | 50.6% exact against 24.7% by chance; Cohen's κ 0.344, weighted κ 0.650 |
+| evaluation batch (teacher run 2) | 959 more rows from 600 `val` + 600 `test` states, same teachers and rules: 468 land in `val`, 491 in `test`, none in `train` — [`results/teach-qwen-low-1024-eval-fold/fold.json`](../results/teach-qwen-low-1024-eval-fold/fold.json) |
+
+**Reasoning effort, verified rather than asserted** — [`results/effort-audit-2026-09-23/effort.json`](../results/effort-audit-2026-09-23/effort.json).
+Each teacher's chat template was rendered with its requested effort and with a contrasting one;
+they must differ and the difference must name the requested value, or a run stops
+(`data/build/teach_run.effort_check`, now run before every teacher job and stored in its meta).
+
+| teacher | effort line the template adds | template default | fingerprint (SHA-256 of the effort lines) |
+|---|---|---|---|
+| Qwen3.8-27B | "Reasoning effort is set to low. Keep your thinking brief and focused…" | `xhigh` | `ce172c3527da`* |
+| gpt-oss-20b | "Reasoning: medium" | `medium` — requesting it renders the same as not asking | `f3ba8dc6313e` |
+
+\* full hashes in the JSON. The Qwen default matters: without the setting, teacher 1 would have
+been told to reason at `xhigh`. The completed runs passed `low`, and the audit of the tokenizers
+they loaded shows it applied.
+
+**Open, not yet resolved:** this card records teacher 2 as MXFP4, while its runs' `meta.json` says
+`nf4-bf16` — the default label of the setting, not a measurement. Which one the loaded weights were
+has to be read from the model, and this line stays until it is.
 
 **Exact agreement becomes a hard target. One level apart becomes a soft target split equally
 across the two levels.** Adjacent levels are where a five-level rubric is genuinely ambiguous

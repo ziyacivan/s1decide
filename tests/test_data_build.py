@@ -321,3 +321,31 @@ def test_a_real_build_is_idempotent(tmp_path) -> None:
         a = (tmp_path / "a" / f"{name}.jsonl").read_bytes()
         b = (tmp_path / "b" / f"{name}.jsonl").read_bytes()
         assert a == b, f"{name}.jsonl differs between builds"
+
+
+def test_the_leakage_guard_fails_the_build_when_it_cannot_run(monkeypatch) -> None:
+    """ "Unchecked" is not a state the Tier-2 guard may be in; it used to return checked=False."""
+    import eval.data
+    from data.build.pipeline import leakage_report
+
+    def unavailable(*args, **kwargs):
+        raise ConnectionError("hub unreachable")
+
+    monkeypatch.setattr(eval.data, "load_system_one_decisions", unavailable)
+    with pytest.raises(RuntimeError, match="ConnectionError"):
+        leakage_report([{"split": "train", "state_hash": "h"}])
+
+
+def test_a_manifest_with_an_unchecked_guard_is_not_rendered() -> None:
+    import json
+
+    from data.build.report import render_build_report
+
+    from s1decide.tasks import repo_root
+
+    manifest = json.loads(
+        (repo_root() / "data/processed/manifest.json").read_text(encoding="utf-8")
+    )
+    manifest["leakage"] = {"checked": False, "reason": "old manifest"}
+    with pytest.raises(ValueError, match="unchecked"):
+        render_build_report(manifest)

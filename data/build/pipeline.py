@@ -691,15 +691,23 @@ def leakage_report(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
         rows: Every built row, carrying ``split`` and ``state``.
 
     Returns:
-        How many external rows would have to be dropped, or a note if the set is unavailable.
+        How many external rows would have to be dropped.
+
+    Raises:
+        RuntimeError: If the external set cannot be loaded. The guard used to return
+            ``checked: False`` and let the build finish; "unchecked" is not a state it may be
+            in, because every Tier-2 number depends on the drop it computes.
     """
     trained = {r["state_hash"] for r in rows if r["split"] in {"train", "val"}}
-    try:
-        from eval.data import load_system_one_decisions
+    from eval.data import load_system_one_decisions
 
+    try:
         external, _ = load_system_one_decisions("test", max_options=10**6)
     except Exception as exc:
-        return {"checked": False, "reason": f"{type(exc).__name__}: {exc}"[:160]}
+        raise RuntimeError(
+            f"Tier-2 leakage guard could not load the external set "
+            f"({type(exc).__name__}: {exc}); refusing to finish the build unchecked"
+        ) from exc
 
     leaked = [item for item in external if state_hash(item.state) in trained]
     return {

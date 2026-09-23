@@ -104,3 +104,14 @@ def test_a_profile_without_an_envelope_has_none() -> None:
     from s1decide.tasks import repo_root
 
     assert load_training_envelope(PROFILES["h100_linux"], repo_root()) is None
+
+
+def test_a_failed_device_detection_is_reported_with_its_type(monkeypatch, capsys) -> None:
+    import torch
+
+    def boom():
+        raise RuntimeError("driver gone")
+
+    monkeypatch.setattr(torch.cuda, "is_available", boom)
+    assert detect_profile().name == "unknown"
+    assert "RuntimeError" in capsys.readouterr().err

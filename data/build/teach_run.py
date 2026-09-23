@@ -43,6 +43,8 @@ from s1decide.kernels import kernel_report
 
 __all__ = [
     "TEACHERS",
+    "EffortNotApplied",
+    "effort_check",
     "load_teacher",
     "main",
     "pending_items",
@@ -202,19 +204,103 @@ def load_teacher(setting: TeacherSetting) -> tuple[Any, Any]:
 
 
 def _render(tokenizer: Any, setting: TeacherSetting, prompt: str) -> str:
-    """Apply the chat template, asking for reasoning where the model has a knob for it."""
+    """Apply the chat template, passing the reasoning effort where the setting has one.
+
+    No fallback: a template that rejects ``reasoning_effort`` used to be retried without it,
+    silently, while the run's meta went on recording the effort. :func:`effort_check` proves the
+    template reads the knob before a run starts; here a ``TypeError`` simply propagates.
+    """
     messages = [{"role": "user", "content": prompt}]
     kwargs: dict[str, Any] = {"tokenize": False, "add_generation_prompt": True}
     if setting.effort:
-        # gpt-oss takes reasoning_effort through its template; models without it ignore the
-        # kwarg, and a TypeError means the template does not accept it at all.
-        try:
-            return tokenizer.apply_chat_template(
-                messages, reasoning_effort=setting.effort, **kwargs
-            )
-        except TypeError:
-            pass
+        kwargs["reasoning_effort"] = setting.effort
     return tokenizer.apply_chat_template(messages, **kwargs)
+
+
+class EffortNotApplied(RuntimeError):
+    """The chat template does not demonstrably apply the requested reasoning effort."""
+
+
+def _changed_lines(a: str, b: str) -> list[str]:
+    """Lines of ``b`` that are not in ``a`` — what the second render added."""
+    import difflib
+
+    return [
+        line[1:]
+        for line in difflib.unified_diff(a.splitlines(), b.splitlines(), lineterm="", n=0)
+        if line.startswith("+") and not line.startswith("+++")
+    ]
+
+
+def effort_check(tokenizer: Any, setting: TeacherSetting, prompt: str) -> dict[str, Any] | None:
+    """Prove the chat template applies ``setting.effort``, and fingerprint how.
+
+    Two renders are compared. **Requested vs a contrasting effort** (``low`` against ``high``)
+    must differ, and the requested value must appear in what changed: that is the proof the
+    template reads the knob at all. **Requested vs no effort** is recorded too, but an empty diff
+    there is not a failure — gpt-oss documents ``reasoning_effort`` as "defaults to medium", so
+    asking for medium renders identically to asking for nothing while being fully in effect.
+    Qwen3.8 defaults to ``xhigh``, which is why the difference matters.
+
+    Args:
+        tokenizer: The teacher's tokenizer.
+        setting: The teacher setting; nothing to check when it has no effort.
+        prompt: A user prompt to render.
+
+    Returns:
+        ``requested``, ``contrast``, ``matches_template_default``, the SHA-256 of the lines the
+        requested effort adds over the contrast and over the default, and of the full render.
+        ``None`` when the setting has no effort.
+
+    Raises:
+        EffortNotApplied: If the template rejects the kwarg (``TypeError``), renders the same for
+            two different efforts, or does not show the requested value in what changed.
+    """
+    import hashlib
+
+    if not setting.effort:
+        return None
+    contrast = "high" if setting.effort != "high" else "low"
+    messages = [{"role": "user", "content": prompt}]
+    kwargs: dict[str, Any] = {"tokenize": False, "add_generation_prompt": True}
+    try:
+        requested = tokenizer.apply_chat_template(
+            messages, reasoning_effort=setting.effort, **kwargs
+        )
+        contrasted = tokenizer.apply_chat_template(messages, reasoning_effort=contrast, **kwargs)
+    except TypeError as exc:
+        raise EffortNotApplied(
+            f"{setting.model}: chat template rejects reasoning_effort ({type(exc).__name__}: "
+            f"{exc}); effort={setting.effort} would not be applied"
+        ) from exc
+    default = tokenizer.apply_chat_template(messages, **kwargs)
+
+    over_contrast = _changed_lines(contrasted, requested)
+    if not over_contrast:
+        raise EffortNotApplied(
+            f"{setting.model}: effort={setting.effort} and effort={contrast} render identically; "
+            "the template ignores the knob"
+        )
+    if not any(setting.effort in line for line in over_contrast):
+        raise EffortNotApplied(
+            f"{setting.model}: the render changed but does not mention effort={setting.effort}: "
+            f"{over_contrast[:2]}"
+        )
+    over_default = _changed_lines(default, requested)
+
+    def digest(lines: list[str] | str) -> str:
+        text = "\n".join(lines) if isinstance(lines, list) else lines
+        return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+    return {
+        "requested": setting.effort,
+        "contrast": contrast,
+        "matches_template_default": not over_default,
+        "effort_lines": over_contrast,
+        "diff_vs_contrast_sha256": digest(over_contrast),
+        "diff_vs_default_sha256": digest(over_default) if over_default else None,
+        "render_sha256": digest(requested),
+    }
 
 
 def teacher_rows(
@@ -506,6 +592,14 @@ def run(
         "kernels": kernel_report(),
         "started": datetime.now(UTC).isoformat(timespec="seconds"),
     }
+    if setting.effort:
+        # Before anything is generated, prove the template applies the effort the meta records.
+        from transformers import AutoTokenizer
+
+        tokenizer = AutoTokenizer.from_pretrained(setting.model, local_files_only=True)
+        meta["effort_check"] = effort_check(
+            tokenizer, setting, build_prompt(items[0]["state"], items[0]["question"])
+        )
     # Before the model load, not after: a refused resume should cost a second, not five minutes.
     check_resume_meta(directory, meta, force=force)
     if not pending_items(directory, items):
