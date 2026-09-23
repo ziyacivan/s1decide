@@ -1,0 +1,185 @@
+{
+  "model": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+  "adapter": "results/smoke-27b-lr2e5/adapter",
+  "split": "val",
+  "rows": 468,
+  "calibration": "none \u2014 raw softmax of the masked option logits, both conditions",
+  "base_rate_control": {
+    "fitted_on": "train score_teacher rows",
+    "distribution": [
+      0.44816819317235634,
+      0.17974604496253122,
+      0.12114904246461282,
+      0.1242714404662781,
+      0.12666527893422147
+    ]
+  },
+  "adapter_layout": {
+    "expected": 256,
+    "adapted": 256,
+    "attention_layers": 16,
+    "mlp_layers": 64
+  },
+  "kernels": {
+    "packages": {
+      "fla": true,
+      "causal_conv1d": false,
+      "triton": true,
+      "triton_kernels": false,
+      "kernels": false
+    },
+    "gated_deltanet": {
+      "chunk_gated_delta_rule": "accelerated",
+      "fused_recurrent_gated_delta_rule": "accelerated",
+      "causal_conv1d_fn": "torch",
+      "causal_conv1d_update": "torch"
+    },
+    "fast_path_all": false,
+    "attention": "sdpa",
+    "notes": [
+      "2 of 4 gated-deltanet kernels are accelerated, but transformers reports is_fast_path_available=False because it is an all() over the four; the 'falling back to torch' warning in the log understates what is active",
+      "causal-conv1d has no Windows wheel and fails to build; its two functions use the torch path (a 4-wide depthwise convolution, the cheap part)",
+      "triton_kernels requires triton>=3.8, which has no Windows wheel; MXFP4 models therefore dequantize to bf16 and will not fit on a 24 GB card"
+    ]
+  },
+  "logit_precision": "fp32",
+  "zero_shot": {
+    "rows": 468,
+    "soft_rows": 182,
+    "accuracy": 0.5918803418803419,
+    "accuracy_hard_rows": 0.7202797202797203,
+    "soft_rows_argmax_on_a_teacher_level": 0.7087912087912088,
+    "qwk": 0.8108346202079036,
+    "mae_argmax": 0.4829059829059829,
+    "mae_expected_level": 0.593429136023065,
+    "kl": 0.7411997922258745,
+    "kl_median": 0.5469105354304559,
+    "ece": 0.050823338535620606,
+    "brier": 0.5037655613564761,
+    "brier_base_rate": 0.7435248920444656,
+    "bss": 0.3224630853026653,
+    "mean_confidence": 0.6043799283086453,
+    "mean_predicted_level": 1.0427350427350428,
+    "mean_expected_level": 1.1586521904131133,
+    "mean_target_level": 1.3632478632478633,
+    "predicted_level_distribution": [
+      0.5021367521367521,
+      0.14316239316239315,
+      0.20512820512820512,
+      0.10897435897435898,
+      0.0405982905982906
+    ]
+  },
+  "adapter_applied": {
+    "rows": 468,
+    "soft_rows": 182,
+    "accuracy": 0.6452991452991453,
+    "accuracy_hard_rows": 0.7762237762237763,
+    "soft_rows_argmax_on_a_teacher_level": 0.7527472527472527,
+    "qwk": 0.8410420674745631,
+    "mae_argmax": 0.4188034188034188,
+    "mae_expected_level": 0.5045805783458135,
+    "kl": 0.644062063364782,
+    "kl_median": 0.4050292474155928,
+    "ece": 0.07581136498682747,
+    "brier": 0.455915351755189,
+    "brier_base_rate": 0.7435248920444656,
+    "bss": 0.3868189799247185,
+    "mean_confidence": 0.6730553254670649,
+    "mean_predicted_level": 1.1495726495726495,
+    "mean_expected_level": 1.2264938066391489,
+    "mean_target_level": 1.3632478632478633,
+    "predicted_level_distribution": [
+      0.44871794871794873,
+      0.20726495726495728,
+      0.1794871794871795,
+      0.07478632478632478,
+      0.08974358974358974
+    ]
+  },
+  "deltas": {
+    "all": {
+      "rows": 468,
+      "kl_delta_mean": -0.09713772886109252,
+      "kl_delta_median": -0.06824160215240901,
+      "kl_delta_p10": -0.4393687098831744,
+      "kl_delta_p90": 0.18899245414112897,
+      "share_kl_improved": 0.7628205128205128,
+      "right_to_wrong": 17,
+      "wrong_to_right": 42
+    },
+    "hard": {
+      "rows": 286,
+      "kl_delta_mean": -0.14464731291976987,
+      "kl_delta_median": -0.06921357920099694,
+      "kl_delta_p10": -0.49254486049066665,
+      "kl_delta_p90": 0.028713275480937328,
+      "share_kl_improved": 0.8426573426573427,
+      "right_to_wrong": 6,
+      "wrong_to_right": 22
+    },
+    "soft": {
+      "rows": 182,
+      "kl_delta_mean": -0.022479811054599556,
+      "kl_delta_median": -0.06755771704008923,
+      "kl_delta_p10": -0.30932832235306484,
+      "kl_delta_p90": 0.3518822087149207,
+      "share_kl_improved": 0.6373626373626373,
+      "right_to_wrong": 11,
+      "wrong_to_right": 20
+    },
+    "by_answer_level": {
+      "0": {
+        "rows": 189,
+        "kl_delta_mean": -0.04060291591281447,
+        "kl_delta_median": -0.02434630076380643,
+        "kl_delta_p10": -0.1851990648327067,
+        "kl_delta_p90": 0.0283217300567564,
+        "share_kl_improved": 0.8148148148148148,
+        "right_to_wrong": 7,
+        "wrong_to_right": 0
+      },
+      "1": {
+        "rows": 109,
+        "kl_delta_mean": -0.10371158316420898,
+        "kl_delta_median": -0.08374495421374611,
+        "kl_delta_p10": -0.4684481187698299,
+        "kl_delta_p90": 0.2733686798610958,
+        "share_kl_improved": 0.6972477064220184,
+        "right_to_wrong": 1,
+        "wrong_to_right": 23
+      },
+      "2": {
+        "rows": 51,
+        "kl_delta_mean": 0.05526764203537175,
+        "kl_delta_median": -0.014865560265724165,
+        "kl_delta_p10": -0.18779758582614414,
+        "kl_delta_p90": 0.4130857643420014,
+        "share_kl_improved": 0.5686274509803921,
+        "right_to_wrong": 2,
+        "wrong_to_right": 2
+      },
+      "3": {
+        "rows": 71,
+        "kl_delta_mean": -0.08692870163056754,
+        "kl_delta_median": -0.13858141429538295,
+        "kl_delta_p10": -0.35545115079617584,
+        "kl_delta_p90": 0.3623728911944042,
+        "share_kl_improved": 0.7183098591549296,
+        "right_to_wrong": 7,
+        "wrong_to_right": 5
+      },
+      "4": {
+        "rows": 48,
+        "kl_delta_mean": -0.48184698672092185,
+        "kl_delta_median": -0.48048422286565906,
+        "kl_delta_p10": -0.7084271562888641,
+        "kl_delta_p90": -0.14343460323264057,
+        "share_kl_improved": 0.9791666666666666,
+        "right_to_wrong": 0,
+        "wrong_to_right": 12
+      }
+    }
+  },
+  "vram_peak_gib": 22.349
+}

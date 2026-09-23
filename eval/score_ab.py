@@ -40,6 +40,7 @@ __all__ = [
     "load_score_rows",
     "main",
     "quadratic_weighted_kappa",
+    "rescore",
     "row_deltas",
     "score_metrics",
 ]
@@ -174,6 +175,10 @@ def score_metrics(
         "brier_base_rate": reference,
         "bss": brier_skill_score(brier, reference),
         "mean_confidence": float(np.mean([p.max() for p in probabilities])),
+        # The prior the model has settled on: the smoke adapter's failure was a shift in these.
+        "mean_predicted_level": float(np.mean(argmax)),
+        "mean_expected_level": float(np.mean(expected)),
+        "mean_target_level": float(np.mean(target_means)),
         "predicted_level_distribution": [
             float(np.mean([a == k for a in argmax])) for k in range(levels)
         ],
@@ -266,6 +271,37 @@ def _score_all(engine: Any, rows: Sequence[dict[str, Any]]) -> list[list[float]]
     return out
 
 
+def rescore(run_dir: Path, root: Path) -> int:
+    """Recompute a run's metrics from the logits it stored, keeping its provenance fields.
+
+    Every metric is a pure function of the stored logits and the rows, so adding one (as the
+    level means were added after the first run) needs no second pass through the model.
+    """
+    payload = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
+    stored = [
+        json.loads(line)
+        for line in (run_dir / "rows.jsonl").read_text(encoding="utf-8").split("\n")
+        if line.strip()
+    ]
+    split_rows = load_score_rows(root / f"data/processed/{payload['split']}.jsonl")
+    by_id = {row["id"]: row for row in split_rows}
+    rows = [by_id[entry["id"]] for entry in stored]
+    base_rate = payload["base_rate_control"]["distribution"]
+    before = score_metrics(rows, [e["logits_before"] for e in stored], base_rate)
+    after = score_metrics(rows, [e["logits_after"] for e in stored], base_rate)
+    deltas = row_deltas(rows, before, after)
+    keys = [k for k in before if k != "per_row"]
+    payload["zero_shot"] = {k: before[k] for k in keys}
+    payload["adapter_applied"] = {k: after[k] for k in keys}
+    payload["deltas"] = deltas["summary"]
+    payload["rescored_from"] = "rows.jsonl logits, eval/score_ab.py --rescore"
+    (run_dir / "metrics.json").write_text(
+        json.dumps(payload, indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
+    print(f"rescored {run_dir}")
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Score the val `Score` rows on the base model, then with ``--adapter``; write the report."""
     import torch
@@ -276,12 +312,21 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     parser = argparse.ArgumentParser(prog="eval.score_ab")
     parser.add_argument("--model", default="unsloth/Qwen3.8-27B-unsloth-bnb-4bit")
-    parser.add_argument("--adapter", required=True)
+    parser.add_argument("--adapter", default=None)
+    parser.add_argument(
+        "--rescore",
+        default=None,
+        help="recompute metrics.json of an existing run from its stored logits (no model)",
+    )
     parser.add_argument("--split", default="val")
-    parser.add_argument("--out", required=True)
+    parser.add_argument("--out", default=None)
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     root = repo_root()
+    if args.rescore:
+        return rescore(root / args.rescore, root)
+    if not (args.adapter and args.out):
+        parser.error("--adapter and --out are required unless --rescore is given")
     rows = load_score_rows(root / f"data/processed/{args.split}.jsonl")
     if not rows:
         raise SystemExit(f"no {SCORE_FAMILY} rows in {args.split}")

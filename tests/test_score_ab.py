@@ -84,3 +84,11 @@ def test_only_teacher_score_rows_are_loaded(tmp_path) -> None:
     ]
     path.write_text("".join(json.dumps(x) + "\n" for x in lines), encoding="utf-8")
     assert [r["id"] for r in load_score_rows(path)] == ["keep"]
+
+
+def test_the_level_means_track_the_prior() -> None:
+    rows = [row(0, id_="a"), row(4, id_="b")]
+    m = score_metrics(rows, [peaked(4), peaked(4)], [0.2] * 5)
+    assert m["mean_predicted_level"] == 4.0
+    assert m["mean_target_level"] == 2.0
+    assert m["mean_expected_level"] == pytest.approx(4.0, abs=1e-6)
