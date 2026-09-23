@@ -146,3 +146,35 @@ def test_an_unknown_selection_is_refused(tmp_path) -> None:
 
     with pytest.raises(ValueError, match="random-ish"):
         train(TrainConfig(selection="random-ish"), root=tmp_path)
+
+
+def test_lr_warms_up_linearly_then_decays_by_cosine_to_zero() -> None:
+    from train.sft_lora import lr_multiplier
+
+    total, warmup = 100, 3
+    assert [round(lr_multiplier(s, total, warmup, "cosine"), 3) for s in range(3)] == [
+        0.333,
+        0.667,
+        1.0,
+    ]
+    assert lr_multiplier(3, total, warmup, "cosine") == pytest.approx(1.0)
+    middle = warmup + (total - warmup) // 2
+    assert lr_multiplier(middle, total, warmup, "cosine") == pytest.approx(0.5, abs=0.02)
+    assert lr_multiplier(total, total, warmup, "cosine") == pytest.approx(0.0, abs=1e-9)
+    assert lr_multiplier(50, total, 0, "constant") == 1.0
+
+
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        ({"sampling": "roughly"}, "unknown sampling"),
+        ({"sampling": "family_balanced"}, "sample_budget"),
+        ({"eval_mode": "full"}, "case-control"),
+        ({"lr_schedule": "linear-ish"}, "lr_schedule"),
+    ],
+)
+def test_a_config_the_trainer_cannot_honour_is_refused_before_any_io(tmp_path, overrides, message):
+    from train.sft_lora import train
+
+    with pytest.raises(ValueError, match=message):
+        train(TrainConfig(**overrides), root=tmp_path)

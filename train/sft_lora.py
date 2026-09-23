@@ -48,6 +48,7 @@ __all__ = [
     "is_prequantized",
     "load_config",
     "longest_examples",
+    "lr_multiplier",
     "main",
     "plan_steps",
     "select_rows",
@@ -88,6 +89,17 @@ class TrainConfig:
         selection: ``stratified`` (default) draws round-robin across primitives for code
             coverage; ``longest`` takes the ``limit`` longest rows of the corpus as rendered —
             the worst case for activation memory, used to measure the envelope.
+        sampling: ``stratified`` (smoke) or ``family_balanced`` (S1): draw ``sample_budget``
+            rows with replacement under ``sampling_weights.json``, `Score` uniform by row.
+        sample_budget: Rows drawn for a ``family_balanced`` run.
+        warmup_fraction: Share of optimiser steps spent in linear warmup.
+        lr_schedule: ``constant`` or ``cosine`` after warmup.
+        checkpoint_every_rows: Save the adapter every this many rows.
+        eval_every_rows: Evaluate the fixed `val` slice every this many rows, and at row 0.
+        eval_mode: Only ``case-control`` is implemented for periodic evaluation.
+        eval_stage1_questions: Stage-1 questions in the slice.
+        eval_negatives: Negatives kept per stage-1 question, weighted back.
+        eval_batch_size: Rows per forward pass during evaluation.
     """
 
     hardware: str = "rtx3090_windows"
@@ -106,6 +118,16 @@ class TrainConfig:
     load_in_4bit: bool = False
     seed: int = 20260923
     selection: str = "stratified"
+    sampling: str = "stratified"
+    sample_budget: int | None = None
+    warmup_fraction: float = 0.0
+    lr_schedule: str = "constant"
+    checkpoint_every_rows: int | None = None
+    eval_every_rows: int | None = None
+    eval_mode: str = "case-control"
+    eval_stage1_questions: int = 300
+    eval_negatives: int = 16
+    eval_batch_size: int = 8
     extra: dict[str, Any] = field(default_factory=dict)
 
 
@@ -246,6 +268,9 @@ def build_examples(
                 "stage1": row.get("stage") == 1,
                 "soft": row["qtype"] == "score" and row.get("target_type") == "soft",
                 "n_options": len(labels),
+                "answer_idx": int(row["answer_idx"]),
+                "eval_weight": float(row.get("eval_weight", 1.0)),
+                "row_index": row.get("row_index"),
             }
         )
     random.Random(config.seed).shuffle(examples)
@@ -404,6 +429,8 @@ def plan_steps(n_examples: int, config: TrainConfig) -> int:
     """
     if config.max_steps is not None:
         return config.max_steps
+    # A family-balanced run's examples are already its draw sequence, so one pass over them is
+    # the sample budget (less any draw dropped over the cap).
     return math.ceil(n_examples / (config.batch_size * config.grad_accum))
 
 
@@ -415,8 +442,93 @@ def _window_means(rows: Sequence[dict[str, float]], key: str) -> dict[str, float
     }
 
 
+def lr_multiplier(step: int, total_steps: int, warmup_steps: int, schedule: str) -> float:
+    """Learning-rate multiplier at optimiser ``step`` (0-based): linear warmup, then the schedule.
+
+    Args:
+        step: Optimiser step about to be taken.
+        total_steps: Steps in the run.
+        warmup_steps: Linear warmup from ~0 to 1 over this many steps.
+        schedule: ``constant`` or ``cosine`` (to zero at the last step).
+
+    Returns:
+        The factor the base learning rate is multiplied by.
+    """
+    if warmup_steps and step < warmup_steps:
+        return (step + 1) / warmup_steps
+    if schedule == "constant":
+        return 1.0
+    if schedule == "cosine":
+        span = max(1, total_steps - warmup_steps)
+        progress = min(1.0, (step - warmup_steps) / span)
+        return 0.5 * (1.0 + math.cos(math.pi * progress))
+    raise ValueError(f"unknown lr_schedule {schedule!r}")
+
+
+def _read_jsonl(path: Path) -> list[dict[str, Any]]:
+    return [
+        json.loads(line) for line in path.read_text(encoding="utf-8").split("\n") if line.strip()
+    ]
+
+
+def _select_examples(
+    config: TrainConfig,
+    rows: list[dict[str, Any]],
+    tokenizer: Any,
+    root: Path,
+    stats: dict[str, int],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """The training sequence, in the order it is trained on, and a report of how it was drawn."""
+    if config.sampling == "family_balanced":
+        from train.sampling import row_weights, sample_indices, score_level_marginal
+
+        weights_file = json.loads(
+            (root / "data/processed/sampling_weights.json").read_text(encoding="utf-8")
+        )
+        indexed = [{**row, "row_index": i} for i, row in enumerate(rows)]
+        weights = row_weights(indexed, weights_file["weights"])
+        draw = sample_indices(weights, int(config.sample_budget), seed=config.seed)
+        unique = sorted(set(draw))
+        rendered = build_examples([indexed[i] for i in unique], tokenizer, config, stats)
+        by_index = {ex["row_index"]: ex for ex in rendered}
+        sequence = [by_index[i] for i in draw if i in by_index]
+        drawn_rows = [rows[i] for i in draw]
+        report = {
+            "sampling": "family_balanced",
+            "uniform_groups": ["score"],
+            "budget": config.sample_budget,
+            "drawn": len(draw),
+            "unique_rows": len(unique),
+            "dropped_over_cap_draws": len(draw) - len(sequence),
+            "score_level_marginal_training": score_level_marginal(rows),
+            "score_level_marginal_drawn": score_level_marginal(drawn_rows),
+            "weights_file_seed": weights_file.get("seed"),
+        }
+        return sequence, report
+    if config.selection == "longest":
+        return longest_examples(build_examples(rows, tokenizer, config, stats), config.limit), {
+            "selection": "longest"
+        }
+    examples = build_examples(select_rows(rows, config), tokenizer, config, stats)
+    if config.limit:
+        examples = examples[: config.limit]
+    return examples, {"selection": "stratified"}
+
+
+def _write_json(path: Path, payload: Any) -> None:
+    path.write_text(
+        json.dumps(payload, indent=2, default=str) + "\n", encoding="utf-8", newline="\n"
+    )
+
+
 def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
     """Run one training job and write its summary.
+
+    Two modes. A **smoke** run (``sampling: stratified`` or ``selection: longest``) makes one
+    pass over a small selection. An **S1** run (``sampling: family_balanced``) draws
+    ``sample_budget`` rows with replacement under the family weights, `Score` uniform by row,
+    and — when configured — saves a checkpoint and evaluates a fixed `val` slice every
+    ``eval_every_rows`` rows, starting with the untrained model at row 0.
 
     Returns:
         Summary: steps, loss curve, VRAM peak, tokens per second, and what it ran on.
@@ -436,6 +548,15 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         )
     if config.selection not in {"stratified", "longest"}:
         raise ValueError(f"unknown selection {config.selection!r}")
+    if config.sampling not in {"stratified", "family_balanced"}:
+        raise ValueError(f"unknown sampling {config.sampling!r}")
+    if config.sampling == "family_balanced" and not config.sample_budget:
+        raise ValueError("family_balanced sampling needs a sample_budget")
+    if config.eval_mode != "case-control":
+        raise ValueError(
+            f"only case-control periodic evaluation is implemented, not {config.eval_mode!r}"
+        )
+    lr_multiplier(0, 1, 0, config.lr_schedule)  # an unknown schedule fails here, not at step 1
     root = root or repo_root()
     out_dir = root / "results" / config.run_id
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -443,24 +564,36 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
     from transformers import AutoTokenizer
 
     tokenizer = AutoTokenizer.from_pretrained(config.model, local_files_only=True)
-    rows = [
-        json.loads(line)
-        for line in (root / "data/processed/train.jsonl").read_text(encoding="utf-8").split("\n")
-        if line.strip()
-    ]
+    rows = _read_jsonl(root / "data/processed/train.jsonl")
     render_stats: dict[str, int] = {"dropped_over_cap": 0}
-    if config.selection == "longest":
-        examples = longest_examples(
-            build_examples(rows, tokenizer, config, render_stats), config.limit
-        )
-    elif config.selection == "stratified":
-        examples = build_examples(select_rows(rows, config), tokenizer, config, render_stats)
-        if config.limit:
-            examples = examples[: config.limit]
-    else:
-        raise ValueError(f"unknown selection {config.selection!r}")
+    examples, selection_report = _select_examples(config, rows, tokenizer, root, render_stats)
     if not examples:
         raise RuntimeError("no training examples survived rendering; check max_seq_len")
+
+    # The evaluation slice and its base-rate controls are built and checked before any weight
+    # is loaded: a row with no control would otherwise raise at the first checkpoint, hours in.
+    eval_examples: list[dict[str, Any]] = []
+    eval_report: dict[str, Any] = {}
+    rates: dict[str, list[float]] = {}
+    if config.eval_every_rows:
+        from train.periodic_eval import base_rates, build_eval_rows, eval_group
+
+        eval_rows, eval_report = build_eval_rows(
+            _read_jsonl(root / "data/processed/val.jsonl"),
+            stage1_questions=config.eval_stage1_questions,
+            negatives=config.eval_negatives,
+            seed=config.seed,
+        )
+        eval_stats: dict[str, int] = {"dropped_over_cap": 0}
+        eval_examples = build_examples(eval_rows, tokenizer, config, eval_stats)
+        eval_report["rows_dropped_over_cap"] = eval_stats["dropped_over_cap"]
+        rates = base_rates(rows)
+        missing = sorted(
+            {f"{eval_group(ex)}/{len(ex['target'])}" for ex in eval_examples} - set(rates)
+        )
+        if missing:
+            raise RuntimeError(f"evaluation rows with no base-rate control: {missing}")
+        _write_json(out_dir / "eval_slice.json", {**eval_report, "base_rates": rates})
 
     model, loader = _load_model(config)
     pad_token_id = tokenizer.pad_token_id or tokenizer.eos_token_id or 0
@@ -468,18 +601,49 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
     optimiser = torch.optim.AdamW(
         [p for p in model.parameters() if p.requires_grad], lr=config.learning_rate
     )
+    one_pass = config.max_steps is None
+    steps = plan_steps(len(examples), config)
+    warmup_steps = round(config.warmup_fraction * steps)
+    scheduler = torch.optim.lr_scheduler.LambdaLR(
+        optimiser, lambda step: lr_multiplier(step, steps, warmup_steps, config.lr_schedule)
+    )
     if torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
+
+    checkpoints: list[dict[str, Any]] = []
+
+    def evaluate(rows_done: int) -> None:
+        from train.periodic_eval import eval_metrics, predict_logits
+
+        began = time.perf_counter()
+        logits = predict_logits(model, eval_examples, pad_token_id, config.eval_batch_size)
+        entry = {
+            "rows": rows_done,
+            "metrics": eval_metrics(eval_examples, logits, rates),
+            "seconds": round(time.perf_counter() - began, 1),
+        }
+        checkpoints.append(entry)
+        with (out_dir / "evals.jsonl").open("a", encoding="utf-8", newline="\n") as handle:
+            handle.write(json.dumps(entry, default=str) + "\n")
+        brief = {g: round(m["kl"], 4) for g, m in entry["metrics"].items()}
+        print(f"  eval @ {rows_done} rows ({entry['seconds']} s): KL {brief}", flush=True)
+
+    def save_checkpoint(rows_done: int) -> None:
+        path = out_dir / "checkpoints" / f"rows-{rows_done:06d}"
+        model.save_pretrained(str(path))
+
+    progress_path = out_dir / "progress.jsonl"
+    if config.eval_every_rows:
+        evaluate(0)
 
     losses: list[float] = []
     seen: list[dict[str, Any]] = []
     loss_rows: list[dict[str, Any]] = []
     tokens = 0
-    steps = plan_steps(len(examples), config)
-    one_pass = config.max_steps is None
     started = time.perf_counter()
     model.train()
     cursor = 0
+    rows_done = 0
     for step in range(steps):
         optimiser.zero_grad(set_to_none=True)
         for _ in range(config.grad_accum):
@@ -505,8 +669,39 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
                     }
                 )
         optimiser.step()
+        scheduler.step()
+        before, rows_done = rows_done, len(seen)
         if step % 10 == 0:
             print(f"  step {step:4d}  loss {losses[-1]:.4f}", flush=True)
+        if step % 25 == 0 or step == steps - 1:
+            elapsed_now = time.perf_counter() - started
+            with progress_path.open("a", encoding="utf-8", newline="\n") as handle:
+                handle.write(
+                    json.dumps(
+                        {
+                            "step": step + 1,
+                            "steps": steps,
+                            "rows": rows_done,
+                            "loss_mean_last_25": sum(losses[-25:]) / len(losses[-25:]),
+                            "lr": scheduler.get_last_lr()[0],
+                            "elapsed_seconds": round(elapsed_now, 1),
+                            "rows_per_second": round(rows_done / max(elapsed_now, 1e-9), 4),
+                            "vram_peak_gib": round(torch.cuda.max_memory_allocated() / 1024**3, 3)
+                            if torch.cuda.is_available()
+                            else None,
+                        }
+                    )
+                    + "\n"
+                )
+            (out_dir / "heartbeat").write_text(
+                time.strftime("%Y-%m-%dT%H:%M:%S"), encoding="utf-8", newline="\n"
+            )
+        for every, hook in (
+            (config.checkpoint_every_rows, save_checkpoint),
+            (config.eval_every_rows, evaluate),
+        ):
+            if every and rows_done // every > before // every:
+                hook(rows_done)
     if one_pass and len(seen) != len(examples):
         raise RuntimeError(f"one pass saw {len(seen)} rows of {len(examples)} selected")
 
@@ -516,7 +711,9 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         "run_id": config.run_id,
         "config": asdict(config),
         "examples": len(examples),
+        "selection": selection_report,
         "steps": steps,
+        "warmup_steps": warmup_steps,
         "one_pass": one_pass,
         "loss_first": losses[0] if losses else None,
         "loss_last": losses[-1] if losses else None,
@@ -548,6 +745,8 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         "coverage": coverage(seen),
         "coverage_selected": coverage(examples),
         "loss_rows": loss_rows,
+        "eval_slice": eval_report or None,
+        "checkpoint_evals": [c["rows"] for c in checkpoints],
         "loader": loader,
         "vram_peak_bytes": peak,
         "vram_peak_gib": round(peak / 1024**3, 3),
@@ -574,9 +773,7 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         except RuntimeError as exc:
             summary["adapter_layout_error"] = str(exc)
 
-    (out_dir / "train_summary.json").write_text(
-        json.dumps(summary, indent=2, default=str) + "\n", encoding="utf-8", newline="\n"
-    )
+    _write_json(out_dir / "train_summary.json", summary)
     write_report(out_dir, summary)
     return summary
 
@@ -913,22 +1110,51 @@ def _load_model(config: TrainConfig) -> tuple[Any, dict[str, Any]]:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Command line for ``uv run task train``."""
+    """Command line for ``uv run task train``.
+
+    ``--detach`` starts the same command in its own process (`s1decide.jobs.spawn_detached`),
+    logging to ``results/<run_id>/log.txt``. A run ends by writing ``DONE`` or ``FAILED`` (with
+    the traceback) beside its summary, so a monitor can tell finished from dead.
+    """
     import argparse
+    import traceback
+
+    from s1decide.tasks import repo_root
 
     parser = argparse.ArgumentParser(prog="task train")
     parser.add_argument("--cfg", required=True, help="path to a train/configs/*.yaml")
+    parser.add_argument("--detach", action="store_true", help="run in a detached process")
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     config = load_config(args.cfg)
+    out_dir = repo_root() / "results" / config.run_id
+    if args.detach:
+        from s1decide.jobs import spawn_detached
+
+        out_dir.mkdir(parents=True, exist_ok=True)
+        pid = spawn_detached([sys.executable, "-m", "train.sft_lora", "--cfg", args.cfg], out_dir)
+        print(f"detached training {config.run_id} (pid {pid}); log: {out_dir / 'log.txt'}")
+        return 0
+
     print(f"training {config.run_id}: {config.model} on {config.hardware}", flush=True)
-    summary = train(config)
-    print(json.dumps({k: v for k, v in summary.items() if k != "config"}, indent=2, default=str))
+    try:
+        summary = train(config)
+    except BaseException:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "FAILED").write_text(traceback.format_exc(), encoding="utf-8", newline="\n")
+        raise
+    bulky = {"config", "loss_rows", "loss_curve"}
+    print(json.dumps({k: v for k, v in summary.items() if k not in bulky}, indent=2, default=str))
     if "adapter_layout_error" in summary or "adapter_error" in summary:
         print(summary.get("adapter_layout_error") or summary.get("adapter_error"))
+        (out_dir / "FAILED").write_text("adapter check failed\n", encoding="utf-8", newline="\n")
         return 1
     if summary["loss_mean_last_10"] is not None and math.isfinite(summary["loss_mean_last_10"]):
+        (out_dir / "DONE").write_text(
+            time.strftime("%Y-%m-%dT%H:%M:%S\n"), encoding="utf-8", newline="\n"
+        )
         return 0
+    (out_dir / "FAILED").write_text("non-finite loss\n", encoding="utf-8", newline="\n")
     return 1
 
 
