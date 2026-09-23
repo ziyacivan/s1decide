@@ -1,0 +1,397 @@
+{
+  "run_id": "smoke-27b",
+  "config": {
+    "hardware": "rtx3090_windows",
+    "model": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+    "run_id": "smoke-27b",
+    "max_steps": 50,
+    "rank": 8,
+    "lora_alpha": 16,
+    "learning_rate": 0.0001,
+    "batch_size": 1,
+    "grad_accum": 1,
+    "max_seq_len": 1024,
+    "limit": 200,
+    "lambda_distance": 0.3,
+    "mu_unimodality": 0.0,
+    "load_in_4bit": true,
+    "seed": 20260923,
+    "extra": {}
+  },
+  "examples": 200,
+  "steps": 50,
+  "loss_first": 0.1797446459531784,
+  "loss_last": 0.9430954456329346,
+  "loss_mean_first_10": 0.7093761534197256,
+  "loss_mean_last_10": 0.8885297831548087,
+  "elapsed_seconds": 80.81,
+  "tokens_per_second": 86.4,
+  "loss_curve": [
+    0.17974,
+    0.00861,
+    1.0537,
+    2.46394,
+    0.00219,
+    0.00408,
+    0.04859,
+    0.17974,
+    2.83991,
+    0.31326,
+    1.01174,
+    0.00023,
+    0.00121,
+    1.78818,
+    0.82594,
+    0.7638,
+    0.69315,
+    0.04763,
+    0.6326,
+    0.12949,
+    0.06703,
+    0.0036,
+    1.51306,
+    0.01416,
+    0.44577,
+    0.02975,
+    0.00031,
+    0.38687,
+    1.24061,
+    1.19348,
+    0.0263,
+    1.89059,
+    0.00462,
+    0.17555,
+    1.61612,
+    0.16022,
+    0.16022,
+    0.00011,
+    0.0004,
+    0.00059,
+    0.0015,
+    0.00022,
+    0.28115,
+    0.91276,
+    0.05488,
+    2.18051,
+    5e-05,
+    9e-05,
+    4.51105,
+    0.9431
+  ],
+  "loss_by_qtype": {
+    "choice": {
+      "rows": 9,
+      "mean_first_10": 0.0003578892469199167,
+      "mean_last_10": 0.0003578892469199167
+    },
+    "noul": {
+      "rows": 24,
+      "mean_first_10": 0.5079795927507803,
+      "mean_last_10": 0.5616572536178864
+    },
+    "score": {
+      "rows": 17,
+      "mean_first_10": 0.9847213335335254,
+      "mean_last_10": 1.2111533880233765
+    }
+  },
+  "coverage": {
+    "by_qtype": {
+      "choice": 9,
+      "noul": 15,
+      "noul/stage1": 9,
+      "score": 17
+    },
+    "by_family": {
+      "banking77": 7,
+      "clinc_oos": 5,
+      "go_emotions": 9,
+      "massive_de": 1,
+      "massive_en": 4,
+      "massive_tr": 1,
+      "mmlu_noul": 6,
+      "score_teacher": 17
+    },
+    "by_target": {
+      "hard": 42,
+      "soft": 8
+    },
+    "by_option_count": {
+      "2": 24,
+      "5": 17,
+      "8": 9
+    }
+  },
+  "loader": {
+    "prequantized": true,
+    "quantize_on_load": false,
+    "unsloth_error": "RuntimeError: Unsloth: Failed to load model. Both AutoConfig and PeftConfig loading failed.\n\nAutoConfig error: We couldn't connect to 'https://huggingface.co' to load the files, and couldn't find them in the cached files.\nCheck your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'.\n\nPeftConfig error: Can't find 'adapter_config.json' at 'unsloth/qwen3.8-27b'\n\n",
+    "dtype_fix": {
+      "linear4bit": 352,
+      "quant_states": 352,
+      "params_cast": 498
+    },
+    "path": "transformers+peft"
+  },
+  "vram_peak_bytes": 22067073536.0,
+  "vram_peak_gib": 20.552,
+  "kernels": {
+    "packages": {
+      "fla": true,
+      "causal_conv1d": false,
+      "triton": true,
+      "triton_kernels": false,
+      "kernels": true
+    },
+    "gated_deltanet": {
+      "chunk_gated_delta_rule": "accelerated",
+      "fused_recurrent_gated_delta_rule": "accelerated",
+      "causal_conv1d_fn": "torch",
+      "causal_conv1d_update": "torch"
+    },
+    "fast_path_all": false,
+    "attention": "sdpa",
+    "notes": [
+      "2 of 4 gated-deltanet kernels are accelerated, but transformers reports is_fast_path_available=False because it is an all() over the four; the 'falling back to torch' warning in the log understates what is active",
+      "causal-conv1d has no Windows wheel and fails to build; its two functions use the torch path (a 4-wide depthwise convolution, the cheap part)",
+      "triton_kernels requires triton>=3.8, which has no Windows wheel; MXFP4 models therefore dequantize to bf16 and will not fit on a 24 GB card"
+    ]
+  },
+  "logit_precision": "fp32",
+  "adapter": "C:\\Users\\yusuf\\Documents\\Github\\s1decide\\results\\smoke-27b\\adapter",
+  "rows_seen": 50,
+  "coverage_selected": {
+    "by_qtype": {
+      "choice": 38,
+      "noul": 44,
+      "noul/stage1": 45,
+      "score": 73
+    },
+    "by_family": {
+      "banking77": 23,
+      "clinc_oos": 29,
+      "go_emotions": 32,
+      "massive_de": 12,
+      "massive_en": 9,
+      "massive_tr": 8,
+      "mmlu": 2,
+      "mmlu_noul": 12,
+      "ordinal_control": 9,
+      "score_teacher": 64
+    },
+    "by_target": {
+      "hard": 163,
+      "soft": 37
+    },
+    "by_option_count": {
+      "2": 89,
+      "3": 3,
+      "4": 3,
+      "5": 69,
+      "8": 36
+    }
+  },
+  "loss_rows": [
+    [
+      "noul",
+      0.17974
+    ],
+    [
+      "noul/stage1",
+      0.00861
+    ],
+    [
+      "noul",
+      1.0537
+    ],
+    [
+      "noul",
+      2.46394
+    ],
+    [
+      "noul/stage1",
+      0.00219
+    ],
+    [
+      "noul/stage1",
+      0.00408
+    ],
+    [
+      "noul",
+      0.04859
+    ],
+    [
+      "noul",
+      0.17974
+    ],
+    [
+      "score",
+      2.83991
+    ],
+    [
+      "noul",
+      0.31326
+    ],
+    [
+      "score",
+      1.01174
+    ],
+    [
+      "choice",
+      0.00023
+    ],
+    [
+      "choice",
+      0.00121
+    ],
+    [
+      "score",
+      1.78818
+    ],
+    [
+      "noul",
+      0.82594
+    ],
+    [
+      "score",
+      0.7638
+    ],
+    [
+      "noul",
+      0.69315
+    ],
+    [
+      "score",
+      0.04763
+    ],
+    [
+      "noul",
+      0.6326
+    ],
+    [
+      "score",
+      0.12949
+    ],
+    [
+      "score",
+      0.06703
+    ],
+    [
+      "noul/stage1",
+      0.0036
+    ],
+    [
+      "score",
+      1.51306
+    ],
+    [
+      "noul/stage1",
+      0.01416
+    ],
+    [
+      "score",
+      0.44577
+    ],
+    [
+      "noul/stage1",
+      0.02975
+    ],
+    [
+      "choice",
+      0.00031
+    ],
+    [
+      "noul",
+      0.38687
+    ],
+    [
+      "score",
+      1.24061
+    ],
+    [
+      "score",
+      1.19348
+    ],
+    [
+      "noul",
+      0.0263
+    ],
+    [
+      "score",
+      1.89059
+    ],
+    [
+      "noul/stage1",
+      0.00462
+    ],
+    [
+      "score",
+      0.17555
+    ],
+    [
+      "score",
+      1.61612
+    ],
+    [
+      "noul",
+      0.16022
+    ],
+    [
+      "noul",
+      0.16022
+    ],
+    [
+      "choice",
+      0.00011
+    ],
+    [
+      "choice",
+      0.0004
+    ],
+    [
+      "choice",
+      0.00059
+    ],
+    [
+      "noul/stage1",
+      0.0015
+    ],
+    [
+      "choice",
+      0.00022
+    ],
+    [
+      "noul",
+      0.28115
+    ],
+    [
+      "score",
+      0.91276
+    ],
+    [
+      "noul/stage1",
+      0.05488
+    ],
+    [
+      "score",
+      2.18051
+    ],
+    [
+      "choice",
+      5e-05
+    ],
+    [
+      "choice",
+      9e-05
+    ],
+    [
+      "noul",
+      4.51105
+    ],
+    [
+      "score",
+      0.9431
+    ]
+  ],
+  "backfilled": "rows_seen, coverage (seen) and loss_rows recomputed after the run from the same deterministic selection; cross-checked against the run's own loss_by_qtype counts"
+}

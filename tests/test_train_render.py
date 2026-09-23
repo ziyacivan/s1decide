@@ -240,3 +240,37 @@ def test_a_prequantized_checkpoint_is_not_quantized_again() -> None:
     assert is_prequantized(SimpleNamespace(quantization_config={"quant_method": "bitsandbytes"}))
     assert not is_prequantized(SimpleNamespace(quantization_config=None))
     assert not is_prequantized(SimpleNamespace())
+
+
+def test_every_run_writes_a_report_with_coverage_beside_the_loss(tmp_path) -> None:
+    from train.sft_lora import coverage, write_report
+
+    seen = [
+        {
+            "qtype": "score",
+            "family": "score_teacher",
+            "soft": True,
+            "n_options": 5,
+            "label_token_ids": [0] * 5,
+        },
+        {"qtype": "noul", "family": "go_emotions", "n_options": 2, "label_token_ids": [0, 1]},
+    ]
+    summary = {
+        "run_id": "unit",
+        "examples": 2,
+        "rows_seen": 2,
+        "steps": 2,
+        "loss_rows": [["score", 1.2], ["noul", 0.4]],
+        "loss_by_qtype": {
+            "noul": {"rows": 1, "mean_first_10": 0.4, "mean_last_10": 0.4},
+            "score": {"rows": 1, "mean_first_10": 1.2, "mean_last_10": 1.2},
+        },
+        "coverage": coverage(seen),
+    }
+    report = write_report(tmp_path, summary).read_text(encoding="utf-8")
+    assert "## Coverage (rows seen)" in report
+    assert "| score_teacher | 1 | 50.0% |" in report
+    assert "| soft | 1 | 50.0% |" in report
+    assert "| score | 1 | 1.2000 | 1.2000 |" in report
+    if "loss.png" in report and "not drawn" not in report:
+        assert (tmp_path / "loss.png").is_file()
