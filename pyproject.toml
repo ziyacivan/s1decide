@@ -18,6 +18,10 @@ classifiers = [
 # torch/CUDA/triton/bitsandbytes tuple known to work there.
 dependencies = [
     "torch==2.10.0",
+    # Transitive via unsloth, declared so it can be taken from the same index as torch. From PyPI
+    # the Linux wheel is built for a different CUDA variant and its C++ ops fail to register
+    # ("operator torchvision::nms does not exist"): found by the first Ubuntu CI run.
+    "torchvision==0.25.0",
     "transformers==5.5.0",
     "tokenizers==0.22.2",
     "safetensors==0.8.0",
@@ -89,6 +93,7 @@ explicit = true
 
 [tool.uv.sources]
 torch = { index = "pytorch-cu130" }
+torchvision = { index = "pytorch-cu130" }
 
 [build-system]
 requires = ["hatchling"]
