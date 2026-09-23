@@ -202,7 +202,7 @@ All via `uv run task <name>` (PowerShell and Linux identical):
 doctor      # GPU/CUDA/torch/bnb/triton/unsloth/llama-cpp checks, VRAM in use, path sanity
 setup       # uv sync (+ optional extras), pre-commit hooks
 data        # fetch + normalise + augment + split → data/processed/
-smoke       # 200-sample end-to-end: data → tiny Unsloth LoRA (rank 8, 50 steps) → eval; ≤ 5 min on 3090
+smoke       # 200-sample end-to-end: data → tiny Unsloth LoRA (rank 8, one pass) → eval; ≤ 5 min on 3090
 train       # --cfg train/configs/sft_3090.yaml
 eval        # --run <run_id>
 bench       # latency vs #questions, current engine
@@ -210,6 +210,7 @@ serve       # uvicorn s1decide.server:app
 test        # pytest -m "not gpu"
 test-gpu    # pytest -m gpu
 gguf        # merge LoRA → BF16 → GGUF Q8/Q5_K_M/Q4_K_M into artifacts/ (llama.cpp convert + quantize)
+push        # HEAD → origin/wip, wait for `ci` green on that commit (GitHub API), then fast-forward main
 ```
 
 If a task in this list doesn't exist yet, creating it is part of the job.
@@ -317,3 +318,14 @@ v0.2 is a scope, not a commitment to rent anything.
 6. When something works in Unsloth Studio but not in our scripts, inspect
    the Studio-generated config/notebook for the exact arguments it used and
    port them — do not paper over the difference.
+7. **Commits reach `main` only through the CI gate.** `main` is protected: the `ci` check is
+   required and there is no admin bypass, so a direct push of an unchecked commit is rejected.
+   Commit locally as before, then `uv run task push`, which:
+   - refuses unless `HEAD` fast-forwards `origin/main` (rebase first otherwise);
+   - pushes `HEAD` to `origin/wip` (forced — `wip` is a scratch lane, not history);
+   - polls the GitHub check-runs API for `ci` on that exact commit (no `gh`; a token in
+     `GITHUB_TOKEN`/`GH_TOKEN` is used if set);
+   - on green, pushes the same SHA to `main`; on red or timeout, prints the failing tests'
+     annotations and leaves `main` alone.
+   Docs-only commits go through the same gate — a CI run for docs is cheap. The hard rule on
+   pushing still applies: `task push` needs the same explicit human "go" as `git push`.

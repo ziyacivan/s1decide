@@ -898,6 +898,23 @@ def task_test_gpu(argv: list[str]) -> int:
     return worst
 
 
+@register("push", "Push HEAD to wip, wait for `ci` to pass on it, then fast-forward main")
+def task_push(argv: list[str]) -> int:
+    """The only way commits reach `main`, which requires a green `ci` (see `s1decide.push`).
+
+    ``--timeout SECONDS`` (default 2700) and ``--interval SECONDS`` (default 45) tune the wait.
+    """
+    import argparse
+
+    from s1decide.push import push_through_gate
+
+    parser = argparse.ArgumentParser(prog="task push")
+    parser.add_argument("--timeout", type=float, default=45 * 60)
+    parser.add_argument("--interval", type=float, default=45.0)
+    args = parser.parse_args(argv)
+    return push_through_gate(repo_root(), timeout=args.timeout, interval=args.interval)
+
+
 @register("lint", "Run ruff check and ruff format --check")
 def task_lint(argv: list[str]) -> int:
     """Lint and check formatting without modifying files."""
