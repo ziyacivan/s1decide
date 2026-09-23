@@ -19,7 +19,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-__all__ = ["OVERNIGHT_PLAN", "main", "run_chain"]
+__all__ = ["OVERNIGHT_PLAN", "main", "plan_with_suffix", "run_chain"]
 
 #: The approved plan: teacher 1 then teacher 2, over the same source rows.
 #:
@@ -31,12 +31,32 @@ OVERNIGHT_PLAN: tuple[dict[str, Any], ...] = (
 )
 
 
+def plan_with_suffix(suffix: str) -> tuple[dict[str, Any], ...]:
+    """The approved plan with every run id suffixed, for a second batch of states.
+
+    The run ids are resume keys. A second batch under the same ids would be refused by the
+    items-digest check at best, and at worst would put evaluation labels in the directory the
+    training rows were folded from. A suffix keeps the teachers and settings identical and the
+    directories separate.
+
+    Args:
+        suffix: e.g. ``"eval"``; empty returns the plan unchanged.
+
+    Returns:
+        The plan, with ``run_id`` suffixed on every leg.
+    """
+    if not suffix:
+        return OVERNIGHT_PLAN
+    return tuple({**leg, "run_id": f"{leg['run_id']}-{suffix}"} for leg in OVERNIGHT_PLAN)
+
+
 def run_chain(
     plan: Sequence[dict[str, Any]],
-    items_path: Path,
+    items_path: Path | Sequence[Path],
     limit: int | None,
     root: Path,
     force: bool = False,
+    chain_name: str = "teach-overnight",
 ) -> dict[str, Any]:
     """Run each leg in order, recording what happened to all of them.
 
@@ -46,19 +66,26 @@ def run_chain(
 
     Args:
         plan: Leg descriptions.
-        items_path: The state/question pairs to label.
+        items_path: The state/question pairs to label; several files are concatenated in
+            order, and their ids must not collide.
         limit: Optional cap, for a rehearsal.
         root: Repository root.
         force: Resume legs whose configuration has changed since their rows on disk.
+        chain_name: Directory under ``results/`` for the chain's own record.
 
     Returns:
         A summary of every leg that ran.
     """
     from data.build.teach_run import TEACHERS, load_items, run
 
-    items = load_items(items_path, limit)
+    paths = [items_path] if isinstance(items_path, Path) else list(items_path)
+    items = [item for path in paths for item in load_items(path, None)]
+    items = items[:limit] if limit else items
+    ids = [item["id"] for item in items]
+    if len(set(ids)) != len(ids):
+        raise ValueError("item ids collide across the input files")
     legs: list[dict[str, Any]] = []
-    chain_dir = root / "results" / "teach-overnight"
+    chain_dir = root / "results" / chain_name
     chain_dir.mkdir(parents=True, exist_ok=True)
 
     def note(payload: dict[str, Any]) -> None:
@@ -92,7 +119,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     from s1decide.tasks import repo_root
 
     parser = argparse.ArgumentParser(prog="task teach-overnight")
-    parser.add_argument("--items", default="data/processed/teach_items.jsonl")
+    parser.add_argument("--items", nargs="+", default=["data/processed/teach_items.jsonl"])
+    parser.add_argument(
+        "--suffix",
+        default="",
+        help="suffix every run id (and the chain directory) for a second batch of states",
+    )
     parser.add_argument("--limit", type=int, default=6000)
     parser.add_argument("--detach", action="store_true")
     parser.add_argument(
@@ -103,25 +135,36 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     root = repo_root()
+    plan = plan_with_suffix(args.suffix)
+    chain_name = f"teach-overnight-{args.suffix}" if args.suffix else "teach-overnight"
     if args.detach:
         child = [
             sys.executable,
             "-m",
             "data.build.teach_overnight",
             "--items",
-            args.items,
+            *args.items,
             "--limit",
             str(args.limit),
         ]
+        if args.suffix:
+            child += ["--suffix", args.suffix]
         if args.force:
             child.append("--force")
-        pid = spawn_detached(child, root / "results" / "teach-overnight")
+        pid = spawn_detached(child, root / "results" / chain_name)
         print(f"detached overnight chain (pid {pid})")
-        for leg in OVERNIGHT_PLAN:
+        for leg in plan:
             print(f"  status: uv run task teach --status {leg['run_id']}")
         return 0
 
-    payload = run_chain(OVERNIGHT_PLAN, root / args.items, args.limit, root, force=args.force)
+    payload = run_chain(
+        plan,
+        [root / item for item in args.items],
+        args.limit,
+        root,
+        force=args.force,
+        chain_name=chain_name,
+    )
     print(json.dumps(payload, indent=2, default=str))
     return 0
 
