@@ -44,6 +44,7 @@ def envelope_point(summary: dict[str, Any]) -> dict[str, Any]:
         "batch_size": config["batch_size"],
         "grad_accum": config["grad_accum"],
         "rows": summary["rows_seen"],
+        "max_row_tokens": summary.get("max_row_tokens"),
         "adapter_modules": layout["adapted"],
         "loader": summary["loader"]["path"],
         "vram_peak_gib": summary["vram_peak_gib"],
@@ -61,6 +62,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="eval.memory_envelope")
     parser.add_argument("runs", nargs="+")
     parser.add_argument("--out", required=True)
+    parser.add_argument(
+        "--decision",
+        action="append",
+        default=[],
+        help="a decision taken from this envelope, recorded verbatim beside the points",
+    )
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     root = repo_root()
@@ -70,7 +77,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         for run in args.runs
     ]
-    payload = {"hardware": detect_profile().name, "points": points}
+    payload = {"hardware": detect_profile().name, "points": points, "decisions": args.decision}
     out = root / args.out
     out.mkdir(parents=True, exist_ok=True)
     (out / "envelope.json").write_text(

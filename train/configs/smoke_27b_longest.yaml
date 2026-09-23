@@ -1,0 +1,23 @@
+# Memory envelope (2026-09-23): attempt 3 with ONE knob changed - the 200 LONGEST rows of the
+# corpus instead of the stratified sample (whose longest row is 412 tokens; the corpus reaches 843).
+# Rank 8: S1 uses rank 8, rank 16 is deferred to v0.2 on an H100.
+#
+# seq 1024, batch 1, rank 8 — the smallest configuration that still exercises the real model.
+# If this OOMs it is not retried with smaller numbers: the answer is that S1 proper needs the
+# h100_linux config, and sft_h100.yaml is ready for it.
+hardware: rtx3090_windows
+model: unsloth/Qwen3.8-27B-unsloth-bnb-4bit
+run_id: smoke-27b-longest
+# One pass: steps = ceil(limit / batch_size), every selected row seen exactly once, so the
+# coverage table describes the rows actually trained on by construction.
+max_steps: null
+rank: 8
+lora_alpha: 16
+learning_rate: 1.0e-4
+batch_size: 1
+grad_accum: 1
+max_seq_len: 1024
+limit: 200
+lambda_distance: 0.3
+load_in_4bit: true
+selection: longest

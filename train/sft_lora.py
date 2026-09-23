@@ -47,6 +47,7 @@ __all__ = [
     "format_coverage",
     "is_prequantized",
     "load_config",
+    "longest_examples",
     "main",
     "plan_steps",
     "select_rows",
@@ -84,6 +85,9 @@ class TrainConfig:
         mu_unimodality: ADR 0007's shape penalty weight.
         load_in_4bit: QLoRA. False for the small pipeline model, which fits in bf16.
         seed: Everything sampled is sampled from this.
+        selection: ``stratified`` (default) draws round-robin across primitives for code
+            coverage; ``longest`` takes the ``limit`` longest rows of the corpus as rendered —
+            the worst case for activation memory, used to measure the envelope.
     """
 
     hardware: str = "rtx3090_windows"
@@ -101,6 +105,7 @@ class TrainConfig:
     mu_unimodality: float = 0.0
     load_in_4bit: bool = False
     seed: int = 20260923
+    selection: str = "stratified"
     extra: dict[str, Any] = field(default_factory=dict)
 
 
@@ -238,6 +243,20 @@ def build_examples(
         )
     random.Random(config.seed).shuffle(examples)
     return examples
+
+
+def longest_examples(examples: Sequence[dict[str, Any]], limit: int | None) -> list[dict[str, Any]]:
+    """The ``limit`` longest examples, longest first; ties keep their original order.
+
+    Args:
+        examples: Rendered examples (``input_ids`` set).
+        limit: How many to keep; ``None`` keeps all, sorted.
+
+    Returns:
+        The selection, sorted by descending token count.
+    """
+    ranked = sorted(examples, key=lambda ex: -len(ex["input_ids"]))
+    return ranked[:limit] if limit else ranked
 
 
 def coverage(examples: Sequence[dict[str, Any]]) -> dict[str, dict[str, int]]:
@@ -408,6 +427,8 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
             f"config keys not implemented by this trainer: {sorted(config.extra)}; "
             "refusing to run a config it would partly ignore"
         )
+    if config.selection not in {"stratified", "longest"}:
+        raise ValueError(f"unknown selection {config.selection!r}")
     root = root or repo_root()
     out_dir = root / "results" / config.run_id
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -420,10 +441,14 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         for line in (root / "data/processed/train.jsonl").read_text(encoding="utf-8").split("\n")
         if line.strip()
     ]
-    rows = select_rows(rows, config)
-    examples = build_examples(rows, tokenizer, config)
-    if config.limit:
-        examples = examples[: config.limit]
+    if config.selection == "longest":
+        examples = longest_examples(build_examples(rows, tokenizer, config), config.limit)
+    elif config.selection == "stratified":
+        examples = build_examples(select_rows(rows, config), tokenizer, config)
+        if config.limit:
+            examples = examples[: config.limit]
+    else:
+        raise ValueError(f"unknown selection {config.selection!r}")
     if not examples:
         raise RuntimeError("no training examples survived rendering; check max_seq_len")
 
@@ -507,6 +532,8 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         },
         # What the optimiser saw, repeats included. In one-pass mode this equals the selection.
         "rows_seen": len(seen),
+        # Activation memory follows the longest row actually trained on, not the cap.
+        "max_row_tokens": max(len(item["input_ids"]) for item in seen),
         "coverage": coverage(seen),
         "coverage_selected": coverage(examples),
         "loss_rows": loss_rows,

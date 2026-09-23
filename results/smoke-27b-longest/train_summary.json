@@ -1,0 +1,2400 @@
+{
+  "run_id": "smoke-27b-longest",
+  "config": {
+    "hardware": "rtx3090_windows",
+    "model": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+    "run_id": "smoke-27b-longest",
+    "max_steps": null,
+    "rank": 8,
+    "lora_alpha": 16,
+    "learning_rate": 0.0001,
+    "batch_size": 1,
+    "grad_accum": 1,
+    "max_seq_len": 1024,
+    "limit": 200,
+    "lambda_distance": 0.3,
+    "mu_unimodality": 0.0,
+    "load_in_4bit": true,
+    "seed": 20260923,
+    "selection": "longest",
+    "extra": {}
+  },
+  "examples": 200,
+  "steps": 200,
+  "one_pass": true,
+  "loss_first": 0.0033915876410901546,
+  "loss_last": 0.11282224208116531,
+  "loss_mean_first_10": 0.6189318580960389,
+  "loss_mean_last_10": 0.8968422077596188,
+  "elapsed_seconds": 475.88,
+  "tokens_per_second": 202.6,
+  "loss_curve": [
+    0.00339,
+    4.88346,
+    0.00091,
+    0.5922,
+    0.40511,
+    0.04859,
+    0.22541,
+    0.00523,
+    0.01251,
+    0.01251,
+    0.00016,
+    0.01416,
+    2.69494,
+    1.20281,
+    2e-05,
+    5.5735,
+    0.0112,
+    0.00122,
+    0.00035,
+    0.39335,
+    0.00016,
+    0.00083,
+    0.0008,
+    2e-05,
+    5.8778,
+    0.00011,
+    1.23684,
+    1.1991,
+    2.44577,
+    0.00192,
+    0.82594,
+    0.02975,
+    0.17974,
+    0.20141,
+    0.19092,
+    0.02975,
+    0.043,
+    2.67199,
+    1.1524,
+    0.06512,
+    0.05488,
+    0.00389,
+    1.70141,
+    1.40615,
+    1.65586,
+    0.22541,
+    0.16022,
+    0.20141,
+    0.4287,
+    0.00917,
+    0.31771,
+    1.26612,
+    0.17974,
+    0.47408,
+    1.43126,
+    1.70141,
+    0.22541,
+    1.0963,
+    0.38687,
+    1.01155,
+    0.00338,
+    0.06197,
+    0.76355,
+    0.7576,
+    0.57594,
+    0.28115,
+    2.08408,
+    0.6326,
+    0.00593,
+    0.00593,
+    0.11282,
+    0.4287,
+    0.01815,
+    0.05989,
+    1.50193,
+    0.03039,
+    0.31326,
+    1.13687,
+    2.7995,
+    0.12693,
+    0.57594,
+    0.25193,
+    0.99346,
+    0.00398,
+    0.00405,
+    0.00071,
+    0.10021,
+    0.1012,
+    0.02325,
+    1.12274,
+    0.22466,
+    0.20623,
+    2.02446,
+    0.08099,
+    0.4148,
+    1.22344,
+    1.0537,
+    0.70722,
+    0.00017,
+    0.92962,
+    0.1176,
+    1.53278,
+    0.50747,
+    0.16531,
+    1.32881,
+    0.17357,
+    0.08894,
+    1.40615,
+    0.83358,
+    0.00026,
+    5.6286,
+    0.0008,
+    0.00523,
+    0.25193,
+    0.043,
+    0.10021,
+    0.06197,
+    0.043,
+    0.17974,
+    0.00579,
+    0.34844,
+    0.17974,
+    0.07889,
+    1.80474,
+    0.06732,
+    0.52312,
+    0.12693,
+    0.35098,
+    0.52312,
+    0.4287,
+    1.09248,
+    1.51012,
+    0.06994,
+    0.12443,
+    0.10021,
+    0.10021,
+    0.31326,
+    0.69315,
+    0.6326,
+    0.06197,
+    0.25193,
+    0.34844,
+    0.06197,
+    0.51081,
+    1.0897,
+    5.11783,
+    2.25306,
+    0.08107,
+    4.81599,
+    1.59401,
+    2.27829,
+    0.4287,
+    0.06197,
+    0.16022,
+    0.0066,
+    0.00705,
+    0.00123,
+    0.63075,
+    0.34844,
+    1.18615,
+    0.00861,
+    0.49522,
+    0.04067,
+    0.0028,
+    1.60041,
+    0.00645,
+    1.26789,
+    0.01053,
+    0.35777,
+    0.01063,
+    0.00193,
+    0.06197,
+    4.14103,
+    2.18708,
+    0.00387,
+    0.04859,
+    0.10021,
+    0.38687,
+    0.00376,
+    0.19491,
+    0.01883,
+    0.00168,
+    1.3317,
+    0.14268,
+    0.58548,
+    0.00517,
+    0.28115,
+    0.22658,
+    0.97408,
+    0.74854,
+    0.47408,
+    0.20141,
+    0.08894,
+    0.12693,
+    0.08894,
+    1.22344,
+    3.174,
+    1.80474,
+    1.67312,
+    0.11282
+  ],
+  "loss_by_qtype": {
+    "choice": {
+      "rows": 70,
+      "soft_rows": 0,
+      "kl": {
+        "mean_first_10": 0.6497679999999999,
+        "mean_last_10": 0.609961
+      },
+      "distance_excess": {
+        "mean_first_10": 0.47234099999999996,
+        "mean_last_10": 0.383556
+      },
+      "total": {
+        "mean_first_10": 0.6497679999999999,
+        "mean_last_10": 0.609961
+      },
+      "floor": {
+        "mean_first_10": 0.0,
+        "mean_last_10": 0.0
+      }
+    },
+    "noul": {
+      "rows": 107,
+      "soft_rows": 0,
+      "kl": {
+        "mean_first_10": 0.301433,
+        "mean_last_10": 0.5376529999999999
+      },
+      "distance_excess": {
+        "mean_first_10": 0.12268099999999997,
+        "mean_last_10": 0.336488
+      },
+      "total": {
+        "mean_first_10": 0.301433,
+        "mean_last_10": 0.5376529999999999
+      },
+      "floor": {
+        "mean_first_10": 0.0,
+        "mean_last_10": 0.0
+      }
+    },
+    "score": {
+      "rows": 23,
+      "soft_rows": 10,
+      "kl": {
+        "mean_first_10": 0.9050600000000001,
+        "mean_last_10": 0.976116
+      },
+      "distance_excess": {
+        "mean_first_10": 0.52064,
+        "mean_last_10": 1.014087
+      },
+      "total": {
+        "mean_first_10": 1.5671380000000001,
+        "mean_last_10": 1.533288
+      },
+      "floor": {
+        "mean_first_10": 0.50589,
+        "mean_last_10": 0.252945
+      }
+    }
+  },
+  "rows_seen": 200,
+  "coverage": {
+    "by_qtype": {
+      "choice": 70,
+      "noul": 107,
+      "score": 23
+    },
+    "by_family": {
+      "mmlu": 70,
+      "mmlu_noul": 107,
+      "score_teacher": 23
+    },
+    "by_target": {
+      "hard": 190,
+      "soft": 10
+    },
+    "by_option_count": {
+      "2": 107,
+      "4": 70,
+      "5": 23
+    }
+  },
+  "coverage_selected": {
+    "by_qtype": {
+      "choice": 70,
+      "noul": 107,
+      "score": 23
+    },
+    "by_family": {
+      "mmlu": 70,
+      "mmlu_noul": 107,
+      "score_teacher": 23
+    },
+    "by_target": {
+      "hard": 190,
+      "soft": 10
+    },
+    "by_option_count": {
+      "2": 107,
+      "4": 70,
+      "5": 23
+    }
+  },
+  "loss_rows": [
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00339,
+      "kl": 0.00339,
+      "cross_entropy": 0.00339,
+      "distance": 0.00455,
+      "distance_excess": 0.00455,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 4.88346,
+      "kl": 4.88346,
+      "cross_entropy": 4.88346,
+      "distance": 2.97621,
+      "distance_excess": 2.97621,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00091,
+      "kl": 0.00091,
+      "cross_entropy": 0.00091,
+      "distance": 0.00153,
+      "distance_excess": 0.00153,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": false,
+      "total": 0.5922,
+      "kl": 0.4769,
+      "cross_entropy": 0.4769,
+      "distance": 0.38433,
+      "distance_excess": 0.38433,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": false,
+      "total": 0.40511,
+      "kl": 0.31933,
+      "cross_entropy": 0.31933,
+      "distance": 0.28595,
+      "distance_excess": 0.28595,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.04859,
+      "kl": 0.04859,
+      "cross_entropy": 0.04859,
+      "distance": 0.04743,
+      "distance_excess": 0.04743,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.22541,
+      "kl": 0.22541,
+      "cross_entropy": 0.22541,
+      "distance": 0.20181,
+      "distance_excess": 0.20181,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.00523,
+      "kl": 0.00523,
+      "cross_entropy": 0.00523,
+      "distance": 0.00522,
+      "distance_excess": 0.00522,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.01251,
+      "kl": 0.01251,
+      "cross_entropy": 0.01251,
+      "distance": 0.01243,
+      "distance_excess": 0.01243,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.01251,
+      "kl": 0.01251,
+      "cross_entropy": 0.01251,
+      "distance": 0.01243,
+      "distance_excess": 0.01243,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.00016,
+      "kl": 0.00016,
+      "cross_entropy": 0.00016,
+      "distance": 0.00016,
+      "distance_excess": 0.00016,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.01416,
+      "kl": 0.01416,
+      "cross_entropy": 0.01416,
+      "distance": 0.01406,
+      "distance_excess": 0.01406,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 2.69494,
+      "kl": 2.69494,
+      "cross_entropy": 2.69494,
+      "distance": 0.93245,
+      "distance_excess": 0.93245,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 1.20281,
+      "kl": 1.20281,
+      "cross_entropy": 1.20281,
+      "distance": 1.39136,
+      "distance_excess": 1.39136,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 2e-05,
+      "kl": 2e-05,
+      "cross_entropy": 2e-05,
+      "distance": 2e-05,
+      "distance_excess": 2e-05,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": false,
+      "total": 5.5735,
+      "kl": 4.81994,
+      "cross_entropy": 4.81994,
+      "distance": 2.51187,
+      "distance_excess": 2.51187,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.0112,
+      "kl": 0.0112,
+      "cross_entropy": 0.0112,
+      "distance": 0.01302,
+      "distance_excess": 0.01302,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00122,
+      "kl": 0.00122,
+      "cross_entropy": 0.00122,
+      "distance": 0.00358,
+      "distance_excess": 0.00358,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00035,
+      "kl": 0.00035,
+      "cross_entropy": 0.00035,
+      "distance": 0.00038,
+      "distance_excess": 0.00038,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.39335,
+      "kl": 0.39335,
+      "cross_entropy": 0.39335,
+      "distance": 0.33104,
+      "distance_excess": 0.33104,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00016,
+      "kl": 0.00016,
+      "cross_entropy": 0.00016,
+      "distance": 0.00035,
+      "distance_excess": 0.00035,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00083,
+      "kl": 0.00083,
+      "cross_entropy": 0.00083,
+      "distance": 0.00139,
+      "distance_excess": 0.00139,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.0008,
+      "kl": 0.0008,
+      "cross_entropy": 0.0008,
+      "distance": 0.0008,
+      "distance_excess": 0.0008,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 2e-05,
+      "kl": 2e-05,
+      "cross_entropy": 2e-05,
+      "distance": 2e-05,
+      "distance_excess": 2e-05,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 5.8778,
+      "kl": 5.8778,
+      "cross_entropy": 5.8778,
+      "distance": 0.9972,
+      "distance_excess": 0.9972,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00011,
+      "kl": 0.00011,
+      "cross_entropy": 0.00011,
+      "distance": 0.00017,
+      "distance_excess": 0.00017,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": true,
+      "total": 1.23684,
+      "kl": 0.29795,
+      "cross_entropy": 0.99109,
+      "distance": 0.81917,
+      "distance_excess": 0.31917,
+      "floor": 0.84315
+    },
+    {
+      "qtype": "score",
+      "soft": true,
+      "total": 1.1991,
+      "kl": 0.35119,
+      "cross_entropy": 1.04434,
+      "distance": 0.51589,
+      "distance_excess": 0.01589,
+      "floor": 0.84315
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 2.44577,
+      "kl": 2.44577,
+      "cross_entropy": 2.44577,
+      "distance": 1.63893,
+      "distance_excess": 1.63893,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00192,
+      "kl": 0.00192,
+      "cross_entropy": 0.00192,
+      "distance": 0.00342,
+      "distance_excess": 0.00342,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.82594,
+      "kl": 0.82594,
+      "cross_entropy": 0.82594,
+      "distance": 0.56218,
+      "distance_excess": 0.56218,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.02975,
+      "kl": 0.02975,
+      "cross_entropy": 0.02975,
+      "distance": 0.02931,
+      "distance_excess": 0.02931,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.17974,
+      "kl": 0.17974,
+      "cross_entropy": 0.17974,
+      "distance": 0.16452,
+      "distance_excess": 0.16452,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.20141,
+      "kl": 0.20141,
+      "cross_entropy": 0.20141,
+      "distance": 0.18243,
+      "distance_excess": 0.18243,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": false,
+      "total": 0.19092,
+      "kl": 0.14233,
+      "cross_entropy": 0.14233,
+      "distance": 0.16197,
+      "distance_excess": 0.16197,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.02975,
+      "kl": 0.02975,
+      "cross_entropy": 0.02975,
+      "distance": 0.02931,
+      "distance_excess": 0.02931,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.043,
+      "kl": 0.043,
+      "cross_entropy": 0.043,
+      "distance": 0.04209,
+      "distance_excess": 0.04209,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": true,
+      "total": 2.67199,
+      "kl": 1.57615,
+      "cross_entropy": 2.26929,
+      "distance": 1.34232,
+      "distance_excess": 0.84232,
+      "floor": 0.84315
+    },
+    {
+      "qtype": "score",
+      "soft": true,
+      "total": 1.1524,
+      "kl": 0.29151,
+      "cross_entropy": 0.98466,
+      "distance": 0.55912,
+      "distance_excess": 0.05912,
+      "floor": 0.84315
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.06512,
+      "kl": 0.06512,
+      "cross_entropy": 0.06512,
+      "distance": 0.1446,
+      "distance_excess": 0.1446,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.05488,
+      "kl": 0.05488,
+      "cross_entropy": 0.05488,
+      "distance": 0.0534,
+      "distance_excess": 0.0534,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00389,
+      "kl": 0.00389,
+      "cross_entropy": 0.00389,
+      "distance": 0.00635,
+      "distance_excess": 0.00635,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 1.70141,
+      "kl": 1.70141,
+      "cross_entropy": 1.70141,
+      "distance": 0.81757,
+      "distance_excess": 0.81757,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 1.40615,
+      "kl": 1.40615,
+      "cross_entropy": 1.40615,
+      "distance": 0.75491,
+      "distance_excess": 0.75491,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": true,
+      "total": 1.65586,
+      "kl": 0.6736,
+      "cross_entropy": 1.36674,
+      "distance": 0.96374,
+      "distance_excess": 0.46374,
+      "floor": 0.84315
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.22541,
+      "kl": 0.22541,
+      "cross_entropy": 0.22541,
+      "distance": 0.20181,
+      "distance_excess": 0.20181,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.16022,
+      "kl": 0.16022,
+      "cross_entropy": 0.16022,
+      "distance": 0.14805,
+      "distance_excess": 0.14805,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.20141,
+      "kl": 0.20141,
+      "cross_entropy": 0.20141,
+      "distance": 0.18243,
+      "distance_excess": 0.18243,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.4287,
+      "kl": 0.4287,
+      "cross_entropy": 0.4287,
+      "distance": 0.34865,
+      "distance_excess": 0.34865,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.00917,
+      "kl": 0.00917,
+      "cross_entropy": 0.00917,
+      "distance": 0.00913,
+      "distance_excess": 0.00913,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.31771,
+      "kl": 0.31771,
+      "cross_entropy": 0.31771,
+      "distance": 0.54164,
+      "distance_excess": 0.54164,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 1.26612,
+      "kl": 1.26612,
+      "cross_entropy": 1.26612,
+      "distance": 1.49796,
+      "distance_excess": 1.49796,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.17974,
+      "kl": 0.17974,
+      "cross_entropy": 0.17974,
+      "distance": 0.16452,
+      "distance_excess": 0.16452,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.47408,
+      "kl": 0.47408,
+      "cross_entropy": 0.47408,
+      "distance": 0.37754,
+      "distance_excess": 0.37754,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 1.43126,
+      "kl": 1.43126,
+      "cross_entropy": 1.43126,
+      "distance": 1.15505,
+      "distance_excess": 1.15505,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 1.70141,
+      "kl": 1.70141,
+      "cross_entropy": 1.70141,
+      "distance": 0.81757,
+      "distance_excess": 0.81757,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.22541,
+      "kl": 0.22541,
+      "cross_entropy": 0.22541,
+      "distance": 0.20181,
+      "distance_excess": 0.20181,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 1.0963,
+      "kl": 1.0963,
+      "cross_entropy": 1.0963,
+      "distance": 0.84473,
+      "distance_excess": 0.84473,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.38687,
+      "kl": 0.38687,
+      "cross_entropy": 0.38687,
+      "distance": 0.32082,
+      "distance_excess": 0.32082,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 1.01155,
+      "kl": 1.01155,
+      "cross_entropy": 1.01155,
+      "distance": 0.70695,
+      "distance_excess": 0.70695,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.00338,
+      "kl": 0.00338,
+      "cross_entropy": 0.00338,
+      "distance": 0.00338,
+      "distance_excess": 0.00338,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.06197,
+      "kl": 0.06197,
+      "cross_entropy": 0.06197,
+      "distance": 0.06009,
+      "distance_excess": 0.06009,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.76355,
+      "kl": 0.76355,
+      "cross_entropy": 0.76355,
+      "distance": 1.05229,
+      "distance_excess": 1.05229,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.7576,
+      "kl": 0.7576,
+      "cross_entropy": 0.7576,
+      "distance": 0.53121,
+      "distance_excess": 0.53121,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.57594,
+      "kl": 0.57594,
+      "cross_entropy": 0.57594,
+      "distance": 0.43782,
+      "distance_excess": 0.43782,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.28115,
+      "kl": 0.28115,
+      "cross_entropy": 0.28115,
+      "distance": 0.24509,
+      "distance_excess": 0.24509,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 2.08408,
+      "kl": 2.08408,
+      "cross_entropy": 2.08408,
+      "distance": 1.89809,
+      "distance_excess": 1.89809,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.6326,
+      "kl": 0.6326,
+      "cross_entropy": 0.6326,
+      "distance": 0.46879,
+      "distance_excess": 0.46879,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.00593,
+      "kl": 0.00593,
+      "cross_entropy": 0.00593,
+      "distance": 0.00591,
+      "distance_excess": 0.00591,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.00593,
+      "kl": 0.00593,
+      "cross_entropy": 0.00593,
+      "distance": 0.00591,
+      "distance_excess": 0.00591,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.11282,
+      "kl": 0.11282,
+      "cross_entropy": 0.11282,
+      "distance": 0.10669,
+      "distance_excess": 0.10669,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.4287,
+      "kl": 0.4287,
+      "cross_entropy": 0.4287,
+      "distance": 0.34865,
+      "distance_excess": 0.34865,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.01815,
+      "kl": 0.01815,
+      "cross_entropy": 0.01815,
+      "distance": 0.01799,
+      "distance_excess": 0.01799,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.05989,
+      "kl": 0.05989,
+      "cross_entropy": 0.05989,
+      "distance": 0.13374,
+      "distance_excess": 0.13374,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 1.50193,
+      "kl": 1.50193,
+      "cross_entropy": 1.50193,
+      "distance": 0.7773,
+      "distance_excess": 0.7773,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.03039,
+      "kl": 0.03039,
+      "cross_entropy": 0.03039,
+      "distance": 0.03038,
+      "distance_excess": 0.03038,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.31326,
+      "kl": 0.31326,
+      "cross_entropy": 0.31326,
+      "distance": 0.26894,
+      "distance_excess": 0.26894,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 1.13687,
+      "kl": 1.13687,
+      "cross_entropy": 1.13687,
+      "distance": 0.67918,
+      "distance_excess": 0.67918,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 2.7995,
+      "kl": 2.7995,
+      "cross_entropy": 2.7995,
+      "distance": 2.4321,
+      "distance_excess": 2.4321,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.12693,
+      "kl": 0.12693,
+      "cross_entropy": 0.12693,
+      "distance": 0.1192,
+      "distance_excess": 0.1192,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.57594,
+      "kl": 0.57594,
+      "cross_entropy": 0.57594,
+      "distance": 0.43782,
+      "distance_excess": 0.43782,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.25193,
+      "kl": 0.25193,
+      "cross_entropy": 0.25193,
+      "distance": 0.2227,
+      "distance_excess": 0.2227,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": true,
+      "total": 0.99346,
+      "kl": 0.1017,
+      "cross_entropy": 0.79485,
+      "distance": 0.66204,
+      "distance_excess": 0.16204,
+      "floor": 0.84315
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00398,
+      "kl": 0.00398,
+      "cross_entropy": 0.00398,
+      "distance": 0.00589,
+      "distance_excess": 0.00589,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00405,
+      "kl": 0.00405,
+      "cross_entropy": 0.00405,
+      "distance": 0.00444,
+      "distance_excess": 0.00444,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.00071,
+      "kl": 0.00071,
+      "cross_entropy": 0.00071,
+      "distance": 0.00071,
+      "distance_excess": 0.00071,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.10021,
+      "kl": 0.10021,
+      "cross_entropy": 0.10021,
+      "distance": 0.09535,
+      "distance_excess": 0.09535,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.1012,
+      "kl": 0.1012,
+      "cross_entropy": 0.1012,
+      "distance": 0.19151,
+      "distance_excess": 0.19151,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.02325,
+      "kl": 0.02325,
+      "cross_entropy": 0.02325,
+      "distance": 0.02298,
+      "distance_excess": 0.02298,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 1.12274,
+      "kl": 1.12274,
+      "cross_entropy": 1.12274,
+      "distance": 1.04332,
+      "distance_excess": 1.04332,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.22466,
+      "kl": 0.22466,
+      "cross_entropy": 0.22466,
+      "distance": 0.41702,
+      "distance_excess": 0.41702,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.20623,
+      "kl": 0.20623,
+      "cross_entropy": 0.20623,
+      "distance": 0.18793,
+      "distance_excess": 0.18793,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": false,
+      "total": 2.02446,
+      "kl": 1.36176,
+      "cross_entropy": 1.36176,
+      "distance": 2.20898,
+      "distance_excess": 2.20898,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.08099,
+      "kl": 0.08099,
+      "cross_entropy": 0.08099,
+      "distance": 0.23027,
+      "distance_excess": 0.23027,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": false,
+      "total": 0.4148,
+      "kl": 0.32751,
+      "cross_entropy": 0.32751,
+      "distance": 0.29096,
+      "distance_excess": 0.29096,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 1.22344,
+      "kl": 1.22344,
+      "cross_entropy": 1.22344,
+      "distance": 0.70579,
+      "distance_excess": 0.70579,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 1.0537,
+      "kl": 1.0537,
+      "cross_entropy": 1.0537,
+      "distance": 0.65135,
+      "distance_excess": 0.65135,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.70722,
+      "kl": 0.70722,
+      "cross_entropy": 0.70722,
+      "distance": 0.53411,
+      "distance_excess": 0.53411,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00017,
+      "kl": 0.00017,
+      "cross_entropy": 0.00017,
+      "distance": 0.00032,
+      "distance_excess": 0.00032,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": true,
+      "total": 0.92962,
+      "kl": 0.05113,
+      "cross_entropy": 0.74428,
+      "distance": 0.6178,
+      "distance_excess": 0.1178,
+      "floor": 0.84315
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.1176,
+      "kl": 0.1176,
+      "cross_entropy": 0.1176,
+      "distance": 0.19548,
+      "distance_excess": 0.19548,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": false,
+      "total": 1.53278,
+      "kl": 1.31338,
+      "cross_entropy": 1.31338,
+      "distance": 0.73132,
+      "distance_excess": 0.73132,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": false,
+      "total": 0.50747,
+      "kl": 0.38452,
+      "cross_entropy": 0.38452,
+      "distance": 0.40982,
+      "distance_excess": 0.40982,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": false,
+      "total": 0.16531,
+      "kl": 0.09654,
+      "cross_entropy": 0.09654,
+      "distance": 0.22925,
+      "distance_excess": 0.22925,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 1.32881,
+      "kl": 1.32881,
+      "cross_entropy": 1.32881,
+      "distance": 0.7378,
+      "distance_excess": 0.7378,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.17357,
+      "kl": 0.17357,
+      "cross_entropy": 0.17357,
+      "distance": 0.17133,
+      "distance_excess": 0.17133,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.08894,
+      "kl": 0.08894,
+      "cross_entropy": 0.08894,
+      "distance": 0.0851,
+      "distance_excess": 0.0851,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 1.40615,
+      "kl": 1.40615,
+      "cross_entropy": 1.40615,
+      "distance": 0.75491,
+      "distance_excess": 0.75491,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.83358,
+      "kl": 0.83358,
+      "cross_entropy": 0.83358,
+      "distance": 1.51351,
+      "distance_excess": 1.51351,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.00026,
+      "kl": 0.00026,
+      "cross_entropy": 0.00026,
+      "distance": 0.00026,
+      "distance_excess": 0.00026,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 5.6286,
+      "kl": 5.6286,
+      "cross_entropy": 5.6286,
+      "distance": 0.99641,
+      "distance_excess": 0.99641,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.0008,
+      "kl": 0.0008,
+      "cross_entropy": 0.0008,
+      "distance": 0.0008,
+      "distance_excess": 0.0008,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.00523,
+      "kl": 0.00523,
+      "cross_entropy": 0.00523,
+      "distance": 0.00522,
+      "distance_excess": 0.00522,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.25193,
+      "kl": 0.25193,
+      "cross_entropy": 0.25193,
+      "distance": 0.2227,
+      "distance_excess": 0.2227,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.043,
+      "kl": 0.043,
+      "cross_entropy": 0.043,
+      "distance": 0.04209,
+      "distance_excess": 0.04209,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.10021,
+      "kl": 0.10021,
+      "cross_entropy": 0.10021,
+      "distance": 0.09535,
+      "distance_excess": 0.09535,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.06197,
+      "kl": 0.06197,
+      "cross_entropy": 0.06197,
+      "distance": 0.06009,
+      "distance_excess": 0.06009,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.043,
+      "kl": 0.043,
+      "cross_entropy": 0.043,
+      "distance": 0.04209,
+      "distance_excess": 0.04209,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.17974,
+      "kl": 0.17974,
+      "cross_entropy": 0.17974,
+      "distance": 0.16452,
+      "distance_excess": 0.16452,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00579,
+      "kl": 0.00579,
+      "cross_entropy": 0.00579,
+      "distance": 0.0114,
+      "distance_excess": 0.0114,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.34844,
+      "kl": 0.34844,
+      "cross_entropy": 0.34844,
+      "distance": 0.29421,
+      "distance_excess": 0.29421,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.17974,
+      "kl": 0.17974,
+      "cross_entropy": 0.17974,
+      "distance": 0.16452,
+      "distance_excess": 0.16452,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.07889,
+      "kl": 0.07889,
+      "cross_entropy": 0.07889,
+      "distance": 0.07586,
+      "distance_excess": 0.07586,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 1.80474,
+      "kl": 1.80474,
+      "cross_entropy": 1.80474,
+      "distance": 0.83548,
+      "distance_excess": 0.83548,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.06732,
+      "kl": 0.06732,
+      "cross_entropy": 0.06732,
+      "distance": 0.16584,
+      "distance_excess": 0.16584,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.52312,
+      "kl": 0.52312,
+      "cross_entropy": 0.52312,
+      "distance": 0.40733,
+      "distance_excess": 0.40733,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.12693,
+      "kl": 0.12693,
+      "cross_entropy": 0.12693,
+      "distance": 0.1192,
+      "distance_excess": 0.1192,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.35098,
+      "kl": 0.35098,
+      "cross_entropy": 0.35098,
+      "distance": 0.66204,
+      "distance_excess": 0.66204,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.52312,
+      "kl": 0.52312,
+      "cross_entropy": 0.52312,
+      "distance": 0.40733,
+      "distance_excess": 0.40733,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.4287,
+      "kl": 0.4287,
+      "cross_entropy": 0.4287,
+      "distance": 0.34865,
+      "distance_excess": 0.34865,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": true,
+      "total": 1.09248,
+      "kl": 0.2406,
+      "cross_entropy": 0.93374,
+      "distance": 0.52911,
+      "distance_excess": 0.02911,
+      "floor": 0.84315
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 1.51012,
+      "kl": 1.51012,
+      "cross_entropy": 1.51012,
+      "distance": 1.72359,
+      "distance_excess": 1.72359,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.06994,
+      "kl": 0.06994,
+      "cross_entropy": 0.06994,
+      "distance": 0.06755,
+      "distance_excess": 0.06755,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.12443,
+      "kl": 0.12443,
+      "cross_entropy": 0.12443,
+      "distance": 0.22883,
+      "distance_excess": 0.22883,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.10021,
+      "kl": 0.10021,
+      "cross_entropy": 0.10021,
+      "distance": 0.09535,
+      "distance_excess": 0.09535,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.10021,
+      "kl": 0.10021,
+      "cross_entropy": 0.10021,
+      "distance": 0.09535,
+      "distance_excess": 0.09535,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.31326,
+      "kl": 0.31326,
+      "cross_entropy": 0.31326,
+      "distance": 0.26894,
+      "distance_excess": 0.26894,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.69315,
+      "kl": 0.69315,
+      "cross_entropy": 0.69315,
+      "distance": 0.5,
+      "distance_excess": 0.5,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.6326,
+      "kl": 0.6326,
+      "cross_entropy": 0.6326,
+      "distance": 0.46879,
+      "distance_excess": 0.46879,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.06197,
+      "kl": 0.06197,
+      "cross_entropy": 0.06197,
+      "distance": 0.06009,
+      "distance_excess": 0.06009,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.25193,
+      "kl": 0.25193,
+      "cross_entropy": 0.25193,
+      "distance": 0.2227,
+      "distance_excess": 0.2227,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.34844,
+      "kl": 0.34844,
+      "cross_entropy": 0.34844,
+      "distance": 0.29421,
+      "distance_excess": 0.29421,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.06197,
+      "kl": 0.06197,
+      "cross_entropy": 0.06197,
+      "distance": 0.06009,
+      "distance_excess": 0.06009,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.51081,
+      "kl": 0.51081,
+      "cross_entropy": 0.51081,
+      "distance": 0.56585,
+      "distance_excess": 0.56585,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 1.0897,
+      "kl": 1.0897,
+      "cross_entropy": 1.0897,
+      "distance": 1.07,
+      "distance_excess": 1.07,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": false,
+      "total": 5.11783,
+      "kl": 3.96539,
+      "cross_entropy": 3.96539,
+      "distance": 3.84147,
+      "distance_excess": 3.84147,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 2.25306,
+      "kl": 2.25306,
+      "cross_entropy": 2.25306,
+      "distance": 1.18055,
+      "distance_excess": 1.18055,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.08107,
+      "kl": 0.08107,
+      "cross_entropy": 0.08107,
+      "distance": 0.07965,
+      "distance_excess": 0.07965,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 4.81599,
+      "kl": 4.81599,
+      "cross_entropy": 4.81599,
+      "distance": 1.57709,
+      "distance_excess": 1.57709,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": true,
+      "total": 1.59401,
+      "kl": 0.51137,
+      "cross_entropy": 1.20452,
+      "distance": 1.29831,
+      "distance_excess": 0.79831,
+      "floor": 0.84315
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 2.27829,
+      "kl": 2.27829,
+      "cross_entropy": 2.27829,
+      "distance": 0.95969,
+      "distance_excess": 0.95969,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.4287,
+      "kl": 0.4287,
+      "cross_entropy": 0.4287,
+      "distance": 0.34865,
+      "distance_excess": 0.34865,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.06197,
+      "kl": 0.06197,
+      "cross_entropy": 0.06197,
+      "distance": 0.06009,
+      "distance_excess": 0.06009,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.16022,
+      "kl": 0.16022,
+      "cross_entropy": 0.16022,
+      "distance": 0.14805,
+      "distance_excess": 0.14805,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.0066,
+      "kl": 0.0066,
+      "cross_entropy": 0.0066,
+      "distance": 0.01249,
+      "distance_excess": 0.01249,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00705,
+      "kl": 0.00705,
+      "cross_entropy": 0.00705,
+      "distance": 0.00788,
+      "distance_excess": 0.00788,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00123,
+      "kl": 0.00123,
+      "cross_entropy": 0.00123,
+      "distance": 0.00141,
+      "distance_excess": 0.00141,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.63075,
+      "kl": 0.63075,
+      "cross_entropy": 0.63075,
+      "distance": 1.11076,
+      "distance_excess": 1.11076,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.34844,
+      "kl": 0.34844,
+      "cross_entropy": 0.34844,
+      "distance": 0.29421,
+      "distance_excess": 0.29421,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 1.18615,
+      "kl": 1.18615,
+      "cross_entropy": 1.18615,
+      "distance": 0.74144,
+      "distance_excess": 0.74144,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.00861,
+      "kl": 0.00861,
+      "cross_entropy": 0.00861,
+      "distance": 0.00858,
+      "distance_excess": 0.00858,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.49522,
+      "kl": 0.49522,
+      "cross_entropy": 0.49522,
+      "distance": 0.4049,
+      "distance_excess": 0.4049,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.04067,
+      "kl": 0.04067,
+      "cross_entropy": 0.04067,
+      "distance": 0.05215,
+      "distance_excess": 0.05215,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.0028,
+      "kl": 0.0028,
+      "cross_entropy": 0.0028,
+      "distance": 0.0028,
+      "distance_excess": 0.0028,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 1.60041,
+      "kl": 1.60041,
+      "cross_entropy": 1.60041,
+      "distance": 0.79819,
+      "distance_excess": 0.79819,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00645,
+      "kl": 0.00645,
+      "cross_entropy": 0.00645,
+      "distance": 0.00905,
+      "distance_excess": 0.00905,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": true,
+      "total": 1.26789,
+      "kl": 0.315,
+      "cross_entropy": 1.00815,
+      "distance": 0.86579,
+      "distance_excess": 0.36579,
+      "floor": 0.84315
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.01053,
+      "kl": 0.01053,
+      "cross_entropy": 0.01053,
+      "distance": 0.01566,
+      "distance_excess": 0.01566,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.35777,
+      "kl": 0.35777,
+      "cross_entropy": 0.35777,
+      "distance": 0.31357,
+      "distance_excess": 0.31357,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.01063,
+      "kl": 0.01063,
+      "cross_entropy": 0.01063,
+      "distance": 0.01335,
+      "distance_excess": 0.01335,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.00193,
+      "kl": 0.00193,
+      "cross_entropy": 0.00193,
+      "distance": 0.00193,
+      "distance_excess": 0.00193,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.06197,
+      "kl": 0.06197,
+      "cross_entropy": 0.06197,
+      "distance": 0.06009,
+      "distance_excess": 0.06009,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 4.14103,
+      "kl": 4.14103,
+      "cross_entropy": 4.14103,
+      "distance": 0.98409,
+      "distance_excess": 0.98409,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": false,
+      "total": 2.18708,
+      "kl": 1.45007,
+      "cross_entropy": 1.45007,
+      "distance": 2.4567,
+      "distance_excess": 2.4567,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00387,
+      "kl": 0.00387,
+      "cross_entropy": 0.00387,
+      "distance": 0.00851,
+      "distance_excess": 0.00851,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.04859,
+      "kl": 0.04859,
+      "cross_entropy": 0.04859,
+      "distance": 0.04743,
+      "distance_excess": 0.04743,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.10021,
+      "kl": 0.10021,
+      "cross_entropy": 0.10021,
+      "distance": 0.09535,
+      "distance_excess": 0.09535,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.38687,
+      "kl": 0.38687,
+      "cross_entropy": 0.38687,
+      "distance": 0.32082,
+      "distance_excess": 0.32082,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00376,
+      "kl": 0.00376,
+      "cross_entropy": 0.00376,
+      "distance": 0.00393,
+      "distance_excess": 0.00393,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": false,
+      "total": 0.19491,
+      "kl": 0.14949,
+      "cross_entropy": 0.14949,
+      "distance": 0.15139,
+      "distance_excess": 0.15139,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.01883,
+      "kl": 0.01883,
+      "cross_entropy": 0.01883,
+      "distance": 0.02219,
+      "distance_excess": 0.02219,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00168,
+      "kl": 0.00168,
+      "cross_entropy": 0.00168,
+      "distance": 0.00266,
+      "distance_excess": 0.00266,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 1.3317,
+      "kl": 1.3317,
+      "cross_entropy": 1.3317,
+      "distance": 0.89611,
+      "distance_excess": 0.89611,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.14268,
+      "kl": 0.14268,
+      "cross_entropy": 0.14268,
+      "distance": 0.13296,
+      "distance_excess": 0.13296,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.58548,
+      "kl": 0.58548,
+      "cross_entropy": 0.58548,
+      "distance": 0.87683,
+      "distance_excess": 0.87683,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.00517,
+      "kl": 0.00517,
+      "cross_entropy": 0.00517,
+      "distance": 0.00832,
+      "distance_excess": 0.00832,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.28115,
+      "kl": 0.28115,
+      "cross_entropy": 0.28115,
+      "distance": 0.24509,
+      "distance_excess": 0.24509,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.22658,
+      "kl": 0.22658,
+      "cross_entropy": 0.22658,
+      "distance": 0.20352,
+      "distance_excess": 0.20352,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.97408,
+      "kl": 0.97408,
+      "cross_entropy": 0.97408,
+      "distance": 0.62246,
+      "distance_excess": 0.62246,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 0.74854,
+      "kl": 0.74854,
+      "cross_entropy": 0.74854,
+      "distance": 0.84836,
+      "distance_excess": 0.84836,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.47408,
+      "kl": 0.47408,
+      "cross_entropy": 0.47408,
+      "distance": 0.37754,
+      "distance_excess": 0.37754,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.20141,
+      "kl": 0.20141,
+      "cross_entropy": 0.20141,
+      "distance": 0.18243,
+      "distance_excess": 0.18243,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.08894,
+      "kl": 0.08894,
+      "cross_entropy": 0.08894,
+      "distance": 0.0851,
+      "distance_excess": 0.0851,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.12693,
+      "kl": 0.12693,
+      "cross_entropy": 0.12693,
+      "distance": 0.1192,
+      "distance_excess": 0.1192,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.08894,
+      "kl": 0.08894,
+      "cross_entropy": 0.08894,
+      "distance": 0.0851,
+      "distance_excess": 0.0851,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 1.22344,
+      "kl": 1.22344,
+      "cross_entropy": 1.22344,
+      "distance": 0.70579,
+      "distance_excess": 0.70579,
+      "floor": 0.0
+    },
+    {
+      "qtype": "choice",
+      "soft": false,
+      "total": 3.174,
+      "kl": 3.174,
+      "cross_entropy": 3.174,
+      "distance": 0.96513,
+      "distance_excess": 0.96513,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 1.80474,
+      "kl": 1.80474,
+      "cross_entropy": 1.80474,
+      "distance": 0.83548,
+      "distance_excess": 0.83548,
+      "floor": 0.0
+    },
+    {
+      "qtype": "score",
+      "soft": false,
+      "total": 1.67312,
+      "kl": 1.3348,
+      "cross_entropy": 1.3348,
+      "distance": 1.12771,
+      "distance_excess": 1.12771,
+      "floor": 0.0
+    },
+    {
+      "qtype": "noul",
+      "soft": false,
+      "total": 0.11282,
+      "kl": 0.11282,
+      "cross_entropy": 0.11282,
+      "distance": 0.10669,
+      "distance_excess": 0.10669,
+      "floor": 0.0
+    }
+  ],
+  "loader": {
+    "prequantized": true,
+    "targets": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ],
+    "unsloth_import_error": null,
+    "dtype_fix": {
+      "linear4bit": 352,
+      "quant_states": 0,
+      "params_cast": 498
+    },
+    "path": "unsloth",
+    "quantized": true,
+    "layout": {
+      "expected": 256,
+      "adapted": 256,
+      "attention_layers": 16,
+      "mlp_layers": 64
+    }
+  },
+  "vram_peak_bytes": 22532260864.0,
+  "vram_peak_gib": 20.985,
+  "kernels": {
+    "packages": {
+      "fla": true,
+      "causal_conv1d": false,
+      "triton": true,
+      "triton_kernels": false,
+      "kernels": false
+    },
+    "gated_deltanet": {
+      "chunk_gated_delta_rule": "accelerated",
+      "fused_recurrent_gated_delta_rule": "accelerated",
+      "causal_conv1d_fn": "torch",
+      "causal_conv1d_update": "torch"
+    },
+    "fast_path_all": false,
+    "attention": "sdpa",
+    "notes": [
+      "2 of 4 gated-deltanet kernels are accelerated, but transformers reports is_fast_path_available=False because it is an all() over the four; the 'falling back to torch' warning in the log understates what is active",
+      "causal-conv1d has no Windows wheel and fails to build; its two functions use the torch path (a 4-wide depthwise convolution, the cheap part)",
+      "triton_kernels requires triton>=3.8, which has no Windows wheel; MXFP4 models therefore dequantize to bf16 and will not fit on a 24 GB card"
+    ]
+  },
+  "logit_precision": "fp32",
+  "adapter": "C:\\Users\\yusuf\\Documents\\Github\\s1decide\\results\\smoke-27b-longest\\adapter",
+  "adapter_layout": {
+    "expected": 256,
+    "adapted": 256,
+    "attention_layers": 16,
+    "mlp_layers": 64
+  },
+  "max_row_tokens": 843,
+  "max_row_tokens_backfilled": "recomputed 2026-09-23 from the run's deterministic selection; the field post-dates the run"
+}

@@ -131,3 +131,18 @@ def test_a_config_key_the_trainer_does_not_implement_is_refused(tmp_path) -> Non
 
     with pytest.raises(RuntimeError, match="sample_budget"):
         train(TrainConfig(extra={"sample_budget": 30000}), root=tmp_path)
+
+
+def test_longest_selection_takes_the_longest_rows_first() -> None:
+    from train.sft_lora import longest_examples
+
+    examples = [{"input_ids": [0] * n, "id": n} for n in (5, 50, 20, 50, 1)]
+    picked = longest_examples(examples, 3)
+    assert [len(e["input_ids"]) for e in picked] == [50, 50, 20]
+
+
+def test_an_unknown_selection_is_refused(tmp_path) -> None:
+    from train.sft_lora import train
+
+    with pytest.raises(ValueError, match="random-ish"):
+        train(TrainConfig(selection="random-ish"), root=tmp_path)

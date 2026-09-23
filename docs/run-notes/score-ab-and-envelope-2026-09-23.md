@@ -92,3 +92,44 @@ corpus goes to 843. S1 will meet rows twice as long, and none of these peaks cov
 measurement that decides rank for S1 is one more run, one knob against attempt 3: the same
 budget over the **longest** rows of the corpus, at rank 8. The profile's `training_envelope`
 points at the JSON above, so that run extends it rather than replacing it.
+
+## Follow-up, same day — the controlled change and the long-row envelope
+
+### Learning rate 1e-4 → 2e-5, nothing else changed
+
+`train/configs/smoke_27b_lr2e5.yaml` differs from attempt 3 only in `learning_rate`; the same 468
+rows were rescored (`results/score-ab-lr2e5-2026-09-23/`). The 1e-4 run was rescored from its
+stored logits to add the level means (`--rescore`; no other field changed).
+
+| | zero-shot | lr 1e-4 | lr 2e-5 |
+|---|---|---|---|
+| accuracy | 0.592 | 0.521 | **0.645** |
+| QWK | 0.811 | 0.764 | **0.841** |
+| MAE, argmax | 0.483 | 0.624 | **0.419** |
+| KL, mean | 0.741 | 0.764 | **0.644** |
+| ECE | **0.051** | 0.101 | 0.076 |
+| BSS vs base rate | 0.323 | 0.226 | **0.387** |
+| mean predicted level (target 1.363) | 1.043 | 1.641 | 1.150 |
+| rows whose KL fell | — | 40.6% | **76.3%** |
+| right→wrong / wrong→right | — | 97 / 64 | **17 / 42** |
+
+**The step size was the cause.** At 2e-5 the prior does not overshoot, and every accuracy and
+proper-score metric beats zero-shot. ECE is the exception: mean confidence rose from 0.60 to
+0.67, and raw confidence is what S2's per-bucket temperature is fitted to correct. λ was not
+changed and needs no separate run on this evidence.
+
+### The longest rows (`smoke-27b-longest`)
+
+`selection: longest` takes the 200 longest rows of the corpus as rendered — 376 to 843 tokens,
+including the corpus maximum — at rank 8, one knob against attempt 3.
+
+| run | max row tokens | rank | peak VRAM |
+|---|---|---|---|
+| attempt 3 (stratified) | 412 | 8 | 20.853 GiB |
+| **longest rows** | **843** | 8 | **20.985 GiB** |
+| rank 16 (stratified) | 412 | 16 | 21.552 GiB |
+
+Doubling the longest row adds 0.13 GiB at rank 8. **S1 uses rank 8; rank 16 is deferred to v0.2
+on an H100** — both recorded in `results/memory-envelope-2026-09-23/envelope.json`, which the
+3090 hardware profile points at. Training summaries now record `max_row_tokens` (backfilled for
+these four runs from their deterministic selections, and marked as such).

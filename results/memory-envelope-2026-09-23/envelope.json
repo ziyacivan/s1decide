@@ -9,6 +9,7 @@
       "batch_size": 1,
       "grad_accum": 1,
       "rows": 200,
+      "max_row_tokens": 412,
       "adapter_modules": 256,
       "loader": "unsloth",
       "vram_peak_gib": 20.853,
@@ -29,6 +30,7 @@
       "batch_size": 1,
       "grad_accum": 1,
       "rows": 200,
+      "max_row_tokens": 412,
       "adapter_modules": 256,
       "loader": "unsloth",
       "vram_peak_gib": 20.853,
@@ -49,6 +51,7 @@
       "batch_size": 1,
       "grad_accum": 1,
       "rows": 200,
+      "max_row_tokens": 412,
       "adapter_modules": 256,
       "loader": "unsloth",
       "vram_peak_gib": 21.552,
@@ -60,6 +63,31 @@
         "causal_conv1d_fn": "torch",
         "causal_conv1d_update": "torch"
       }
+    },
+    {
+      "run_id": "smoke-27b-longest",
+      "model": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+      "max_seq_len": 1024,
+      "rank": 8,
+      "batch_size": 1,
+      "grad_accum": 1,
+      "rows": 200,
+      "max_row_tokens": 843,
+      "adapter_modules": 256,
+      "loader": "unsloth",
+      "vram_peak_gib": 20.985,
+      "tokens_per_second": 202.6,
+      "seconds_per_row": 2.3794,
+      "kernels": {
+        "chunk_gated_delta_rule": "accelerated",
+        "fused_recurrent_gated_delta_rule": "accelerated",
+        "causal_conv1d_fn": "torch",
+        "causal_conv1d_update": "torch"
+      }
     }
+  ],
+  "decisions": [
+    "S1 on the 3090 uses rank 8, seq 1024, batch 1; its worst case is the smoke-27b-longest point (the 200 longest corpus rows), which stays below the profile's measured-fine ceiling.",
+    "Rank 16 is deferred to v0.2 on an H100; see the smoke-27b-rank16 point, measured on short rows only."
   ]
 }
