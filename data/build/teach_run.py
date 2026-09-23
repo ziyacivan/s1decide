@@ -350,15 +350,20 @@ def release_teacher(*held: Any) -> int:
         Bytes still reserved afterwards, or 0 when there is no CUDA device. Returned rather than
         logged so a test can assert on it.
     """
-    import contextlib
     import gc
 
     for item in held:
         moved = False
         if hasattr(item, "to"):
-            with contextlib.suppress(Exception):
+            try:
                 item.to("meta")
                 moved = True
+            except Exception as exc:  # a 4-bit model refuses; fall through to dropping storage
+                print(
+                    f"  release: {type(item).__name__}.to('meta') refused "
+                    f"({type(exc).__name__}: {exc}); dropping parameter storage instead",
+                    file=sys.stderr,
+                )
         if not moved and hasattr(item, "parameters"):
             # A bitsandbytes 4-bit model refuses `.to()`, and the suppress above hid that: on
             # 2026-09-23 the 27B stayed resident and leg 2 died exactly as it had on 09-22.
@@ -377,18 +382,29 @@ def release_teacher(*held: Any) -> int:
     return int(torch.cuda.memory_reserved())
 
 
-def _drop_storage(module: Any) -> None:
-    """Point every parameter and buffer of ``module`` at an empty CPU tensor, freeing its memory."""
-    import contextlib
+def _drop_storage(module: Any) -> int:
+    """Point every parameter and buffer of ``module`` at an empty CPU tensor, freeing its memory.
 
+    Returns:
+        Tensors that could not be emptied; each is also reported on stderr with its error type.
+    """
     try:
         import torch
     except ImportError:  # pragma: no cover - torch is a declared dependency
-        return
+        return 0
     empty = torch.empty(0)
+    failed = 0
     for tensor in [*module.parameters(), *module.buffers()]:
-        with contextlib.suppress(Exception):
+        try:
             tensor.data = empty
+        except Exception as exc:  # reported, and counted so a caller can see memory was kept
+            failed += 1
+            print(
+                f"  release: could not empty a {tuple(tensor.shape)} tensor "
+                f"({type(exc).__name__}: {exc})",
+                file=sys.stderr,
+            )
+    return failed
 
 
 def pending_items(directory: Path, items: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:

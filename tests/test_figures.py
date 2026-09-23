@@ -105,3 +105,19 @@ def test_every_figure_records_the_digest_of_its_source(root) -> None:
     digests = json.loads((root / "docs" / "figures" / DIGESTS_FILE).read_text(encoding="utf-8"))
     assert set(digests) == {spec.name for spec in FIGURES}
     assert all(len(value) == 64 for value in digests.values())
+
+
+def test_a_git_failure_in_the_freshness_fallback_is_reported(tmp_path, monkeypatch, capsys) -> None:
+    import subprocess
+
+    from eval import readme_slots
+
+    path = tmp_path / "x.json"
+    path.write_text("{}", encoding="utf-8")
+
+    def boom(*args, **kwargs):
+        raise OSError("no git")
+
+    monkeypatch.setattr(subprocess, "run", boom)
+    assert readme_slots._changed_at(tmp_path, path) == path.stat().st_mtime
+    assert "OSError" in capsys.readouterr().err

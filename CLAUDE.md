@@ -242,6 +242,13 @@ Tasks that aren't implementable yet fail loudly with "not implemented".
   results produced under different configurations are reported as separate rows.
   `uv run task doctor` prints the active configuration; `docs/windows-setup.md`
   records which fast paths this machine can and cannot have.
+- **Anti-pattern: a swallowed exception.** No broad `except` (`Exception`, `BaseException`,
+  bare `except:`, `contextlib.suppress(Exception)`) that passes, skips or continues silently.
+  Every exception that is caught and not re-raised is logged with its **type** (stderr, or a
+  field in the run's JSON) and has a test that triggers it and asserts the log. Narrow handlers
+  that fall back to a default follow the same rule. Two bugs on 2026-09-23 hid behind one: a
+  `suppress(Exception)` around `model.to("meta")` hid that a 4-bit model refuses to move, and
+  the 27B stayed resident through a second night's OOM.
 - Commit messages: `area: imperative summary` (e.g. `engine: add KV broadcast for hf engine`).
   Small commits. Never amend a commit that has been pushed.
 - Language of code, docs, commits, model card: English.

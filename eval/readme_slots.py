@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -185,8 +186,11 @@ def _changed_at(root: Path, path: Path) -> float:
             ).stdout.strip()
             if stamp:
                 return float(stamp)
-    except (OSError, subprocess.CalledProcessError):
-        pass
+    except (OSError, subprocess.CalledProcessError) as exc:
+        print(
+            f"readme_slots: git unavailable for {rel} ({type(exc).__name__}); using its mtime",
+            file=sys.stderr,
+        )
     return path.stat().st_mtime
 
 

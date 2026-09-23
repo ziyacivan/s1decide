@@ -207,3 +207,39 @@ def test_vram_comes_back_from_a_module_that_refuses_to_move_while_still_referenc
 
     assert after <= before + 1024 * 1024, f"reserved {after} vs {before} before loading"
     del layer
+
+
+def test_a_refused_move_is_reported_with_its_error_type(capsys) -> None:
+    """CLAUDE.md: a swallowed exception is logged with its type. This one hid the 09-23 OOM."""
+
+    class Stubborn:
+        def to(self, device: str) -> None:
+            raise RuntimeError("cannot move a 4-bit model")
+
+    release_teacher(Stubborn())
+    assert "RuntimeError" in capsys.readouterr().err
+
+
+def test_a_tensor_that_cannot_be_emptied_is_counted_and_reported(capsys) -> None:
+    from data.build.teach_run import _drop_storage
+
+    class Locked:
+        shape = (4, 4)
+
+        @property
+        def data(self):
+            return None
+
+        @data.setter
+        def data(self, value):
+            raise PermissionError("pinned")
+
+    class Module:
+        def parameters(self):
+            return [Locked()]
+
+        def buffers(self):
+            return []
+
+    assert _drop_storage(Module()) == 1
+    assert "PermissionError" in capsys.readouterr().err
