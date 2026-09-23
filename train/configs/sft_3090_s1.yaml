@@ -1,0 +1,38 @@
+# S1 proper on the RTX 3090 — defined by a sample budget, not epochs (owner's decision,
+# 2026-09-23). Launch needs an explicit go after the before/after Score check and the memory
+# envelope have been reported (docs/phase-1-plan.md, "S1 proper on the 3090").
+#
+# The keys after `lambda_distance` are not implemented by train/sft_lora.py yet, and the trainer
+# refuses a config with keys it does not implement — so this file cannot be run until they are,
+# rather than running and silently ignoring its own budget and eval schedule.
+hardware: rtx3090_windows
+model: unsloth/Qwen3.8-27B-unsloth-bnb-4bit
+run_id: s1-3090
+load_in_4bit: true
+
+# Memory: batch 1 in memory, accumulation to an effective batch of 8.
+batch_size: 1
+grad_accum: 8
+# No training row is longer than 843 tokens (results/token-lengths-2026-09-23/lengths.json),
+# so 1024 skips nothing and a larger cap buys nothing at batch 1.
+max_seq_len: 1024
+
+# PROVISIONAL until the memory envelope reports rank 16 (item 2).
+rank: 8
+lora_alpha: 16
+# PROVISIONAL until the before/after Score check (item 1) says whether 1e-4 hurt Score.
+learning_rate: 1.0e-4
+lambda_distance: 0.3
+max_steps: null   # derived from the sample budget: 30,000 / 8 = 3,750 optimiser steps
+limit: null
+
+# --- not implemented yet ------------------------------------------------------------------
+# Rows drawn with replacement under data/processed/sampling_weights.json (family-balanced,
+# clipped at 3x), so the run sees the effective mix the manifest reports, not the raw one.
+sample_budget: 30000
+sampling: family_balanced
+# Every 5,000 sampled rows: save the adapter, and evaluate val in case-control mode with
+# per-primitive KL, accuracy, ECE and BSS (and the genuine Score rows through eval/score_ab.py).
+checkpoint_every_rows: 5000
+eval_every_rows: 5000
+eval_mode: case-control

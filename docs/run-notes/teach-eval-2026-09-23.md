@@ -109,8 +109,10 @@ Its 34.5 tokens/s counts only rows labelled in the timed invocation; run 1's 44.
 Per-batch time went from ~20 s to ~75 s at row ~530 and stayed there to the end. Not the data
 (trace length flat at ~225 tokens throughout, and the step is not at the val/test boundary at
 row 600), not throttling (1,965 MHz, 56 °C), not Discord (closing it changed nothing). The card
-was at 24.2 of 24 GiB from that point, so the most likely cause is the caching allocator retrying
-at the memory ceiling — not confirmed, as it cannot be read from outside the process. Speed does
+was at 24.2 of 24 GiB from that point. The hardware profile already records the cause on this
+card (ADR 0003): above ~22 GiB it slows with no error — 22.34 GiB ran 2.8x slower, 22.78 GiB
+6.4x — so this is the documented memory cliff rather than something new. (First guess in this
+note was the caching allocator; the measured cliff is the better explanation.) Speed does
 not change the labels. `summary.json` records the overall rate.
 
 ### An environment change during the run

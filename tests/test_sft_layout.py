@@ -124,3 +124,10 @@ def test_the_reread_floor_matches_loss_parts() -> None:
         parts = loss_parts(torch.zeros(1, 5), torch.tensor([target]), lambda_distance=0.3)
         assert row_floor(target, "score", 0.3) == pytest.approx(float(parts["floor"]))
     assert row_floor([0.0, 1.0], "noul", 0.3) == pytest.approx(0.0)
+
+
+def test_a_config_key_the_trainer_does_not_implement_is_refused(tmp_path) -> None:
+    from train.sft_lora import train
+
+    with pytest.raises(RuntimeError, match="sample_budget"):
+        train(TrainConfig(extra={"sample_budget": 30000}), root=tmp_path)

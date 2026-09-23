@@ -85,3 +85,22 @@ def test_profile_serialises_for_a_run_record() -> None:
     assert payload["name"] == "rtx3090_windows"
     assert payload["measured"] is True
     assert set(payload["peak_bytes_per_cache_byte"]) == {"True", "False"}
+
+
+def test_the_3090_training_envelope_is_measured_on_full_adapters() -> None:
+    """The profile's training numbers come from runs, and only from full ADR 0002 adapters."""
+    from s1decide.hardware import load_training_envelope
+    from s1decide.tasks import repo_root
+
+    envelope = load_training_envelope(PROFILES["rtx3090_windows"], repo_root())
+    assert envelope is not None and envelope["points"]
+    for point in envelope["points"]:
+        assert point["adapter_modules"] == 256
+        assert point["vram_peak_gib"] > 0 and point["tokens_per_second"] > 0
+
+
+def test_a_profile_without_an_envelope_has_none() -> None:
+    from s1decide.hardware import load_training_envelope
+    from s1decide.tasks import repo_root
+
+    assert load_training_envelope(PROFILES["h100_linux"], repo_root()) is None

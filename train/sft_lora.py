@@ -20,11 +20,11 @@ proves the pipeline in minutes, and only then does a 27B get GPU hours.
 
 from __future__ import annotations
 
-import contextlib
 import json
 import math
 import random
 import re
+import sys
 import time
 from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass, field
@@ -400,6 +400,14 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
     from s1decide.kernels import kernel_report
     from s1decide.tasks import repo_root
 
+    if config.extra:
+        # load_config keeps unknown keys in `extra`; training on a config whose sample budget,
+        # sampling or eval schedule is silently ignored would be a different run from the one
+        # the file describes.
+        raise RuntimeError(
+            f"config keys not implemented by this trainer: {sorted(config.extra)}; "
+            "refusing to run a config it would partly ignore"
+        )
     root = root or repo_root()
     out_dir = root / "results" / config.run_id
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -767,9 +775,14 @@ def _load_model(config: TrainConfig) -> tuple[Any, dict[str, Any]]:
     """
     import copy
 
-    # Unsloth first, so its kernels are bound before transformers builds anything.
-    with contextlib.suppress(Exception):  # Unsloth absent, or no accelerator to patch
+    # Unsloth first, so its kernels are bound before transformers builds anything. A failure
+    # here is recorded, not hidden: it is also why the Unsloth path below would then fail.
+    unsloth_import_error = None
+    try:
         import unsloth  # noqa: F401
+    except Exception as exc:  # Unsloth absent, or no accelerator to patch
+        unsloth_import_error = f"{type(exc).__name__}: {exc}"[:300]
+        print(f"  unsloth import failed ({unsloth_import_error})", file=sys.stderr)
     import torch
     from transformers import AutoConfig
 
@@ -777,7 +790,11 @@ def _load_model(config: TrainConfig) -> tuple[Any, dict[str, Any]]:
 
     hf_config = AutoConfig.from_pretrained(config.model, local_files_only=True)
     prequantized = is_prequantized(hf_config)
-    loader: dict[str, Any] = {"prequantized": prequantized, "targets": list(LORA_TARGETS)}
+    loader: dict[str, Any] = {
+        "prequantized": prequantized,
+        "targets": list(LORA_TARGETS),
+        "unsloth_import_error": unsloth_import_error,
+    }
 
     try:
         from unsloth import FastLanguageModel

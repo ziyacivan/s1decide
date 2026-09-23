@@ -17,7 +17,13 @@ import sys
 from dataclasses import dataclass, field
 from typing import Any
 
-__all__ = ["PROFILES", "HardwareProfile", "detect_profile", "get_profile"]
+__all__ = [
+    "PROFILES",
+    "HardwareProfile",
+    "detect_profile",
+    "get_profile",
+    "load_training_envelope",
+]
 
 
 @dataclass(frozen=True)
@@ -33,6 +39,9 @@ class HardwareProfile:
         measured: Whether these numbers come from a benchmark on this hardware or are an
             informed starting point awaiting one.
         note: Why the numbers are what they are.
+        training_envelope: Repository-relative path of the measured training envelope — peak
+            VRAM and throughput per (seq cap, rank, batch) — written by
+            ``eval/memory_envelope.py`` from the runs' own summaries. Empty when unmeasured.
     """
 
     name: str
@@ -41,6 +50,7 @@ class HardwareProfile:
     reuse_buffer: bool = False
     measured: bool = False
     note: str = ""
+    training_envelope: str = ""
 
     def to_json(self) -> dict[str, Any]:
         """Serialise into a run's ``meta``, so a result records what tuning produced it."""
@@ -52,6 +62,7 @@ class HardwareProfile:
             },
             "reuse_buffer": self.reuse_buffer,
             "measured": self.measured,
+            "training_envelope": self.training_envelope,
         }
 
 
@@ -70,6 +81,7 @@ PROFILES: dict[str, HardwareProfile] = {
         reuse_buffer=False,
         measured=True,
         note="ADR 0003 rows-per-pass sweep, Qwen3.8-27B nf4, 1,617-token prefix",
+        training_envelope="results/memory-envelope-2026-09-23/envelope.json",
     ),
     "h100_linux": HardwareProfile(
         name="h100_linux",
@@ -138,3 +150,25 @@ def detect_profile(device_name: str | None = None) -> HardwareProfile:
     if "h100" in lowered and sys.platform.startswith("linux"):
         return PROFILES["h100_linux"]
     return PROFILES["unknown"]
+
+
+def load_training_envelope(profile: HardwareProfile, root: Any) -> dict[str, Any] | None:
+    """The measured training envelope for ``profile``, or ``None`` if it has none.
+
+    Args:
+        profile: A hardware profile.
+        root: Repository root (a ``pathlib.Path``).
+
+    Returns:
+        The parsed ``envelope.json``.
+
+    Raises:
+        FileNotFoundError: If the profile names an envelope file that does not exist — a profile
+            claiming a measurement it cannot produce is an error, not a missing value.
+    """
+    import json
+
+    if not profile.training_envelope:
+        return None
+    path = root / profile.training_envelope
+    return json.loads(path.read_text(encoding="utf-8"))

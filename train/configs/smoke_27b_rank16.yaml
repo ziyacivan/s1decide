@@ -1,0 +1,21 @@
+# Memory envelope (2026-09-23): attempt 3 with ONE knob changed - rank 8 -> 16.
+# lora_alpha stays 16 on purpose: it scales updates, not memory, and changing it is a second knob.
+#
+# seq 1024, batch 1, rank 8 — the smallest configuration that still exercises the real model.
+# If this OOMs it is not retried with smaller numbers: the answer is that S1 proper needs the
+# h100_linux config, and sft_h100.yaml is ready for it.
+hardware: rtx3090_windows
+model: unsloth/Qwen3.8-27B-unsloth-bnb-4bit
+run_id: smoke-27b-rank16
+# One pass: steps = ceil(limit / batch_size), every selected row seen exactly once, so the
+# coverage table describes the rows actually trained on by construction.
+max_steps: null
+rank: 16
+lora_alpha: 16
+learning_rate: 1.0e-4
+batch_size: 1
+grad_accum: 1
+max_seq_len: 1024
+limit: 200
+lambda_distance: 0.3
+load_in_4bit: true
