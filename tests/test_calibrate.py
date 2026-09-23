@@ -12,6 +12,8 @@ from eval.metrics import Prediction, ece, summarize
 from s1decide.calibrate import (
     CALIBRATION_VERSION,
     Calibration,
+    CalibrationSet,
+    default_method,
     fit_calibration,
     fit_temperature,
     nll_at_temperature,
@@ -209,3 +211,92 @@ def test_option_count_bucket_is_shared_with_the_eval() -> None:
     from eval.metrics import option_count_bucket as eval_bucket
 
     assert eval_bucket is option_count_bucket
+
+
+@pytest.fixture
+def binary_predictions() -> list[Prediction]:
+    """Enough two-option rows to fit both a temperature and a bias vector."""
+    return synthetic(400, 2, true_temperature=1.7)
+
+
+# --- which method a quantization deploys -------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "quantization,expected",
+    [
+        ("q4_k_m", "vector"),
+        ("Q5_K_M", "vector"),
+        ("q8_0", "vector"),
+        ("qwen3.8-27b-gguf", "vector"),
+        ("nf4-bf16", "temperature"),
+        ("bf16", "temperature"),
+        ("int8", "temperature"),
+    ],
+)
+def test_gguf_artefacts_deploy_vector_scaling(quantization, expected) -> None:
+    """Measured, not preferred: moving nf4 -> Q4_K_M shifted every one of 300 rows' log-odds by
+    about -2.07 nats, and a temperature is monotone so it recovered exactly zero of the decision
+    agreement. A per-option bias is the parameter that can absorb a shift."""
+    assert default_method(quantization) == expected
+
+
+def test_a_gguf_fit_deploys_vector_when_there_is_data_for_one(binary_predictions) -> None:
+    fit = fit_calibration(binary_predictions, quantization="q4_k_m", primitive="noul")
+    assert fit.primitive == "noul"
+    assert fit.method == "vector"
+    assert fit.temperatures, "the temperature is still fitted and still reported"
+
+
+def test_a_gguf_fit_with_no_room_for_a_bias_says_so_instead_of_pretending(
+    binary_predictions,
+) -> None:
+    """Deploying "vector" with no fitted vector would fall back to the temperature on every
+    question while the file claimed otherwise."""
+    fit = fit_calibration(binary_predictions[:5], quantization="q4_k_m", min_count=1)
+    assert fit.method == "temperature"
+    assert "deployed" in fit.meta["vector_scaling"]
+
+
+def test_the_fit_records_that_its_target_was_labels(binary_predictions) -> None:
+    """nf4 is a diagnostic reference for measuring drift, not a judge of the right answer -- on
+    the Noul study it was the less accurate of the two runtimes."""
+    fit = fit_calibration(binary_predictions, quantization="nf4-bf16")
+    assert "never agreement with another runtime" in fit.meta["fit_target"]
+
+
+# --- one file, many fits -----------------------------------------------------------
+
+
+def test_a_set_keeps_one_fit_per_quantization_and_primitive(tmp_path, binary_predictions) -> None:
+    noul = fit_calibration(binary_predictions, quantization="q4_k_m", primitive="noul")
+    other = fit_calibration(binary_predictions, quantization="nf4-bf16", primitive="score")
+    saved = CalibrationSet().add(noul).add(other)
+    path = saved.save(tmp_path / "calibration.json")
+
+    loaded = CalibrationSet.load(path)
+    assert set(loaded.entries) == {"q4_k_m/noul", "nf4-bf16/score"}
+    assert loaded.get("q4_k_m", "noul").method == "vector"
+    assert loaded.get("nf4-bf16", "score").method == "temperature"
+
+
+def test_a_missing_primitive_falls_back_within_its_quantization(binary_predictions) -> None:
+    shared = fit_calibration(binary_predictions, quantization="q4_k_m", primitive="all")
+    assert CalibrationSet().add(shared).get("q4_k_m", "noul") is shared
+
+
+def test_a_missing_quantization_does_not_borrow_from_another(binary_predictions) -> None:
+    """The specific mistake the whole quantization study exists to prevent. An identity fit is
+    honestly uncalibrated; a borrowed one is quietly wrong by about two nats."""
+    fit = fit_calibration(binary_predictions, quantization="q4_k_m", primitive="noul")
+    got = CalibrationSet().add(fit).get("nf4-bf16", "noul")
+    assert got.quantization == "nf4-bf16"
+    assert got.temperatures == {} and got.default == 1.0
+
+
+def test_an_older_single_fit_file_still_loads(tmp_path, binary_predictions) -> None:
+    """Files written before the set schema hold one fit and no primitive; they are still valid."""
+    single = fit_calibration(binary_predictions, quantization="nf4-bf16")
+    path = single.save(tmp_path / "calibration.json")
+    loaded = CalibrationSet.load(path)
+    assert set(loaded.entries) == {"nf4-bf16/all"}

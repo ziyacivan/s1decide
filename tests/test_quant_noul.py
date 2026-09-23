@@ -91,3 +91,36 @@ def test_the_sample_is_deterministic() -> None:
     assert [r["id"] for r in sample_noul_rows(pool, 40)] == [
         r["id"] for r in sample_noul_rows(pool, 40)
     ]
+
+
+def test_the_committed_logits_are_not_quantised_by_the_compute_dtype() -> None:
+    """A resolution floor under every calibration number, guarded on the committed artefact.
+
+    `HFEngine` used to run the output head in bf16 and cast afterwards, which widens the type
+    without restoring the value: at the magnitude a logit sits at, bf16's spacing is 0.125, so
+    the 300 `Noul` rows produced only 84 distinct probabilities and every log-odds landed on an
+    exact multiple of an eighth. llama.cpp's fp32 produced 300. An equal-mass ECE bin narrower
+    than that floor measures the dtype, not the model.
+    """
+    import json
+    import math
+    from pathlib import Path
+
+    from s1decide.tasks import repo_root
+
+    saved = Path(repo_root()) / "results/quant-noul/hf.json"
+    if not saved.is_file():
+        pytest.skip("no committed quant-noul run")
+    p = json.loads(saved.read_text(encoding="utf-8"))["p_yes"]
+    assert len(p) == 300
+    assert len(set(p)) > 250, (
+        f"only {len(set(p))} distinct probabilities in 300 rows; the answer-position logits are "
+        "being rounded by the compute dtype again"
+    )
+
+    def log_odds(x: float) -> float:
+        x = min(max(x, 1e-9), 1 - 1e-9)
+        return math.log(x / (1 - x))
+
+    on_eighths = sum(1 for v in map(log_odds, p) if abs(v * 8 - round(v * 8)) < 1e-3)
+    assert on_eighths < 30, f"{on_eighths} of 300 log-odds sit on exact eighths — that is bf16"

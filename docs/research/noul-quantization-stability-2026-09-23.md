@@ -23,22 +23,22 @@ calibration.**
 
 | | value |
 |---|---|
-| decisions agreeing (p ≥ 0.5) | **88.7%** (266 of 300) |
+| decisions agreeing (p ≥ 0.5) | **89.3%** (268 of 300) |
 | — on stage-1 rows | 97.3% |
-| — on genuine `Noul` rows | 80.0% |
+| — on genuine `Noul` rows | 81.3% |
 | mean p(yes), nf4 | 0.295 |
 | mean p(yes), Q4_K_M | 0.169 |
 | mean shift | **−0.126** |
 | rows shifted down | **300 of 300** |
 | sign test | p ≈ 1e-90 |
-| largest single shift | 0.708 |
+| largest single shift | 0.697 |
 
-**The decision is more stable than `Score`'s label: 88.7% against 78%.** So a single masked logit
+**The decision is more stable than `Score`'s label: 89.3% against 78%.** So a single masked logit
 does survive quantization better than a judgement assembled over hundreds of decode steps, which
 is what the hypothesis predicted.
 
 **The probability is not stable at all.** Every one of the 300 rows moved in the same direction.
-In log-odds the shift is **−2.075 nats on average, median −2.047, standard deviation 0.727**, with
+In log-odds the shift is **−2.074 nats on average, median −2.043, standard deviation 0.727**, with
 a slope against the nf4 log-odds of only +0.12. That is not noise and it is not a temperature
 difference: it is close to a **constant per-option bias** on the yes-versus-no gap.
 
@@ -69,13 +69,13 @@ Scaling a logit by temperature is monotone, so it cannot move a two-option decis
 
 | correction applied to Q4_K_M | agreement with nf4's decision | mean \|Δp\| |
 |---|---|---|
-| none | 0.887 | 0.1257 |
-| temperature only, best `T` = 1.84 | **0.887** | 0.1013 |
-| per-option bias only, `b` = +2.075 | 0.930 | 0.0494 |
-| vector scaling, `T` = 1.18, `b` = +1.35 | **0.953** | 0.0376 |
+| none | 0.893 | 0.1256 |
+| temperature only, best `T` = 1.82 | **0.893** | 0.1014 |
+| per-option bias only, `b` = +2.074 | 0.923 | 0.0493 |
+| vector scaling, `T` = 1.17, `b` = +1.35 | **0.953** | 0.0382 |
 
-Temperature scaling buys **exactly zero** decision agreement. A per-option bias buys 4.3 points,
-and the two together buy 6.6 and bring the probabilities 3.3× closer.
+Temperature scaling buys **exactly zero** decision agreement. A per-option bias buys 3.0 points,
+and the two together buy 6.0 and bring the probabilities 3.3× closer.
 
 This is direct empirical support for a decision taken before it was measured: vector scaling
 (temperature plus per-option bias) is a second calibration method, and the quantization table
@@ -84,8 +84,12 @@ cost as irreducible when most of it is a shift that one extra parameter removes.
 
 ## What this does not say
 
+**nf4 is a diagnostic reference, not a judge.** It is the runtime our other measurements run
+on, and that is the whole of its authority. Every calibration fit targets the validation split's
+own labels; agreement with nf4 is a drift measurement and is never a fit target.
+
 **It does not say nf4 is right.** Against the true labels, Q4_K_M is the *better* of the two here
-— NLL 0.289 against 0.393, Brier 0.094 against 0.126. Correcting Q4_K_M toward nf4 makes it agree
+— NLL 0.289 against 0.393, Brier 0.094 against 0.127. Correcting Q4_K_M toward nf4 makes it agree
 more and score worse. "Agreement with nf4" and "correctness" are different targets and this
 experiment measures the first.
 
@@ -102,15 +106,21 @@ comparison of two artifacts, not of two algorithms in isolation.
 
 ## Side finding: our own logits arrive at bf16 resolution
 
-`HFEngine` returns logits in the model's compute dtype. At the magnitudes these sit at, bf16's
-spacing puts the yes-minus-no gap on multiples of 0.125, so 300 rows produced only **84 distinct
-probabilities** — the first ten log-odds are −1.0, 1.375, −0.625, −2.375, −2.0, −1.0, 3.5, −0.375,
-−1.125, 0.625, every one a multiple of an eighth. llama.cpp returns float32 and produced 300
-distinct values.
+**Found here, fixed before these numbers were taken.** `HFEngine` used to run the output head in
+the compute dtype and cast afterwards, which widens the type without restoring the value. At the
+magnitudes logits sit at, bf16's spacing puts the yes-minus-no gap on multiples of 0.125, so the
+first pass over these 300 rows produced only **84 distinct probabilities**, every log-odds an
+exact multiple of an eighth, against llama.cpp's 300.
 
-This does not explain the shift — 0.125 of granularity against a 2.075 offset — but it is a real
-constraint on fine-grained calibration work: an equal-mass ECE bin narrower than 0.125 in log-odds
-is measuring the dtype. Worth a look before the reliability diagrams are read too closely.
+`_label_logits` now projects only the allowed label rows of the head in fp32 — two for a `Noul`,
+at most twenty-six for a `Choice`, a few hundred multiply-adds — and the same 300 rows produce
+**300 distinct probabilities**, with 2 rather than 300 landing on an eighth. Casting the whole
+head to fp32 would allocate gigabytes to compute a vocabulary that is immediately discarded.
+
+It was never large enough to explain the shift — 0.125 of granularity against a 2.074 offset —
+but it was a resolution floor under every calibration number, and an equal-mass ECE bin narrower
+than it would have been measuring the dtype. The figures above are from the fp32 path; the bf16
+path gave 88.7% agreement against 89.3%, so it moved the third digit and nothing else.
 
 ## Consequences
 

@@ -2,13 +2,13 @@
   "n": 300,
   "first": "hf-nf4",
   "second": "llamacpp-q4_k_m",
-  "exact_agreement": 0.8866666666666667,
-  "disagreements": 34,
-  "mean_p_first": 0.2951940911122159,
+  "exact_agreement": 0.8933333333333333,
+  "disagreements": 32,
+  "mean_p_first": 0.2950782382212492,
   "mean_p_second": 0.1694507167381099,
-  "mean_shift": -0.12574337437410557,
-  "mean_absolute_shift": 0.12574337437410557,
-  "max_absolute_shift": 0.7076857759418785,
+  "mean_shift": -0.1256275214831398,
+  "mean_absolute_shift": 0.1256275214831398,
+  "max_absolute_shift": 0.6969736059886257,
   "shift_up": 0,
   "shift_down": 300,
   "sign_test_p": 9.818186930595453e-91,
@@ -21,7 +21,7 @@
     },
     "None": {
       "n": 150,
-      "exact_agreement": 0.8
+      "exact_agreement": 0.8133333333333334
     }
   }
 }

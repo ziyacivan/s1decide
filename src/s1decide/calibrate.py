@@ -30,12 +30,16 @@ import numpy as np
 __all__ = [
     "CALIBRATION_METHODS",
     "CALIBRATION_VERSION",
+    "GGUF_QUANTIZATION_MARKERS",
     "MIN_VECTOR_SAMPLES_PER_PARAMETER",
     "OPTION_COUNT_BUCKETS",
     "Calibration",
+    "CalibrationSet",
+    "default_method",
     "fit_calibration",
     "fit_temperature",
     "fit_vector_scaling",
+    "is_gguf",
     "nll_at_temperature",
     "nll_with_vector",
     "option_count_bucket",
@@ -348,8 +352,11 @@ class Calibration:
         vectors: Per **exact** option count, ``{"3": {"temperature": T, "bias": [...]}}`` —
             the vector-scaling fit. Keyed by count rather than bucket because a bias vector is
             indexed by position and a 3-option question has nothing to share with a 5-option one.
+        primitive: Which primitive this fit is for — ``"choice"``, ``"score"``, ``"noul"``, or
+            ``"all"`` for a fit shared across them. A bias vector is indexed by option position,
+            so a two-option `Noul` fit has nothing to lend a five-level `Score`.
         method: Which method :meth:`apply` uses. Both are always fitted and reported; this names
-            the one that is deployed.
+            the one that is deployed. :func:`default_method` chooses it from the quantization.
         meta: Provenance — model, dataset, split, run id, commit, fit NLL before and after.
         version: Schema version.
     """
@@ -358,6 +365,7 @@ class Calibration:
     default: float = 1.0
     quantization: str = "unknown"
     vectors: dict[str, dict[str, Any]] = field(default_factory=dict)
+    primitive: str = "all"
     method: str = "temperature"
     meta: dict[str, Any] = field(default_factory=dict)
     version: str = CALIBRATION_VERSION
@@ -429,6 +437,7 @@ class Calibration:
             default=self.default,
             quantization=self.quantization,
             vectors=dict(self.vectors),
+            primitive=self.primitive,
             method=method,
             meta=dict(self.meta),
             version=self.version,
@@ -457,6 +466,7 @@ class Calibration:
         return {
             "version": self.version,
             "quantization": self.quantization,
+            "primitive": self.primitive,
             "method": self.method,
             "default": self.default,
             "temperatures": dict(sorted(self.temperatures.items())),
@@ -474,12 +484,11 @@ class Calibration:
         return target
 
     @classmethod
-    def load(cls, path: str | Path) -> Calibration:
-        """Read a ``calibration.json`` written by :meth:`save`."""
-        raw = json.loads(Path(path).read_text(encoding="utf-8"))
+    def from_json(cls, raw: Mapping[str, Any]) -> Calibration:
+        """Build one fit from its serialised form."""
         if raw.get("version") != CALIBRATION_VERSION:
             raise ValueError(
-                f"calibration.json is version {raw.get('version')!r}, expected "
+                f"calibration entry is version {raw.get('version')!r}, expected "
                 f"{CALIBRATION_VERSION!r}"
             )
         return cls(
@@ -489,10 +498,16 @@ class Calibration:
             # Absent in files written before vector scaling existed; those load as
             # temperature-only rather than failing, which is what they are.
             vectors={str(k): dict(v) for k, v in raw.get("vectors", {}).items()},
+            primitive=str(raw.get("primitive", "all")),
             method=str(raw.get("method", "temperature")),
             meta=dict(raw.get("meta", {})),
             version=str(raw["version"]),
         )
+
+    @classmethod
+    def load(cls, path: str | Path) -> Calibration:
+        """Read a single-fit ``calibration.json`` written by :meth:`save`."""
+        return cls.from_json(json.loads(Path(path).read_text(encoding="utf-8")))
 
     @classmethod
     def identity(cls, quantization: str = "unknown") -> Calibration:
@@ -504,24 +519,36 @@ def fit_calibration(
     predictions: Sequence[Any],
     *,
     quantization: str,
+    primitive: str = "all",
     min_count: int = 30,
     meta: Mapping[str, Any] | None = None,
+    method: str | None = None,
 ) -> Calibration:
     """Fit one temperature per option-count bucket on a held-out split.
 
     Args:
         predictions: :class:`eval.metrics.Prediction` objects from the **validation** split.
             Fitting on the split you then report is self-evaluation, not calibration.
-        quantization: What the model was running as, recorded and later enforced.
+        quantization: What the model was running as, recorded and later enforced. It also
+            chooses the deployed method unless ``method`` overrides it — see
+            :func:`default_method`.
+        primitive: Which primitive these predictions are, recorded on the fit.
         min_count: Buckets with fewer predictions than this are left at the default rather
             than fitted to noise; which ones were skipped is recorded in ``meta``.
         meta: Extra provenance to record.
+        method: Force the deployed method instead of taking it from the quantization.
 
     Returns:
         The fitted :class:`Calibration`. **Both** methods are fitted: one temperature per
         option-count bucket, and one temperature-plus-bias per exact option count where there
-        is enough data. ``method`` deploys the temperature; the eval reports both so the
+        is enough data. Which one is *deployed* comes from the quantization — vector scaling for
+        a GGUF artefact, temperature otherwise — and the eval reports both either way, so the
         comparison is visible rather than assumed.
+
+        The fit target is always the validation split's own labels. It is never agreement with
+        another runtime: nf4 is a diagnostic reference for measuring drift, not a judge of what
+        the right answer is, and on the `Noul` study it was in fact the *less* accurate of the
+        two runtimes being compared.
     """
     by_bucket: dict[str, list[Any]] = {}
     for p in predictions:
@@ -576,17 +603,173 @@ def fit_calibration(
             "nll_vector": nll_with_vector(logits, labels, temperature, bias, weights),
         }
 
+    deployed = method or default_method(quantization)
+    if deployed == "vector" and not vectors:
+        # A GGUF row with too little data for any bias vector. Deploying "vector" would silently
+        # fall back to the temperature on every question; saying so is better than implying a fit
+        # that does not exist.
+        deployed = "temperature"
+        vector_info["deployed"] = "temperature: no option count had enough data for a bias vector"
+
     return Calibration(
         vectors=vectors,
         temperatures=temperatures,
         default=1.0,
         quantization=quantization,
+        primitive=primitive,
+        method=deployed,
         meta=dict(meta or {})
         | {
             "fitted_at": datetime.now(UTC).isoformat(timespec="seconds"),
             "n_predictions": len(predictions),
             "min_count": min_count,
+            "primitive": primitive,
+            "method_default_for_quantization": default_method(quantization),
+            "fit_target": "validation labels; never agreement with another runtime",
             "buckets": fit_info,
             "vector_scaling": vector_info,
         },
     )
+
+
+#: Quantization names that mean a GGUF artefact, matched case-insensitively as a substring.
+#:
+#: The list is the llama.cpp naming scheme rather than a guess: a k-quant, a legacy quant or an
+#: 8-bit dump all arrive through the same runtime.
+GGUF_QUANTIZATION_MARKERS: tuple[str, ...] = (
+    "gguf",
+    "q2_k",
+    "q3_k",
+    "q4_k",
+    "q5_k",
+    "q6_k",
+    "q8_0",
+    "q4_0",
+    "q4_1",
+    "q5_0",
+    "q5_1",
+)
+
+
+def is_gguf(quantization: str) -> bool:
+    """Whether a quantization label names a GGUF artefact.
+
+    Args:
+        quantization: A label such as ``"nf4-bf16"`` or ``"q4_k_m"``.
+
+    Returns:
+        True for GGUF artefacts.
+    """
+    lowered = quantization.lower()
+    return any(marker in lowered for marker in GGUF_QUANTIZATION_MARKERS)
+
+
+def default_method(quantization: str) -> str:
+    """Which calibration method a quantization deploys by default.
+
+    **GGUF artefacts deploy vector scaling; everything else deploys temperature.** Measured
+    reason, not a preference: switching from bitsandbytes nf4 to llama.cpp Q4_K_M moved the
+    yes-versus-no log-odds of all 300 rows of the `Noul` stability study in the same direction,
+    by a near-constant -2.075 nats. A temperature is monotone, so it cannot move a two-option
+    decision at all — the best temperature recovered 0.887 agreement against 0.887 uncorrected,
+    exactly nothing — while a per-option bias recovered 0.930 and the two together 0.953.
+
+    A shift that one extra parameter removes should not be reported as a cost of the
+    quantization. Temperature is still fitted and still reported beside it, because the
+    comparison is the point: it shows whether a row's cost is confidence or position.
+
+    See `docs/research/noul-quantization-offset-2026-09-23.md`.
+
+    Args:
+        quantization: The deployment quantization label.
+
+    Returns:
+        ``"vector"`` or ``"temperature"``.
+    """
+    return "vector" if is_gguf(quantization) else "temperature"
+
+
+@dataclass
+class CalibrationSet:
+    """Every fit a release carries, keyed by quantization and primitive.
+
+    One number per release is not enough. A quantization changes the logits, and a primitive
+    changes what a logit *is* — a `Noul` is two options and a `Score` is an ordered five, so a
+    bias vector fitted on one says nothing about the other. The quantization table reports a row
+    per quantization, and each row has to name the fit it deployed.
+
+    Attributes:
+        entries: ``{"q4_k_m/noul": Calibration, ...}``. Keys are ``quantization/primitive``.
+        version: Schema version.
+    """
+
+    entries: dict[str, Calibration] = field(default_factory=dict)
+    version: str = CALIBRATION_VERSION
+
+    @staticmethod
+    def key(quantization: str, primitive: str) -> str:
+        """The lookup key for a (quantization, primitive) pair."""
+        return f"{quantization}/{primitive}"
+
+    def add(self, calibration: Calibration) -> CalibrationSet:
+        """Record a fit under its own quantization and primitive. Returns self, for chaining."""
+        self.entries[self.key(calibration.quantization, calibration.primitive)] = calibration
+        return self
+
+    def get(self, quantization: str, primitive: str) -> Calibration:
+        """The fit for a pair, or the identity.
+
+        Falls back to a fit for the same quantization across all primitives before giving up, so
+        a release that fitted one calibration per quantization still resolves. It does **not**
+        fall back across quantizations: deploying a fit from a different quantization is the
+        specific mistake the whole study exists to prevent, and an identity calibration is
+        honestly uncalibrated where a borrowed one is quietly wrong.
+
+        Args:
+            quantization: Deployment quantization.
+            primitive: ``"choice"``, ``"score"`` or ``"noul"``.
+
+        Returns:
+            The fitted calibration, or an identity for this quantization.
+        """
+        exact = self.entries.get(self.key(quantization, primitive))
+        if exact is not None:
+            return exact
+        shared = self.entries.get(self.key(quantization, "all"))
+        if shared is not None:
+            return shared
+        return Calibration.identity(quantization)
+
+    def to_json(self) -> dict[str, Any]:
+        """Serialise every entry, each naming its own method and parameters."""
+        return {
+            "version": self.version,
+            "entries": {k: self.entries[k].to_json() for k in sorted(self.entries)},
+        }
+
+    def save(self, path: str | Path) -> Path:
+        """Write ``calibration.json``. Returns the path written."""
+        target = Path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(
+            json.dumps(self.to_json(), indent=2, sort_keys=False) + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+        return target
+
+    @classmethod
+    def load(cls, path: str | Path) -> CalibrationSet:
+        """Read a ``calibration.json``, in either the set form or the single-fit form.
+
+        A file written before this schema existed holds one fit and no primitive; it loads as a
+        single ``all`` entry rather than failing, because those files are still valid fits.
+        """
+        raw = json.loads(Path(path).read_text(encoding="utf-8"))
+        if "entries" not in raw:
+            single = Calibration.load(path)
+            return cls(entries={cls.key(single.quantization, single.primitive): single})
+        entries = {}
+        for key, payload in raw["entries"].items():
+            entries[key] = Calibration.from_json(payload)
+        return cls(entries=entries, version=str(raw.get("version", CALIBRATION_VERSION)))

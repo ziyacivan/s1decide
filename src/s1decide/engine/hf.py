@@ -552,19 +552,63 @@ class HFEngine:
                 past_key_values=cache,
                 use_cache=True,
             ).last_hidden_state
-            answer_logits = head(hidden[row_index, lengths - 1])
-        else:
-            out = self.model(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-                past_key_values=cache,
-                use_cache=True,
-            )
-            answer_logits = out.logits[row_index, lengths - 1]
+            return self._label_logits(hidden[row_index, lengths - 1], head, chunk_labels)
+
+        # Fallback for a model that does not expose trunk and head separately. The full-vocabulary
+        # logits have already been computed and rounded to the compute dtype, so the precision
+        # `_label_logits` preserves is not recoverable here; `.float()` widens the type without
+        # restoring the value.
+        out = self.model(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            past_key_values=cache,
+            use_cache=True,
+        )
+        answer_logits = out.logits[row_index, lengths - 1]
         return [
             tuple(answer_logits[i, list(ids)].float().tolist())
             for i, ids in enumerate(chunk_labels)
         ]
+
+    def _label_logits(
+        self, answer_hidden: Any, head: Any, chunk_labels: Sequence[Sequence[int]]
+    ) -> list[tuple[float, ...]]:
+        """Compute the allowed labels' logits in fp32, projecting only the rows we need.
+
+        Running the head in the compute dtype and casting afterwards does not preserve
+        precision, it only widens the type: the rounding already happened in the matmul's output.
+        At the magnitude a logit sits at — roughly 10 to 30 — bf16's spacing is 0.125, so a
+        two-option probability could only land on about eighty distinct values. Measured over the
+        300 `Noul` rows of the quantization study, the old path produced **84 distinct
+        probabilities** where llama.cpp's fp32 produced 300, and the yes-minus-no gap fell on
+        exact multiples of an eighth.
+
+        That is a resolution floor under every calibration number computed from these logits, and
+        an equal-mass ECE bin narrower than the floor measures the dtype rather than the model.
+
+        Only the label rows of the head are projected — two for a `Noul`, at most twenty-six for a
+        `Choice` — so the fp32 matmul is a few hundred multiply-adds per row. Casting the whole
+        head to fp32 would allocate gigabytes to compute a vocabulary we immediately discard.
+
+        Args:
+            answer_hidden: One hidden state per row, at the answer position.
+            head: The output embedding module.
+            chunk_labels: Allowed token ids per row.
+
+        Returns:
+            One tuple of logits per row, in label order.
+        """
+        weight = head.weight
+        bias = getattr(head, "bias", None)
+        hidden32 = answer_hidden.float()
+        out: list[tuple[float, ...]] = []
+        for i, ids in enumerate(chunk_labels):
+            index = torch.tensor(list(ids), device=weight.device)
+            values = hidden32[i] @ weight[index].float().T
+            if bias is not None:
+                values = values + bias[index].float()
+            out.append(tuple(values.tolist()))
+        return out
 
     def _sync(self) -> None:
         if self.device.type == "cuda":

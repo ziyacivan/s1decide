@@ -25,11 +25,21 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import random
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Any
 
-__all__ = ["RUN_DIR", "compare", "main", "sample_noul_rows", "score_hf", "score_llamacpp"]
+__all__ = [
+    "RUN_DIR",
+    "compare",
+    "draw_offset",
+    "main",
+    "sample_noul_rows",
+    "score_hf",
+    "score_llamacpp",
+]
 
 #: Where both passes and the comparison land.
 RUN_DIR = "results/quant-noul"
@@ -244,6 +254,63 @@ def compare(first: dict[str, Any], second: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def draw_offset(root: Path) -> Path:
+    """Draw the log-odds of one runtime against the other.
+
+    The figure is the argument. A cloud scattered about the diagonal would be quantization noise;
+    a cloud on a line parallel to the diagonal is a *shift*, and a shift is the one thing a
+    temperature cannot remove. Everything else in the note is that picture in numbers.
+
+    Args:
+        root: Repository root.
+
+    Returns:
+        The path written.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from eval.figures import DPI, FIGSIZE, _style
+
+    out_dir = root / "docs" / "figures"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    first = json.loads((root / RUN_DIR / "hf.json").read_text(encoding="utf-8"))
+    second = json.loads((root / RUN_DIR / "llamacpp.json").read_text(encoding="utf-8"))
+
+    def log_odds(p: float) -> float:
+        p = min(max(p, 1e-9), 1 - 1e-9)
+        return math.log(p / (1 - p))
+
+    x = [log_odds(p) for p in first["p_yes"]]
+    y = [log_odds(p) for p in second["p_yes"]]
+    offset = sum(b - a for a, b in zip(x, y, strict=True)) / len(x)
+
+    fig, ax = plt.subplots(figsize=FIGSIZE, constrained_layout=True)
+    lo = min(min(x), min(y)) - 0.5
+    hi = max(max(x), max(y)) + 0.5
+    ax.plot([lo, hi], [lo, hi], linewidth=1.2, linestyle="--", label="no change")
+    ax.plot(
+        [lo, hi],
+        [lo + offset, hi + offset],
+        linewidth=1.2,
+        label=f"constant shift of {offset:+.2f} nats",
+    )
+    ax.scatter(x, y, s=12, alpha=0.55, edgecolors="none", label=f"{len(x)} Noul questions")
+    ax.set_xlim(lo, hi)
+    ax.set_ylim(lo, hi)
+    ax.set_xlabel("log-odds of yes — bitsandbytes nf4")
+    ax.set_ylabel("log-odds of yes — llama.cpp Q4_K_M")
+    ax.set_title("Two 4-bit quantizations of one model, same questions")
+    ax.legend(loc="upper left", frameon=False, fontsize=9)
+    _style(ax)
+    path = out_dir / "quant-noul-offset.png"
+    fig.savefig(path, dpi=DPI)
+    plt.close(fig)
+    return path
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Command line for ``uv run task quant-noul``."""
     from s1decide.tasks import repo_root
@@ -251,6 +318,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="task quant-noul")
     parser.add_argument("--runtime", choices=("hf", "llamacpp"), help="score one runtime")
     parser.add_argument("--compare", action="store_true", help="compare two saved passes")
+    parser.add_argument("--figure", action="store_true", help="draw the log-odds figure")
     parser.add_argument("--split", default="test")
     parser.add_argument("--limit", type=int, default=300)
     parser.add_argument("--base-url", default="http://127.0.0.1:8080")
@@ -259,6 +327,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     root = repo_root()
     out_dir = root / RUN_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.figure:
+        print(f"wrote {draw_offset(root)}")
+        if not args.compare:
+            return 0
 
     if args.compare:
         first = json.loads((out_dir / "hf.json").read_text(encoding="utf-8"))
