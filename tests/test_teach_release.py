@@ -157,6 +157,13 @@ def test_a_finished_job_is_not_reloaded_and_its_summary_is_not_touched(
         raise AssertionError("a finished job must not load its teacher")
 
     monkeypatch.setattr(teach_run, "load_teacher", no_load)
+    import transformers
+
+    def no_tokenizer(*args, **kwargs):
+        raise AssertionError("a finished job must not load even a tokenizer")
+
+    # Independent of the local HF cache: CI has none, and a warm cache hid this once.
+    monkeypatch.setattr(transformers.AutoTokenizer, "from_pretrained", no_tokenizer)
     monkeypatch.setattr(teach_run, "check_resume_meta", lambda *a, **k: None)
     setting = next(iter(teach_run.TEACHERS.values()))
     assert teach_run.run(setting, items, directory, batch_size=4) == summary

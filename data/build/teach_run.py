@@ -592,6 +592,14 @@ def run(
         "kernels": kernel_report(),
         "started": datetime.now(UTC).isoformat(timespec="seconds"),
     }
+    if not pending_items(directory, items):
+        # Nothing to label: load nothing — not a 27B, not even a tokenizer — and touch neither
+        # meta, DONE nor the summary. The first relaunch of the eval chain did both, and rewrote
+        # leg 1's summary with a zero elapsed time.
+        existing = directory / "summary.json"
+        if existing.is_file():
+            return json.loads(existing.read_text(encoding="utf-8"))
+        return rebuild_summary(directory, setting)
     if setting.effort:
         # Before anything is generated, prove the template applies the effort the meta records.
         from transformers import AutoTokenizer
@@ -602,14 +610,6 @@ def run(
         )
     # Before the model load, not after: a refused resume should cost a second, not five minutes.
     check_resume_meta(directory, meta, force=force)
-    if not pending_items(directory, items):
-        # Nothing to label: do not load a 27B for zero rows, and do not touch meta, DONE or the
-        # summary. The first relaunch of the eval chain did both, and rewrote leg 1's summary
-        # with a zero elapsed time.
-        existing = directory / "summary.json"
-        if existing.is_file():
-            return json.loads(existing.read_text(encoding="utf-8"))
-        return rebuild_summary(directory, setting)
 
     # The model lives in this dict and nowhere else, so clearing it drops the last reference
     # before the caching allocator is emptied; `work` reads it through the dict rather than
