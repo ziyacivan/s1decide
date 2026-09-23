@@ -19,7 +19,13 @@ from __future__ import annotations
 import importlib.util
 from typing import Any
 
-__all__ = ["FAST_PATH_KERNELS", "kernel_report", "kernel_summary"]
+__all__ = [
+    "FAST_PATH_KERNELS",
+    "RECORDED_PACKAGES",
+    "kernel_report",
+    "kernel_summary",
+    "package_versions",
+]
 
 #: The per-kernel attributes transformers resolves on the Qwen3.5 gated-deltanet layer. Each is
 #: either an accelerated implementation or ``None``, in which case the layer uses its torch
@@ -30,6 +36,36 @@ FAST_PATH_KERNELS: tuple[str, ...] = (
     "causal_conv1d_fn",
     "causal_conv1d_update",
 )
+
+
+#: Distributions whose version every run records. `None` means not installed.
+RECORDED_PACKAGES: tuple[str, ...] = (
+    "torch",
+    "transformers",
+    "peft",
+    "trl",
+    "bitsandbytes",
+    "unsloth",
+    "unsloth_zoo",
+    "triton",
+    "triton-windows",
+    "kernels",
+    "flash-linear-attention",
+    "accelerate",
+)
+
+
+def package_versions(names: tuple[str, ...] = RECORDED_PACKAGES) -> dict[str, str | None]:
+    """Installed version of each distribution, ``None`` when it is not installed."""
+    from importlib.metadata import PackageNotFoundError, version
+
+    out: dict[str, str | None] = {}
+    for name in names:
+        try:
+            out[name] = version(name)
+        except PackageNotFoundError:
+            out[name] = None  # recorded as absent; absence is the finding, not an error
+    return out
 
 
 def _installed(name: str) -> bool:
@@ -52,6 +88,9 @@ def kernel_report() -> dict[str, Any]:
         name: _installed(name)
         for name in ("fla", "causal_conv1d", "triton", "triton_kernels", "kernels")
     }
+    # Versions, not just presence: the teacher-2 runs recorded `kernels: true` and nothing
+    # more, and which version they used can now only be inferred (dataset card).
+    versions = package_versions()
 
     gated: dict[str, str] = {}
     fast_path_all: bool | None = None
@@ -88,6 +127,7 @@ def kernel_report() -> dict[str, Any]:
 
     return {
         "packages": packages,
+        "versions": versions,
         "gated_deltanet": gated,
         "fast_path_all": fast_path_all,
         "attention": "sdpa",

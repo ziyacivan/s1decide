@@ -178,3 +178,30 @@ def test_a_config_the_trainer_cannot_honour_is_refused_before_any_io(tmp_path, o
 
     with pytest.raises(ValueError, match=message):
         train(TrainConfig(**overrides), root=tmp_path)
+
+
+def test_a_checkpoint_carries_optimiser_schedule_and_position(tmp_path) -> None:
+    """A resume without these restarts Adam's moments and the LR schedule: a different run."""
+    torch = pytest.importorskip("torch")
+    from train.sft_lora import lr_multiplier, save_training_state
+
+    param = torch.nn.Parameter(torch.ones(3))
+    optimiser = torch.optim.AdamW([param], lr=2e-5)
+    scheduler = torch.optim.lr_scheduler.LambdaLR(
+        optimiser, lambda s: lr_multiplier(s, 100, 3, "cosine")
+    )
+    for _ in range(5):
+        param.sum().backward()
+        optimiser.step()
+        scheduler.step()
+        optimiser.zero_grad()
+
+    path = save_training_state(tmp_path / "rows-000040", optimiser, scheduler, 40, TrainConfig())
+    state = torch.load(path, weights_only=False)
+    assert state["rows_done"] == 40
+    assert state["optimizer_steps_done"] == 5
+    assert "exp_avg" in state["optimizer"]["state"][0]
+    assert state["config"]["learning_rate"] == TrainConfig().learning_rate
+
+    fresh = torch.optim.AdamW([torch.nn.Parameter(torch.ones(3))], lr=2e-5)
+    fresh.load_state_dict(state["optimizer"])  # loads back into a new optimiser

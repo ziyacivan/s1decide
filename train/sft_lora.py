@@ -51,6 +51,7 @@ __all__ = [
     "lr_multiplier",
     "main",
     "plan_steps",
+    "save_training_state",
     "select_rows",
     "train",
     "write_report",
@@ -465,6 +466,38 @@ def lr_multiplier(step: int, total_steps: int, warmup_steps: int, schedule: str)
     raise ValueError(f"unknown lr_schedule {schedule!r}")
 
 
+def save_training_state(
+    path: Path, optimiser: Any, scheduler: Any, rows_done: int, config: TrainConfig
+) -> Path:
+    """Write ``trainer_state.pt`` beside a checkpoint's adapter: what a faithful resume needs.
+
+    Args:
+        path: The checkpoint directory (created if missing).
+        optimiser: The optimiser; its moments are part of the run's state.
+        scheduler: The learning-rate scheduler; its step count is the schedule position.
+        rows_done: Rows trained so far — the position in the seeded draw sequence.
+        config: The run's config, stored so a resume can refuse a changed one.
+
+    Returns:
+        The file written.
+    """
+    import torch
+
+    path.mkdir(parents=True, exist_ok=True)
+    target = path / "trainer_state.pt"
+    torch.save(
+        {
+            "optimizer": optimiser.state_dict(),
+            "scheduler": scheduler.state_dict(),
+            "optimizer_steps_done": scheduler.last_epoch,
+            "rows_done": rows_done,
+            "config": asdict(config),
+        },
+        target,
+    )
+    return target
+
+
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     return [
         json.loads(line) for line in path.read_text(encoding="utf-8").split("\n") if line.strip()
@@ -611,6 +644,7 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         torch.cuda.reset_peak_memory_stats()
 
     checkpoints: list[dict[str, Any]] = []
+    stop_reasons: list[str] = []
 
     def evaluate(rows_done: int) -> None:
         from train.periodic_eval import eval_metrics, predict_logits
@@ -626,20 +660,36 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         logits = predict_logits(
             model, eval_examples, pad_token_id, config.eval_batch_size, on_progress=beat
         )
-        entry = {
+        entry: dict[str, Any] = {
             "rows": rows_done,
             "metrics": eval_metrics(eval_examples, logits, rates),
             "seconds": round(time.perf_counter() - began, 1),
         }
         checkpoints.append(entry)
+        from train.stop_rule import stop_decision
+
+        entry["stop_rule"] = stop_decision(checkpoints)
+        if entry["stop_rule"]["stop"]:
+            stop_reasons.extend(entry["stop_rule"]["reasons"])
         with (out_dir / "evals.jsonl").open("a", encoding="utf-8", newline="\n") as handle:
             handle.write(json.dumps(entry, default=str) + "\n")
         brief = {g: round(m["kl"], 4) for g, m in entry["metrics"].items()}
         print(f"  eval @ {rows_done} rows ({entry['seconds']} s): KL {brief}", flush=True)
+        for line in entry["stop_rule"]["warnings"]:
+            print(f"  warning: {line}", flush=True)
+        for line in entry["stop_rule"]["reasons"]:
+            print(f"  STOP: {line}", flush=True)
 
     def save_checkpoint(rows_done: int) -> None:
+        """Adapter plus everything a faithful resume needs: optimiser, schedule, position.
+
+        The draw sequence is a deterministic function of the seed, so ``rows_done`` is the
+        position in it; without the optimiser and scheduler state a resume would restart Adam's
+        moments and the learning-rate schedule, which is a different run.
+        """
         path = out_dir / "checkpoints" / f"rows-{rows_done:06d}"
         model.save_pretrained(str(path))
+        save_training_state(path, optimiser, scheduler, rows_done, config)
 
     progress_path = out_dir / "progress.jsonl"
     if config.eval_every_rows:
@@ -711,7 +761,17 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         ):
             if every and rows_done // every > before // every:
                 hook(rows_done)
-    if one_pass and len(seen) != len(examples):
+        if stop_reasons:
+            # The rule is only evaluated at a checkpoint row, where the checkpoint (saved before
+            # the evaluation) already holds this exact state.
+            (out_dir / "STOPPED").write_text(
+                f"stopped at {rows_done} rows\n" + "\n".join(stop_reasons) + "\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            print(f"  stopping at {rows_done} rows: {stop_reasons}", flush=True)
+            break
+    if one_pass and len(seen) != len(examples) and not stop_reasons:
         raise RuntimeError(f"one pass saw {len(seen)} rows of {len(examples)} selected")
 
     elapsed = time.perf_counter() - started
@@ -756,6 +816,7 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         "loss_rows": loss_rows,
         "eval_slice": eval_report or None,
         "checkpoint_evals": [c["rows"] for c in checkpoints],
+        "stopped": stop_reasons or None,
         "loader": loader,
         "vram_peak_bytes": peak,
         "vram_peak_gib": round(peak / 1024**3, 3),
@@ -1158,6 +1219,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(summary.get("adapter_layout_error") or summary.get("adapter_error"))
         (out_dir / "FAILED").write_text("adapter check failed\n", encoding="utf-8", newline="\n")
         return 1
+    if summary.get("stopped"):
+        # STOPPED was written by the loop with its reasons; not DONE, and not a crash either.
+        return 3
     if summary["loss_mean_last_10"] is not None and math.isfinite(summary["loss_mean_last_10"]):
         (out_dir / "DONE").write_text(
             time.strftime("%Y-%m-%dT%H:%M:%S\n"), encoding="utf-8", newline="\n"

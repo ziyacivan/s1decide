@@ -115,3 +115,12 @@ def test_a_failed_device_detection_is_reported_with_its_type(monkeypatch, capsys
     monkeypatch.setattr(torch.cuda, "is_available", boom)
     assert detect_profile().name == "unknown"
     assert "RuntimeError" in capsys.readouterr().err
+
+
+def test_every_run_records_package_versions() -> None:
+    """Teacher 2 recorded only `kernels: true`; its version is now inferred, not measured."""
+    from s1decide.kernels import kernel_report
+
+    versions = kernel_report()["versions"]
+    assert "kernels" in versions and "torch" in versions
+    assert versions["torch"] is not None
