@@ -42,3 +42,6 @@ Thumbs.db
 
 # Announcement drafts are written locally and never committed.
 docs/announce/
+
+# External-model evaluation slices carry full states; predictions and metrics are committed.
+results/*/slice-*.jsonl
