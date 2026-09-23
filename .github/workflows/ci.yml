@@ -62,8 +62,15 @@ jobs:
       - name: Install (locked)
         run: uv sync --locked
 
+      # Each failing test is also raised as an annotation: the job log needs a signed-in
+      # session to read, annotations do not, so a red run says what broke to anyone looking.
       - name: CPU test suite
-        run: uv run task test
+        shell: bash
+        run: |
+          status=0
+          uv run task test -rfE 2>&1 | tee pytest.out || status=$?
+          grep -E '^(FAILED|ERROR) ' pytest.out | cut -c1-900 | sed 's/^/::error title=pytest::/' || true
+          exit $status
 
   # The one stable name for branch protection to require.
   ci:
