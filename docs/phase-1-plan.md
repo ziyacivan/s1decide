@@ -513,31 +513,15 @@ only, `offload_embedding=True`, `use_gradient_checkpointing="unsloth"`. Ordinal 
 Also required: **a test that fails if packing or `padding_free` is enabled for a GDN hybrid model
 on transformers < 5.9**, so the silent state-leak finding cannot be undone by a version bump.
 
-### S1 proper on the 3090 — sample budget, not epochs (decided 2026-09-23, launch not yet approved)
+### S1 proper on the 3090 — sample budget, not epochs (decided 2026-09-23, awaiting launch go)
 
-`train/configs/sft_3090_s1.yaml`. Attempt 3 of the smoke run showed the 27B QLoRA with the full
-ADR 0002 adapter fits this card at seq 1024, batch 1, rank 8 (20.85 GiB, 118.5 tok/s). One epoch
-over 90,594 rows would be ~28 h and is not what the model needs; the unit is a **sample budget**.
+`train/configs/sft_3090_s1.yaml`, fully implemented by the trainer and smoke-tested end to end at
+a 400-row budget (`results/s1-3090-smoke/`). The proposal — config, ETA, VRAM, monitoring and a
+proposed stop rule — is [`run-notes/s1-proposal-2026-09-24.md`](run-notes/s1-proposal-2026-09-24.md).
 
-- **30,000 sampled rows**, drawn under `data/processed/sampling_weights.json` (family-balanced,
-  clipped at 3x), so the run sees the effective mix, not the raw one.
-- **Batch 1 in memory, gradient accumulation 8** — effective batch 8, 3,750 optimiser steps.
-- **Every 5,000 rows:** save the adapter; evaluate `val` in `case-control` mode with KL, accuracy,
-  ECE and BSS **per primitive**; score the 468 genuine `Score` val rows with `eval/score_ab.py`
-  so a `Score` regression shows up at the first checkpoint, not at the end.
-- `max_seq_len` 1024: no training row is longer than 843 tokens.
-- **Provisional:** `learning_rate` (pending the before/after `Score` check) and `rank` (pending
-  the rank-16 memory run). Both are marked in the file.
-
-**Not runnable yet, by construction.** The trainer does not implement `sample_budget`,
-`sampling`, `checkpoint_every_rows`, `eval_every_rows` or `eval_mode`, and it now refuses any
-config key it does not implement — before this change it would have trained on the defaults and
-ignored all five. Before launch: implement weighted sampling with replacement, the periodic
-checkpoint, and the periodic eval hook, each with a test; then a one-pass smoke of the S1 config
-at a 200-row budget.
-
-At the measured 1.12 s per row, 30,000 rows is roughly 9–10 hours of training plus six
-evaluations.
+rank 8 · seq 2048 · lr 2e-5 with 3% warmup and cosine decay · batch 1 accumulated to 8 · 30,000
+rows family-balanced with `Score` uniform by row · checkpoint and case-control val evaluation
+every 5,000 rows, per primitive (KL, accuracy, ECE, BSS, predicted-vs-target marginal).
 
 ### Planned experiment: raw-completion render (after S1 LoRA, not before)
 

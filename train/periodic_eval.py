@@ -99,11 +99,16 @@ def predict_logits(
     examples: Sequence[dict[str, Any]],
     pad_token_id: int,
     batch_size: int = 8,
+    on_progress: Any = None,
+    every: int = 100,
 ) -> list[list[float]]:
     """Masked option logits at the answer position, fp32, in example order.
 
     Same read as training and inference: left-padded batch, last position, the row's option
     tokens only. Runs under ``no_grad`` with the model in eval mode, and restores train mode.
+
+    ``on_progress(done, total)`` is called every ``every`` batches. An evaluation of the S1
+    slice takes ~22 minutes; without it a heartbeat watcher cannot tell it from a hang.
     """
     import torch
 
@@ -118,16 +123,22 @@ def predict_logits(
             for start in range(0, len(examples), batch_size):
                 chunk = examples[start : start + batch_size]
                 batch = collate(chunk, pad_token_id)
+                # Only the answer position is read. Without `logits_to_keep` the model builds
+                # full-vocabulary logits at every position — 2.31 GiB at batch 8 — and the first
+                # S1 smoke died of it in the row-0 evaluation.
                 logits = (
                     model(
                         input_ids=batch["input_ids"].to(device),
                         attention_mask=batch["attention_mask"].to(device),
+                        logits_to_keep=1,
                     )
                     .logits[:, -1, :]
                     .float()
                 )
                 for i, ids in enumerate(batch["label_token_ids"]):
                     out.append(logits[i, torch.tensor(ids, device=device)].tolist())
+                if on_progress is not None and (start // batch_size + 1) % every == 0:
+                    on_progress(len(out), len(examples))
     finally:
         if was_training:
             model.train()

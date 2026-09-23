@@ -1,0 +1,3 @@
+{"step": 1, "steps": 50, "rows": 8, "loss_mean_last_25": 0.07859563280362636, "lr": 2e-05, "elapsed_seconds": 8.0, "rows_per_second": 1.0044, "vram_peak_gib": 21.26}
+{"step": 26, "steps": 50, "rows": 208, "loss_mean_last_25": 0.18770796842931303, "lr": 1e-05, "elapsed_seconds": 150.3, "rows_per_second": 1.3835, "vram_peak_gib": 21.26}
+{"step": 50, "steps": 50, "rows": 400, "loss_mean_last_25": 0.18310195154714165, "lr": 0.0, "elapsed_seconds": 290.8, "rows_per_second": 1.3757, "vram_peak_gib": 21.26}

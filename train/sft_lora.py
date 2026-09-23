@@ -616,7 +616,16 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         from train.periodic_eval import eval_metrics, predict_logits
 
         began = time.perf_counter()
-        logits = predict_logits(model, eval_examples, pad_token_id, config.eval_batch_size)
+
+        def beat(done: int, total: int) -> None:
+            (out_dir / "heartbeat").write_text(
+                time.strftime("%Y-%m-%dT%H:%M:%S"), encoding="utf-8", newline="\n"
+            )
+            print(f"    eval @ {rows_done} rows: {done}/{total}", flush=True)
+
+        logits = predict_logits(
+            model, eval_examples, pad_token_id, config.eval_batch_size, on_progress=beat
+        )
         entry = {
             "rows": rows_done,
             "metrics": eval_metrics(eval_examples, logits, rates),

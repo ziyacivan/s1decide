@@ -84,3 +84,55 @@ def test_base_rates_are_the_training_target_marginal_per_group_and_size() -> Non
         {"qtype": "noul", "family": "f", "options": ["yes", "no"], "answer_idx": 1},
     ]
     assert base_rates(rows)["noul/2"] == pytest.approx([2 / 3, 1 / 3])
+
+
+def test_eval_asks_the_model_for_the_last_position_only() -> None:
+    """Full-vocabulary logits at every position OOMed the first S1 smoke's row-0 eval."""
+    torch = pytest.importorskip("torch")
+    from train.periodic_eval import predict_logits
+
+    calls: list[dict] = []
+
+    class Tiny(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.w = torch.nn.Parameter(torch.zeros(1))
+
+        def forward(self, input_ids, attention_mask, **kwargs):
+            calls.append(kwargs)
+            keep = kwargs.get("logits_to_keep", input_ids.shape[1])
+            logits = torch.arange(10.0).repeat(input_ids.shape[0], keep, 1)
+            return type("Out", (), {"logits": logits})()
+
+    examples = [
+        {"input_ids": [1, 2, 3], "label_token_ids": [4, 7], "target": [1.0, 0.0], "qtype": "noul"}
+    ]
+    model = Tiny().train()
+    assert predict_logits(model, examples, pad_token_id=0) == [[4.0, 7.0]]
+    assert calls[0]["logits_to_keep"] == 1
+    assert model.training  # train mode restored
+
+
+def test_a_long_evaluation_reports_progress() -> None:
+    torch = pytest.importorskip("torch")
+    from train.periodic_eval import predict_logits
+
+    class Tiny(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.w = torch.nn.Parameter(torch.zeros(1))
+
+        def forward(self, input_ids, attention_mask, **kwargs):
+            return type("Out", (), {"logits": torch.zeros(input_ids.shape[0], 1, 10)})()
+
+    example = {"input_ids": [1], "label_token_ids": [2, 3], "target": [1.0, 0.0], "qtype": "noul"}
+    seen: list[tuple[int, int]] = []
+    predict_logits(
+        Tiny(),
+        [example] * 10,
+        0,
+        batch_size=2,
+        on_progress=lambda d, t: seen.append((d, t)),
+        every=2,
+    )
+    assert seen == [(4, 10), (8, 10)]
