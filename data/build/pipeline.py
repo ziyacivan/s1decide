@@ -41,6 +41,7 @@ from data.build.synthetic import generate_ordinal_control
 from s1decide.tokens import MAX_SINGLE_TOKEN_OPTIONS
 
 __all__ = [
+    "TEACHER_SCORE_EVAL_FILE",
     "TEACHER_SCORE_FAMILY",
     "TEACHER_SCORE_FILE",
     "BuildConfig",
@@ -296,6 +297,11 @@ def _normalised(source: Source, raw: Iterable[dict[str, Any]]) -> list[dict[str,
 #: Where the teacher fold writes its `Score` rows, relative to ``data/processed``.
 TEACHER_SCORE_FILE = "score_teacher.jsonl"
 
+#: Where the fold of the *evaluation* batch writes: states drawn from val and test. Kept apart
+#: from the training file so that neither fold can overwrite the other; both join the corpus
+#: before the split, and the state-hash partition puts these in val and test.
+TEACHER_SCORE_EVAL_FILE = "score_teacher_eval.jsonl"
+
 #: The family teacher-labelled `Score` rows join the corpus under.
 #:
 #: Its own family rather than the family each state came from, because the *label* is what a
@@ -305,7 +311,7 @@ TEACHER_SCORE_FILE = "score_teacher.jsonl"
 TEACHER_SCORE_FAMILY = "score_teacher"
 
 
-def teacher_score_rows(path: Path) -> list[dict[str, Any]]:
+def teacher_score_rows(path: Path, loaded_from: str = TEACHER_SCORE_FAMILY) -> list[dict[str, Any]]:
     """Read the teacher-labelled `Score` rows and put them in corpus schema.
 
     Two targets come out of the fold, and they are not the same kind of evidence. Where both
@@ -363,7 +369,7 @@ def teacher_score_rows(path: Path) -> list[dict[str, Any]]:
                 # ours. The fold resolved it per row against the training split, so ADR 0004's
                 # gate sees a real licence here rather than a default.
                 "source": str(raw.get("source", "?")),
-                "loaded_from": TEACHER_SCORE_FAMILY,
+                "loaded_from": loaded_from,
                 "license": str(raw.get("license", "?")),
                 "role": "train",
                 "stage": None,
@@ -464,12 +470,45 @@ def build(config: BuildConfig | None = None) -> dict[str, Any]:
         }
         rows.extend(teacher_rows)
 
+    eval_teacher_rows = teacher_score_rows(
+        out_dir / TEACHER_SCORE_EVAL_FILE, loaded_from=f"{TEACHER_SCORE_FAMILY}_eval"
+    )
+    if eval_teacher_rows:
+        soft = sum(1 for row in eval_teacher_rows if row["target_type"] == "soft")
+        per_source[f"{TEACHER_SCORE_FAMILY}_eval"] = {
+            "repo": TEACHER_SCORE_FAMILY,
+            "canonical_repo": TEACHER_SCORE_FAMILY,
+            "license": "per-row, inherited from the state's source",
+            "role": "train",
+            "primitive": "score",
+            "rows_loaded": len(eval_teacher_rows),
+            "rows_kept": len(eval_teacher_rows),
+            "hard_targets": len(eval_teacher_rows) - soft,
+            "soft_targets": soft,
+            "note": (
+                "Teacher run 2: the same two teachers, rubric, cap and agreement rule, over states "
+                "drawn from the val and test partitions. The state-hash split places them there; "
+                "the build fails if one lands in train."
+            ),
+        }
+        rows.extend(eval_teacher_rows)
+
     # Split *before* expanding. `split_by_state` depends only on role and state hash, both of
     # which a stage-1 row inherits from its parent, so the answer is the same either way — but
     # doing it first means the expansion knows which split a question is destined for, and can
     # give training a subsample while evaluation keeps the whole fan-out. Expanding first would
     # mean materialising ~1.1M rows and throwing most away.
     pre_split = split_by_state(rows, cfg)
+    leaked = [
+        row["id"]
+        for row in pre_split
+        if row.get("loaded_from") == f"{TEACHER_SCORE_FAMILY}_eval" and row["split"] == "train"
+    ]
+    if leaked:
+        raise RuntimeError(
+            f"{len(leaked)} evaluation-batch teacher rows were split into train, e.g. {leaked[:3]}; "
+            "their states were drawn from val/test, so the state hash should never do that"
+        )
 
     expanded: list[dict[str, Any]] = []
     two_stage_parents = 0

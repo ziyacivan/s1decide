@@ -123,6 +123,10 @@ def load_levels(directory: Path) -> dict[str, int | None]:
     return levels
 
 
+#: Where the training batch's fold writes. Evaluation batches must name their own file.
+DEFAULT_OUT = "data/processed/score_teacher.jsonl"
+
+
 def source_index(train_rows: Sequence[Mapping[str, Any]]) -> dict[str, tuple[str, str]]:
     """Map state text to the source and licence it came in under.
 
@@ -132,7 +136,7 @@ def source_index(train_rows: Sequence[Mapping[str, Any]]) -> dict[str, tuple[str
     deterministic rather than arbitrary.
 
     Args:
-        train_rows: Rows of the training split.
+        train_rows: Corpus rows to resolve against — every split, for an evaluation batch.
 
     Returns:
         State text to ``(source, licence)``.
@@ -330,13 +334,25 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="task teach-fold")
     parser.add_argument("--first", required=True, help="teacher 1 run id")
     parser.add_argument("--second", required=True, help="teacher 2 run id")
-    parser.add_argument("--items", default="data/processed/teach_items.jsonl")
-    parser.add_argument("--out", default="data/processed/score_teacher.jsonl")
-    parser.add_argument("--split", default="train")
+    parser.add_argument("--items", nargs="+", default=["data/processed/teach_items.jsonl"])
+    parser.add_argument("--out", default=DEFAULT_OUT)
+    parser.add_argument(
+        "--split",
+        default="train",
+        help="the batch the states were drawn from: `train`, or `eval` for val/test states",
+    )
     parser.add_argument(
         "--dry-run", action="store_true", help="report only; write neither rows nor report"
     )
     args = parser.parse_args(list(argv) if argv is not None else None)
+    if args.split != "train" and args.out == DEFAULT_OUT:
+        # The default output is the training rows. Folding an evaluation batch into it would
+        # silently replace 4,804 training labels with evaluation ones.
+        print(
+            f"--split {args.split} writes evaluation rows; pass an --out other than {DEFAULT_OUT}",
+            file=sys.stderr,
+        )
+        return 2
 
     root = repo_root()
     first_dir, second_dir = root / "results" / args.first, root / "results" / args.second
@@ -356,15 +372,20 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     items = [
         json.loads(line)
-        for line in (root / args.items).read_text(encoding="utf-8").split("\n")
+        for path in args.items
+        for line in (root / path).read_text(encoding="utf-8").split("\n")
         if line.strip()
     ]
-    train = [
+    # Provenance is looked up across every split: an evaluation batch's states come from val and
+    # test, and looking them up in train alone would leave every row unlicensed.
+    corpus = [
         json.loads(line)
-        for line in (root / "data/processed/train.jsonl").read_text(encoding="utf-8").split("\n")
+        for name in ("train", "val", "test")
+        if (root / f"data/processed/{name}.jsonl").is_file()
+        for line in (root / f"data/processed/{name}.jsonl").read_text(encoding="utf-8").split("\n")
         if line.strip()
     ]
-    rows = build_score_rows(items, kept, source_index(train), report, split=args.split)
+    rows = build_score_rows(items, kept, source_index(corpus), report, split=args.split)
 
     pairs = [
         (first[i], second[i])

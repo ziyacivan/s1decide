@@ -124,3 +124,22 @@ def test_a_shuffle_moves_a_soft_target_with_the_options() -> None:
     carried = {out["options"][i] for i, v in enumerate(out["target"]) if v > 0}
     assert carried == {"b", "c"}
     assert sum(out["target"]) == pytest.approx(1.0)
+
+
+# --- the evaluation batch (teacher run 2) ---------------------------------------------
+
+
+def test_eval_batch_rows_are_marked_as_such(tmp_path) -> None:
+    rows = teacher_score_rows(
+        write(tmp_path, [fold_row("exact", 2, 2, 2)]),
+        loaded_from=f"{TEACHER_SCORE_FAMILY}_eval",
+    )
+    assert rows[0]["loaded_from"] == f"{TEACHER_SCORE_FAMILY}_eval"
+    assert rows[0]["family"] == TEACHER_SCORE_FAMILY
+
+
+def test_folding_an_eval_batch_over_the_training_rows_is_refused() -> None:
+    """The default --out is the training fold; an eval batch written there replaces it."""
+    from data.build.agree import main
+
+    assert main(["--first", "a", "--second", "b", "--split", "eval"]) == 2
