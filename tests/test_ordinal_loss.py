@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 import pytest
 
 torch = pytest.importorskip("torch")
@@ -139,6 +141,42 @@ def test_two_modes_at_the_ends_of_the_scale_are_penalised(p, expected) -> None:
     largest, so the value is known by hand.
     """
     assert float(unimodality_penalty(torch.tensor([p]))) == pytest.approx(expected, abs=1e-6)
+
+
+def test_loss_parts_sum_to_the_loss_that_is_trained() -> None:
+    from train.ordinal_loss import loss_parts
+
+    row = logits([0.3, 1.2, -0.4, 0.8, -1.0])
+    target = torch.tensor([[0.0, 0.5, 0.5, 0.0, 0.0]])
+    parts = loss_parts(row, target, lambda_distance=0.3)
+    assert float(parts["total"]) == pytest.approx(
+        float(ordinal_loss(row, target, lambda_distance=0.3))
+    )
+    assert float(parts["total"]) == pytest.approx(
+        float(parts["cross_entropy"] + 0.3 * parts["distance"])
+    )
+    assert float(parts["kl"]) == pytest.approx(float(parts["cross_entropy"] - parts["entropy"]))
+
+
+def test_a_5050_soft_row_has_floor_ln2_plus_half_lambda_and_zero_kl_at_the_target() -> None:
+    """The floor the first two smoke reports mistook for Score getting worse."""
+    from train.ordinal_loss import loss_parts
+
+    at_target = logits([-30.0, 0.0, 0.0, -30.0, -30.0])
+    target = torch.tensor([[0.0, 0.5, 0.5, 0.0, 0.0]])
+    parts = loss_parts(at_target, target, lambda_distance=0.3)
+    assert float(parts["floor"]) == pytest.approx(math.log(2) + 0.3 * 0.5)
+    assert float(parts["kl"]) == pytest.approx(0.0, abs=1e-6)
+    assert float(parts["distance_excess"]) == pytest.approx(0.0, abs=1e-6)
+    assert float(parts["total"]) == pytest.approx(float(parts["floor"]), abs=1e-6)
+
+
+def test_on_a_hard_row_kl_is_cross_entropy_and_the_floor_is_zero() -> None:
+    from train.ordinal_loss import loss_parts
+
+    parts = loss_parts(logits([1.0, 0.2, -0.5]), torch.tensor([0]), lambda_distance=0.3)
+    assert float(parts["kl"]) == pytest.approx(float(parts["cross_entropy"]))
+    assert float(parts["floor"]) == pytest.approx(0.0)
 
 
 def test_the_shape_penalty_is_off_by_default() -> None:

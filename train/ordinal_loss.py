@@ -31,6 +31,7 @@ __all__ = [
     "DEFAULT_UNIMODALITY",
     "expected_level",
     "level_distance",
+    "loss_parts",
     "ordinal_loss",
     "unimodality_penalty",
 ]
@@ -177,10 +178,47 @@ def ordinal_loss(
     Raises:
         ValueError: On an unknown reduction, or a soft target that does not sum to one.
     """
-    import torch
-
     if reduction not in {"mean", "sum", "none"}:
         raise ValueError(f"unknown reduction {reduction!r}")
+
+    per_row = loss_parts(
+        logits, target, lambda_distance=lambda_distance, mu_unimodality=mu_unimodality
+    )["total"]
+    if reduction == "mean":
+        return per_row.mean()
+    if reduction == "sum":
+        return per_row.sum()
+    return per_row
+
+
+def loss_parts(
+    logits: torch.Tensor,
+    target: torch.Tensor,
+    *,
+    lambda_distance: float = DEFAULT_LAMBDA,
+    mu_unimodality: float = DEFAULT_UNIMODALITY,
+) -> dict[str, torch.Tensor]:
+    """The loss per row, and every piece of it, so a curve can be read against its floor.
+
+    A soft target has a floor the model cannot go below. For a 0.5/0.5 split, cross-entropy
+    bottoms out at ``ln 2`` and ``E|k - y|`` at 0.5 — the latter for *any* prediction on the two
+    levels, not just the target. So mean loss over `Score` rows moves with the hard/soft mix of
+    whatever window it is averaged over, and the first smoke reports read that as learning going
+    backwards. ``kl`` and ``distance_excess`` are the parts that are zero at the optimum.
+
+    Args:
+        logits: ``(batch, levels)`` masked option logits.
+        target: ``(batch,)`` indices or ``(batch, levels)`` probabilities.
+        lambda_distance: Weight on the distance term.
+        mu_unimodality: Weight on the shape penalty.
+
+    Returns:
+        ``(batch,)`` tensors: ``total`` (what is optimised), ``cross_entropy``, ``entropy`` of the
+        target, ``kl`` = cross_entropy - entropy, ``distance``, ``distance_floor`` (its minimum
+        over predictions), ``distance_excess``, ``unimodality``, and ``floor`` — the lowest
+        ``total`` any prediction can reach, ``entropy + lambda * distance_floor``.
+    """
+    import torch
 
     log_probabilities = torch.log_softmax(logits, dim=-1)
     probabilities = log_probabilities.exp()
@@ -189,14 +227,27 @@ def ordinal_loss(
     )
 
     cross_entropy = -(distribution * log_probabilities).sum(dim=-1)
-    per_row = cross_entropy
-    if lambda_distance:
-        per_row = per_row + lambda_distance * level_distance(probabilities, distribution)
-    if mu_unimodality:
-        per_row = per_row + mu_unimodality * unimodality_penalty(probabilities)
+    entropy = -torch.special.xlogy(distribution, distribution).sum(dim=-1)
+    distance = level_distance(probabilities, distribution)
+    # E_{k~p}[|k - y|] is linear in p, so its minimum is at a point mass: the best single level.
+    levels = torch.arange(logits.shape[-1], device=logits.device, dtype=distribution.dtype)
+    gap = (levels[:, None] - levels[None, :]).abs()
+    distance_floor = (distribution @ gap).min(dim=-1).values
+    unimodality = unimodality_penalty(probabilities)
 
-    if reduction == "mean":
-        return per_row.mean()
-    if reduction == "sum":
-        return per_row.sum()
-    return per_row
+    total = cross_entropy
+    if lambda_distance:
+        total = total + lambda_distance * distance
+    if mu_unimodality:
+        total = total + mu_unimodality * unimodality
+    return {
+        "total": total,
+        "cross_entropy": cross_entropy,
+        "entropy": entropy,
+        "kl": cross_entropy - entropy,
+        "distance": distance,
+        "distance_floor": distance_floor,
+        "distance_excess": distance - distance_floor,
+        "unimodality": unimodality,
+        "floor": entropy + lambda_distance * distance_floor,
+    }

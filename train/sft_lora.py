@@ -20,25 +20,35 @@ proves the pipeline in minutes, and only then does a 27B get GPU hours.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import math
 import random
+import re
 import time
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
 __all__ = [
+    "ATTENTION_TARGETS",
+    "LORA_TARGETS",
+    "MLP_TARGETS",
     "SMALL_MODEL",
     "TrainConfig",
+    "adapted_module_names",
+    "adapter_file_keys",
     "build_examples",
+    "check_lora_layout",
     "collate",
     "coverage",
+    "expected_lora_layout",
     "format_coverage",
     "is_prequantized",
     "load_config",
     "main",
+    "plan_steps",
     "select_rows",
     "train",
     "write_report",
@@ -58,7 +68,10 @@ class TrainConfig:
             the other machine rather than discovering the difference at hour three.
         model: Hub id or local path.
         run_id: Output directory under ``results/``.
-        max_steps: Optimiser steps. The smoke run is deliberately tiny.
+        max_steps: Optimiser steps. ``None`` (the default, and what the smoke configs use)
+            means exactly one pass: ``ceil(rows / (batch_size * grad_accum))`` steps, every
+            selected row seen once, so the coverage table describes what was trained on by
+            construction. A number wraps around the selection as often as it needs to.
         rank: LoRA rank.
         lora_alpha: LoRA alpha.
         learning_rate: Peak learning rate.
@@ -76,7 +89,7 @@ class TrainConfig:
     hardware: str = "rtx3090_windows"
     model: str = SMALL_MODEL
     run_id: str = "smoke"
-    max_steps: int = 50
+    max_steps: int | None = None
     rank: int = 8
     lora_alpha: int = 16
     learning_rate: float = 2e-4
@@ -301,15 +314,30 @@ def collate(batch: Sequence[dict[str, Any]], pad_token_id: int) -> dict[str, Any
     }
 
 
-def _batch_loss(model: Any, batch: dict[str, Any], config: TrainConfig) -> tuple[Any, list[float]]:
+PART_KEYS: tuple[str, ...] = (
+    "total",
+    "kl",
+    "cross_entropy",
+    "distance",
+    "distance_excess",
+    "floor",
+)
+
+
+def _batch_loss(
+    model: Any, batch: dict[str, Any], config: TrainConfig
+) -> tuple[Any, list[dict[str, float]]]:
     """Masked-option loss at the answer position, ordinal where the row is a `Score`.
 
-    Returns the batch mean for the backward pass and each row's own loss, so the summary can
-    show the curve per primitive rather than one number that a single family can carry.
+    Returns the batch mean for the backward pass and, per row, the loss broken into the parts
+    :func:`train.ordinal_loss.loss_parts` defines. The parts are what the reports read: a soft
+    target's loss has a floor of ``ln 2`` plus the distance term's own floor, so the raw total
+    over `Score` rows moves with the hard/soft mix, while ``kl`` is zero at the optimum on
+    every row.
     """
     import torch
 
-    from train.ordinal_loss import ordinal_loss
+    from train.ordinal_loss import loss_parts
 
     device = next(model.parameters()).device
     out = model(
@@ -319,25 +347,46 @@ def _batch_loss(model: Any, batch: dict[str, Any], config: TrainConfig) -> tuple
     answer_logits = out.logits[:, -1, :].float()
 
     total = answer_logits.new_zeros(())
-    per_row: list[float] = []
+    per_row: list[dict[str, float]] = []
     for i, (ids, target, qtype) in enumerate(
         zip(batch["label_token_ids"], batch["target"], batch["qtype"], strict=True)
     ):
         index = torch.tensor(ids, device=device)
         row = answer_logits[i, index].unsqueeze(0)
         distribution = torch.tensor([target], device=device, dtype=row.dtype)
-        if qtype == "score":
-            loss = ordinal_loss(
-                row,
-                distribution,
-                lambda_distance=config.lambda_distance,
-                mu_unimodality=config.mu_unimodality,
-            )
-        else:
-            loss = ordinal_loss(row, distribution, lambda_distance=0.0)
-        per_row.append(float(loss.detach()))
-        total = total + loss
+        is_score = qtype == "score"
+        parts = loss_parts(
+            row,
+            distribution,
+            lambda_distance=config.lambda_distance if is_score else 0.0,
+            mu_unimodality=config.mu_unimodality if is_score else 0.0,
+        )
+        total = total + parts["total"].sum()
+        per_row.append({key: float(parts[key].detach().sum()) for key in PART_KEYS})
     return total / len(batch["qtype"]), per_row
+
+
+def plan_steps(n_examples: int, config: TrainConfig) -> int:
+    """Optimiser steps for a run: ``max_steps`` if set, else exactly one pass.
+
+    Args:
+        n_examples: Rows selected for the run.
+        config: ``max_steps``, ``batch_size``, ``grad_accum``.
+
+    Returns:
+        ``config.max_steps``, or ``ceil(n_examples / (batch_size * grad_accum))``.
+    """
+    if config.max_steps is not None:
+        return config.max_steps
+    return math.ceil(n_examples / (config.batch_size * config.grad_accum))
+
+
+def _window_means(rows: Sequence[dict[str, float]], key: str) -> dict[str, float]:
+    values = [row[key] for row in rows]
+    return {
+        "mean_first_10": sum(values[:10]) / len(values[:10]),
+        "mean_last_10": sum(values[-10:]) / len(values[-10:]),
+    }
 
 
 def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
@@ -380,18 +429,21 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         torch.cuda.reset_peak_memory_stats()
 
     losses: list[float] = []
-    seen_losses: dict[str, list[float]] = {}
     seen: list[dict[str, Any]] = []
-    loss_rows: list[list[Any]] = []
+    loss_rows: list[dict[str, Any]] = []
     tokens = 0
+    steps = plan_steps(len(examples), config)
+    one_pass = config.max_steps is None
     started = time.perf_counter()
     model.train()
     cursor = 0
-    for step in range(config.max_steps):
+    for step in range(steps):
         optimiser.zero_grad(set_to_none=True)
         for _ in range(config.grad_accum):
             chunk = examples[cursor : cursor + config.batch_size]
             if not chunk:
+                if one_pass:
+                    break  # the last step of a pass can be short; it never wraps
                 cursor = 0
                 chunk = examples[: config.batch_size]
             cursor += config.batch_size
@@ -400,13 +452,20 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
             loss, per_row = _batch_loss(model, batch, config)
             (loss / config.grad_accum).backward()
             losses.append(float(loss.detach()))
-            for item, value in zip(chunk, per_row, strict=True):
-                seen_losses.setdefault(item["qtype"], []).append(value)
+            for item, parts in zip(chunk, per_row, strict=True):
                 seen.append(item)
-                loss_rows.append(["noul/stage1" if item.get("stage1") else item["qtype"], value])
+                loss_rows.append(
+                    {
+                        "qtype": "noul/stage1" if item.get("stage1") else item["qtype"],
+                        "soft": bool(item.get("soft")),
+                        **{k: round(v, 5) for k, v in parts.items()},
+                    }
+                )
         optimiser.step()
         if step % 10 == 0:
             print(f"  step {step:4d}  loss {losses[-1]:.4f}", flush=True)
+    if one_pass and len(seen) != len(examples):
+        raise RuntimeError(f"one pass saw {len(seen)} rows of {len(examples)} selected")
 
     elapsed = time.perf_counter() - started
     peak = float(torch.cuda.max_memory_allocated()) if torch.cuda.is_available() else 0.0
@@ -414,7 +473,8 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         "run_id": config.run_id,
         "config": asdict(config),
         "examples": len(examples),
-        "steps": config.max_steps,
+        "steps": steps,
+        "one_pass": one_pass,
         "loss_first": losses[0] if losses else None,
         "loss_last": losses[-1] if losses else None,
         "loss_mean_first_10": sum(losses[:10]) / max(1, len(losses[:10])),
@@ -422,20 +482,26 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         "elapsed_seconds": round(elapsed, 2),
         "tokens_per_second": round(tokens / elapsed, 1) if elapsed else None,
         "loss_curve": [round(v, 5) for v in losses],
+        # Per primitive, KL(target || pred) is the headline: it equals cross-entropy on a hard
+        # row and has floor 0 on a soft one, so a window's hard/soft mix cannot move it. The raw
+        # total and its floor are kept beside it so the difference stays visible.
         "loss_by_qtype": {
             qtype: {
-                "rows": len(values),
-                "mean_first_10": sum(values[:10]) / len(values[:10]),
-                "mean_last_10": sum(values[-10:]) / len(values[-10:]),
+                "rows": len(rows_q),
+                "soft_rows": sum(1 for r in rows_q if r["soft"]),
+                "kl": _window_means(rows_q, "kl"),
+                "distance_excess": _window_means(rows_q, "distance_excess"),
+                "total": _window_means(rows_q, "total"),
+                "floor": _window_means(rows_q, "floor"),
             }
-            for qtype, values in sorted(seen_losses.items())
+            for qtype in sorted({r["qtype"].split("/")[0] for r in loss_rows})
+            for rows_q in [[r for r in loss_rows if r["qtype"].split("/")[0] == qtype]]
         },
-        # What the optimiser saw, repeats included. 50 steps at batch 1 over 200 selected rows
-        # sees a quarter of them, and the table has to describe that quarter, not the 200.
+        # What the optimiser saw, repeats included. In one-pass mode this equals the selection.
         "rows_seen": len(seen),
         "coverage": coverage(seen),
         "coverage_selected": coverage(examples),
-        "loss_rows": [[q, round(v, 5)] for q, v in loss_rows],
+        "loss_rows": loss_rows,
         "loader": loader,
         "vram_peak_bytes": peak,
         "vram_peak_gib": round(peak / 1024**3, 3),
@@ -450,6 +516,17 @@ def train(config: TrainConfig, root: Path | None = None) -> dict[str, Any]:
         summary["adapter"] = str(adapter)
     except Exception as exc:  # pragma: no cover - depends on the peft wrapper
         summary["adapter_error"] = repr(exc)
+    else:
+        # The file is the artefact, so the file is what gets checked, not the live model.
+        from transformers import AutoConfig
+
+        try:
+            summary["adapter_layout"] = check_lora_layout(
+                adapter_file_keys(adapter),
+                AutoConfig.from_pretrained(config.model, local_files_only=True),
+            )
+        except RuntimeError as exc:
+            summary["adapter_layout_error"] = str(exc)
 
     (out_dir / "train_summary.json").write_text(
         json.dumps(summary, indent=2, default=str) + "\n", encoding="utf-8", newline="\n"
@@ -485,15 +562,25 @@ def write_report(out_dir: Path, summary: dict[str, Any]) -> Path:
         if plotted
         else "_loss.png not drawn (no matplotlib)_",
         "",
-        "## Loss by qtype (per-row, rows seen)",
+        "## Loss by qtype (per row, rows seen)",
         "",
-        "| qtype | rows | mean first 10 | mean last 10 |",
-        "|---|---|---|---|",
+        "KL(target ‖ pred) is the column to read: it is cross-entropy on a hard row and zero at",
+        "the optimum on a soft one. The raw total carries a soft row's floor (ln 2 plus",
+        "λ·0.5 for a 50/50 split) and so moves with the hard/soft mix of the window.",
+        "",
+        "| qtype | rows | soft | KL first 10 | KL last 10 | total first 10 | total last 10 "
+        "| floor first 10 | floor last 10 |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     for qtype, stats in (summary.get("loss_by_qtype") or {}).items():
         lines.append(
-            f"| {qtype} | {stats['rows']} | {stats['mean_first_10']:.4f} "
-            f"| {stats['mean_last_10']:.4f} |"
+            f"| {qtype} | {stats['rows']} | {stats['soft_rows']} "
+            + " ".join(
+                f"| {stats[key][window]:.4f}"
+                for key in ("kl", "total", "floor")
+                for window in ("mean_first_10", "mean_last_10")
+            )
+            + " |"
         )
     lines += ["", "## Coverage (rows seen)", "", format_coverage(summary.get("coverage") or {})]
     path = out_dir / "report.md"
@@ -501,8 +588,11 @@ def write_report(out_dir: Path, summary: dict[str, Any]) -> Path:
     return path
 
 
-def _plot_loss(path: Path, loss_rows: Sequence[Sequence[Any]]) -> bool:
-    """Scatter per-row loss against its position, one colour per qtype. False if not drawn."""
+def _plot_loss(path: Path, loss_rows: Sequence[dict[str, Any]]) -> bool:
+    """Two panels: KL per row by qtype, and `Score`'s CE and distance components apart.
+
+    Returns False if nothing was drawn (no matplotlib, or no rows).
+    """
     try:
         import matplotlib
 
@@ -512,17 +602,133 @@ def _plot_loss(path: Path, loss_rows: Sequence[Sequence[Any]]) -> bool:
         return False
     if not loss_rows:
         return False
-    fig, ax = plt.subplots(figsize=(7, 3.5))
-    for qtype in sorted({str(q) for q, _ in loss_rows}):
-        points = [(i, v) for i, (q, v) in enumerate(loss_rows) if q == qtype]
-        ax.scatter([p[0] for p in points], [p[1] for p in points], s=12, label=qtype)
-    ax.set_xlabel("row seen")
-    ax.set_ylabel("loss")
-    ax.legend(frameon=False, fontsize=8)
+    fig, (top, bottom) = plt.subplots(2, 1, figsize=(7.5, 6), sharex=True)
+    for qtype in sorted({str(r["qtype"]) for r in loss_rows}):
+        points = [(i, r["kl"]) for i, r in enumerate(loss_rows) if r["qtype"] == qtype]
+        top.scatter([p[0] for p in points], [p[1] for p in points], s=12, label=qtype)
+    top.set_ylabel("KL(target ‖ pred)")
+    top.legend(frameon=False, fontsize=8)
+
+    score = [(i, r) for i, r in enumerate(loss_rows) if r["qtype"] == "score"]
+    if score:
+        xs = [i for i, _ in score]
+        bottom.scatter(xs, [r["cross_entropy"] for _, r in score], s=12, label="cross-entropy")
+        bottom.scatter(
+            xs,
+            [r["total"] - r["cross_entropy"] for _, r in score],
+            s=12,
+            marker="x",
+            label="λ·distance",
+        )
+        bottom.scatter(xs, [r["floor"] for _, r in score], s=8, marker="_", label="row floor")
+        bottom.legend(frameon=False, fontsize=8)
+    bottom.set_ylabel("Score components")
+    bottom.set_xlabel("row seen")
     fig.tight_layout()
     fig.savefig(path, dpi=120)
     plt.close(fig)
     return True
+
+
+#: ADR 0002, condition 4: LoRA on attention and MLP projections. The gated-deltanet projections
+#: (``linear_attn.*``) are LoRA-able but deliberately excluded — adapting them is its own
+#: evaluated decision, not a default.
+ATTENTION_TARGETS: tuple[str, ...] = ("q_proj", "k_proj", "v_proj", "o_proj")
+MLP_TARGETS: tuple[str, ...] = ("gate_proj", "up_proj", "down_proj")
+LORA_TARGETS: tuple[str, ...] = ATTENTION_TARGETS + MLP_TARGETS
+
+_LORA_NAME = re.compile(
+    r"layers\.(?P<layer>\d+)\.(?P<block>self_attn|mlp)\.(?P<proj>[a-z_]+)"
+    r"(?:\.lora_[AB](?:\.[A-Za-z_]+)*(?:\.weight)?)?$"
+)
+
+
+def expected_lora_layout(hf_config: Any) -> set[tuple[int, str]]:
+    """Every ``(layer, projection)`` ADR 0002 says a Stage-1 adapter must cover.
+
+    MLP projections in every decoder layer; attention projections in every layer that has
+    softmax attention. On the Qwen3.5/3.8 hybrid that is 16 of 64 layers — the other 48 are
+    gated-deltanet and have no ``self_attn`` to adapt — so "attention + MLP on all layers" means
+    192 MLP modules and 64 attention modules, 256 in all.
+
+    Args:
+        hf_config: A ``transformers`` config; a vision-language config's text config is used.
+
+    Returns:
+        The set of ``(layer_index, projection_name)`` pairs.
+    """
+    text = hf_config.get_text_config() if hasattr(hf_config, "get_text_config") else hf_config
+    layers = int(text.num_hidden_layers)
+    types = list(getattr(text, "layer_types", None) or ["full_attention"] * layers)
+    attention = [i for i, kind in enumerate(types) if kind == "full_attention"]
+    return {(i, p) for i in attention for p in ATTENTION_TARGETS} | {
+        (i, p) for i in range(layers) for p in MLP_TARGETS
+    }
+
+
+def check_lora_layout(adapted: Iterable[str], hf_config: Any) -> dict[str, Any]:
+    """Compare the modules an adapter actually covers with ADR 0002's layout, and refuse a gap.
+
+    The first 27B attempt trained on a fallback that adapted ``q/k/v/o`` in 16 of 64 layers and
+    no MLP at all, and nothing said so until the adapter file was opened afterwards. This check
+    runs before the first step and again on the saved file.
+
+    Args:
+        adapted: Module or tensor names carrying LoRA weights — ``named_modules`` names of
+            layers with ``lora_A``, or safetensors keys such as
+            ``base_model.model.model.layers.3.self_attn.q_proj.lora_A.weight``.
+        hf_config: The base model's config.
+
+    Returns:
+        ``expected``, ``adapted``, ``attention_layers`` and ``mlp_layers`` counts.
+
+    Raises:
+        RuntimeError: If any expected module is not adapted, or anything outside the layout is
+            (a ``linear_attn`` projection, the vision tower) — naming what is wrong.
+    """
+    expected = expected_lora_layout(hf_config)
+    got: set[tuple[int, str]] = set()
+    unexpected: set[str] = set()
+    for name in adapted:
+        match = _LORA_NAME.search(name)
+        parts = set(name.split("."))
+        foreign = bool(parts & {"mtp", "visual", "vision_tower"})
+        if match and match["proj"] in LORA_TARGETS and not foreign:
+            got.add((int(match["layer"]), match["proj"]))
+        else:
+            unexpected.add(re.sub(r"\.lora_[AB].*$", "", name))
+    missing = expected - got
+    unexpected |= {f"layers.{i}.{p}" for i, p in got - expected}
+    if missing or unexpected:
+        missing_by_proj: dict[str, int] = {}
+        for _, proj in missing:
+            missing_by_proj[proj] = missing_by_proj.get(proj, 0) + 1
+        raise RuntimeError(
+            "LoRA layout does not match ADR 0002 (attention + MLP): "
+            f"{len(got & expected)}/{len(expected)} expected modules adapted; "
+            f"missing by projection {dict(sorted(missing_by_proj.items()))}; "
+            f"unexpected {sorted(unexpected)[:8]}{' ...' if len(unexpected) > 8 else ''}. "
+            "Refusing to train a different adapter from the one the config describes."
+        )
+    return {
+        "expected": len(expected),
+        "adapted": len(got),
+        "attention_layers": len({i for i, p in got if p in ATTENTION_TARGETS}),
+        "mlp_layers": len({i for i, p in got if p in MLP_TARGETS}),
+    }
+
+
+def adapted_module_names(model: Any) -> list[str]:
+    """Names of every module in ``model`` that carries LoRA weights."""
+    return [name for name, module in model.named_modules() if hasattr(module, "lora_A")]
+
+
+def adapter_file_keys(adapter_dir: Path) -> list[str]:
+    """Tensor names in a saved adapter's ``adapter_model.safetensors``."""
+    from safetensors import safe_open
+
+    with safe_open(str(adapter_dir / "adapter_model.safetensors"), "pt") as handle:
+        return list(handle.keys())
 
 
 def is_prequantized(hf_config: Any) -> bool:
@@ -541,21 +747,29 @@ def _load_model(config: TrainConfig) -> tuple[Any, dict[str, Any]]:
     """Load through Unsloth where it can, and fall back to plain peft where it cannot.
 
     CLAUDE.md pins Unsloth Core as the training backend, and that is what a real run uses. The
-    fallback exists for the small pipeline-proving model, which Unsloth may not recognise: the
-    point of that run is to prove the *data and loss* path, and refusing to run it because a
-    0.8B is not in a support matrix would remove the cheapest check in the project.
+    fallback exists for the small pipeline-proving model, which Unsloth may not recognise.
 
-    Returns ``(model, loader)``: ``loader`` records which path ran, whether the checkpoint was
-    pre-quantized, and why Unsloth was skipped if it was — the first 27B attempt left no trace of
-    which path had failed.
+    Both paths apply the same ADR 0002 layout (:data:`LORA_TARGETS`) and both are checked
+    against it with :func:`check_lora_layout` before a step is taken: a path that cannot build
+    that adapter raises rather than training a smaller one.
 
-    A checkpoint that ships its own ``quantization_config`` (``unsloth/*-bnb-4bit``) is loaded
-    with **no** quantization request on top: asking for 4-bit again is what produced
-    ``A inner dim (5120) does not match weight (1)`` on the first 27B attempt, the same failure
-    ``engine/hf.py`` and ``data/build/teach_run.py`` already guard against.
+    Quantization is asked for differently on each path, and deliberately:
+
+    - **Unsloth** gets ``load_in_4bit=config.load_in_4bit``. Unsloth resolves the repo name from
+      that flag: told ``False`` it maps ``unsloth/*-bnb-4bit`` to the bf16 repo, which is what
+      sent the second 27B attempt to an uncached checkpoint. Told ``True`` on a pre-quantized
+      checkpoint, it keeps the repo and uses the checkpoint's own quantization.
+    - **transformers + peft** never adds a quantization config to a checkpoint that ships one.
+      Doing so produced ``A inner dim (5120) does not match weight (1)`` on the first attempt.
+
+    Returns ``(model, loader)``: ``loader`` records the path, whether the checkpoint was
+    pre-quantized, why Unsloth was skipped if it was, and the adapter layout.
     """
     import copy
 
+    # Unsloth first, so its kernels are bound before transformers builds anything.
+    with contextlib.suppress(Exception):  # Unsloth absent, or no accelerator to patch
+        import unsloth  # noqa: F401
     import torch
     from transformers import AutoConfig
 
@@ -563,8 +777,7 @@ def _load_model(config: TrainConfig) -> tuple[Any, dict[str, Any]]:
 
     hf_config = AutoConfig.from_pretrained(config.model, local_files_only=True)
     prequantized = is_prequantized(hf_config)
-    quantize = config.load_in_4bit and not prequantized
-    loader: dict[str, Any] = {"prequantized": prequantized, "quantize_on_load": quantize}
+    loader: dict[str, Any] = {"prequantized": prequantized, "targets": list(LORA_TARGETS)}
 
     try:
         from unsloth import FastLanguageModel
@@ -572,21 +785,23 @@ def _load_model(config: TrainConfig) -> tuple[Any, dict[str, Any]]:
         model, _ = FastLanguageModel.from_pretrained(
             model_name=config.model,
             max_seq_length=config.max_seq_len,
-            load_in_4bit=quantize,
+            load_in_4bit=config.load_in_4bit,
             dtype=torch.bfloat16,
             local_files_only=True,
+            text_only=True,
+            offload_embedding=config.load_in_4bit,
         )
         if prequantized:
             loader["dtype_fix"] = force_quantized_model_dtype(model, torch.bfloat16)
-        loader["path"] = "unsloth"
         model = FastLanguageModel.get_peft_model(
             model,
             r=config.rank,
             lora_alpha=config.lora_alpha,
+            target_modules=list(LORA_TARGETS),
             use_gradient_checkpointing="unsloth",
             random_state=config.seed,
         )
-        return model, loader
+        loader["path"] = "unsloth"
     except Exception as exc:
         loader["unsloth_error"] = f"{type(exc).__name__}: {exc}"[:500]
         print(f"  unsloth path unavailable ({loader['unsloth_error']}); using transformers + peft")
@@ -598,6 +813,7 @@ def _load_model(config: TrainConfig) -> tuple[Any, dict[str, Any]]:
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+
         from peft import LoraConfig, get_peft_model
         from transformers import AutoModelForCausalLM
 
@@ -606,7 +822,7 @@ def _load_model(config: TrainConfig) -> tuple[Any, dict[str, Any]]:
             "local_files_only": True,
             "attn_implementation": "sdpa",
         }
-        if quantize:
+        if config.load_in_4bit and not prequantized:
             from s1decide.engine.hf import nf4_config
 
             kwargs["quantization_config"] = nf4_config()
@@ -625,16 +841,20 @@ def _load_model(config: TrainConfig) -> tuple[Any, dict[str, Any]]:
             model = model.to("cuda")
         model.gradient_checkpointing_enable()
         model.enable_input_require_grads()
-        loader["path"] = "transformers+peft"
-        return get_peft_model(
+        model = get_peft_model(
             model,
             LoraConfig(
                 r=config.rank,
                 lora_alpha=config.lora_alpha,
-                target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
+                target_modules=list(LORA_TARGETS),
                 task_type="CAUSAL_LM",
             ),
-        ), loader
+        )
+        loader["path"] = "transformers+peft"
+
+    loader["quantized"] = bool(getattr(model, "is_quantized", False)) or config.load_in_4bit
+    loader["layout"] = check_lora_layout(adapted_module_names(model), hf_config)
+    return model, loader
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -649,6 +869,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"training {config.run_id}: {config.model} on {config.hardware}", flush=True)
     summary = train(config)
     print(json.dumps({k: v for k, v in summary.items() if k != "config"}, indent=2, default=str))
+    if "adapter_layout_error" in summary or "adapter_error" in summary:
+        print(summary.get("adapter_layout_error") or summary.get("adapter_error"))
+        return 1
     if summary["loss_mean_last_10"] is not None and math.isfinite(summary["loss_mean_last_10"]):
         return 0
     return 1

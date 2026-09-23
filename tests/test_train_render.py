@@ -260,10 +260,38 @@ def test_every_run_writes_a_report_with_coverage_beside_the_loss(tmp_path) -> No
         "examples": 2,
         "rows_seen": 2,
         "steps": 2,
-        "loss_rows": [["score", 1.2], ["noul", 0.4]],
+        "loss_rows": [
+            {
+                "qtype": "score",
+                "soft": True,
+                "total": 1.2,
+                "kl": 0.3,
+                "cross_entropy": 1.0,
+                "distance": 0.66,
+                "distance_excess": 0.16,
+                "floor": 0.843,
+            },
+            {
+                "qtype": "noul",
+                "soft": False,
+                "total": 0.4,
+                "kl": 0.4,
+                "cross_entropy": 0.4,
+                "distance": 0.0,
+                "distance_excess": 0.0,
+                "floor": 0.0,
+            },
+        ],
         "loss_by_qtype": {
-            "noul": {"rows": 1, "mean_first_10": 0.4, "mean_last_10": 0.4},
-            "score": {"rows": 1, "mean_first_10": 1.2, "mean_last_10": 1.2},
+            q: {
+                "rows": 1,
+                "soft_rows": int(q == "score"),
+                **{key: {"mean_first_10": v, "mean_last_10": v} for key, v in values.items()},
+            }
+            for q, values in {
+                "noul": {"kl": 0.4, "distance_excess": 0.0, "total": 0.4, "floor": 0.0},
+                "score": {"kl": 0.3, "distance_excess": 0.16, "total": 1.2, "floor": 0.843},
+            }.items()
         },
         "coverage": coverage(seen),
     }
@@ -271,6 +299,8 @@ def test_every_run_writes_a_report_with_coverage_beside_the_loss(tmp_path) -> No
     assert "## Coverage (rows seen)" in report
     assert "| score_teacher | 1 | 50.0% |" in report
     assert "| soft | 1 | 50.0% |" in report
-    assert "| score | 1 | 1.2000 | 1.2000 |" in report
+    # KL first, then the raw total and its floor, so the two can be read against each other.
+    assert "| score | 1 | 1 | 0.3000 | 0.3000 | 1.2000 | 1.2000 | 0.8430 | 0.8430 |" in report
+    assert "KL(target" in report
     if "loss.png" in report and "not drawn" not in report:
         assert (tmp_path / "loss.png").is_file()
