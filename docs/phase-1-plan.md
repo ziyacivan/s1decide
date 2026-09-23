@@ -393,9 +393,22 @@ hash with our training data. Before any Tier-2 figure is reported:
 - state in the model card that `pngwn/system-one-decisions` is derived from sources we train on,
   so Tier 2 is **"external" in labelling, not in distribution**.
 
-## Queued — `Noul` quantization stability (**first GPU task after leg 2 completes**)
+## DONE 2026-09-23 — `Noul` quantization stability
 
-Queued 2026-09-18. **Not started; the GPU is held by the teacher run.**
+Queued 2026-09-18, run once leg 2 finished. **Result: the hypothesis is half right.** `Noul`
+*decisions* are more stable than `Score` labels across 4-bit schemes — 88.7% against 78% — but
+the *probabilities* are not stable at all: all 300 rows shifted the same way, by a near-constant
+−2.075 nats in the yes/no log-odds. Temperature scaling buys exactly zero decision agreement
+against that, because it is monotone; a per-option bias buys 4.3 points and vector scaling 6.6.
+That is measured support for keeping both calibration methods in the quantization table.
+
+Full writeup, including the five alternative explanations ruled out and the harness bug found
+and fixed along the way, in
+[`docs/research/noul-quantization-stability-2026-09-23.md`](research/noul-quantization-stability-2026-09-23.md).
+Numbers in `results/quant-noul/`. The logit-reading half of the GGUF engine was written for this
+and is the piece `engine/llamacpp.py` needed anyway.
+
+### The original queue entry, for the record
 
 `docs/research/quantization-label-disagreement-2026-09-18.md` measured nf4 against Q4_K_M on
 the same model and the same 100 rows, for a 5-level `Score` judgement produced by hundreds of

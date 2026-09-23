@@ -814,6 +814,19 @@ def task_teach_fold(argv: list[str]) -> int:
     return fold_main(argv)
 
 
+@register("quant-noul", "Does 4-bit quantization move a Noul answer? nf4 vs Q4_K_M")
+def task_quant_noul(argv: list[str]) -> int:
+    """Score the same `Noul` rows through both 4-bit runtimes and compare.
+
+    Two passes, because a 27B does not fit twice on a 24 GiB card: `--runtime llamacpp` with
+    llama-server up, then `--runtime hf` once it is stopped, then `--compare`.
+    """
+    ensure_repo_on_path()
+    from eval.quantization_noul import main as quant_main
+
+    return quant_main(argv)
+
+
 @register("setup", "uv sync the project environment")
 def task_setup(argv: list[str]) -> int:
     """Sync the environment with ``uv``. Extra arguments are passed to ``uv sync``."""

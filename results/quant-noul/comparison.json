@@ -1,0 +1,27 @@
+{
+  "n": 300,
+  "first": "hf-nf4",
+  "second": "llamacpp-q4_k_m",
+  "exact_agreement": 0.8866666666666667,
+  "disagreements": 34,
+  "mean_p_first": 0.2951940911122159,
+  "mean_p_second": 0.1694507167381099,
+  "mean_shift": -0.12574337437410557,
+  "mean_absolute_shift": 0.12574337437410557,
+  "max_absolute_shift": 0.7076857759418785,
+  "shift_up": 0,
+  "shift_down": 300,
+  "sign_test_p": 9.818186930595453e-91,
+  "accuracy_first": 0.8133333333333334,
+  "accuracy_second": 0.8666666666666667,
+  "by_stage": {
+    "1": {
+      "n": 150,
+      "exact_agreement": 0.9733333333333334
+    },
+    "None": {
+      "n": 150,
+      "exact_agreement": 0.8
+    }
+  }
+}
