@@ -51,16 +51,22 @@ class ReferenceRun:
 
 REFERENCE_RUNS: dict[str, ReferenceRun] = {
     "zeroshot": ReferenceRun(
-        run_id="20260917-format02-zeroshot",
-        purpose="Zero-shot Qwen3.8-27B at nf4-bf16 — what S1 has to beat",
+        run_id="20260923-format02-zeroshot-fp32logit",
+        purpose="Zero-shot Qwen3.8-27B at nf4-bf16, fp32 answer logits — what S1 has to beat",
         format_version="0.2",
         note=(
-            "Accepted 2026-09-17 as the reference for S1 comparisons. Accuracy is unchanged "
-            "from the format-0.1 run within noise (0.7671 -> 0.7645, n=1520), uncalibrated ECE "
-            "improves (0.1274 -> 0.1026) and calibrated ECE is a wash (0.0375 -> 0.0449). The "
-            "0.1 run stays committed and stays labelled not comparable. Read the Brier skill "
-            "score before the ECE: the base-rate control beats this model's calibrated ECE "
-            "while scoring 33 accuracy points lower."
+            "Replaced 20260917-format02-zeroshot on 2026-09-23 because the answer-position "
+            "logits stopped being rounded to bf16, which is a new result row and not a silent "
+            "upgrade. Same model, same data, same kernels; the head now projects the allowed "
+            "label rows in fp32. The numbers move slightly and not all in one direction: "
+            "accuracy 0.7645 -> 0.7638 (one question of 1520), uncalibrated ECE 0.1026 -> "
+            "0.1032, calibrated ECE 0.0449 -> 0.0428, Brier skill 0.4602 -> 0.4598. MCE moves "
+            "most, 0.1846 -> 0.2060, which is what a max-over-bins statistic does when the "
+            "probabilities it bins get finer — read it as the noisiest number here, not the "
+            "most alarming. The bf16 run stays committed and stays labelled: it cannot be "
+            "reproduced by the current code. Read the Brier skill score before the ECE — the "
+            "base-rate control beats this model's calibrated ECE while scoring 33 accuracy "
+            "points lower."
         ),
     ),
 }

@@ -81,14 +81,14 @@ Source: `results/<s1-run>/metrics.json`, rendered in `SUMMARY.md`.
 
 | | zero-shot (4-bit) | S1 (4-bit) | S1 + temperature |
 |---|---|---|---|
-| Accuracy | 0.7645 | TBD | TBD |
-| **BSS vs base rate** (multiclass) | **+0.4602** | TBD | TBD |
-| ECE (15 equal-mass bins) | 0.0449 | TBD | TBD |
-| Brier (top label) | 0.1546 | TBD | TBD |
-| NLL | 0.5948 | TBD | TBD |
+| Accuracy | 0.7638 | TBD | TBD |
+| **BSS vs base rate** (multiclass) | **+0.4598** | TBD | TBD |
+| ECE (15 equal-mass bins) | 0.0428 | TBD | TBD |
+| Brier (top label) | 0.1545 | TBD | TBD |
+| NLL | 0.5952 | TBD | TBD |
 
 The zero-shot column is the committed reference run
-`results/20260917-format02-zeroshot/`, registered in `eval/baselines.py` and tagged
+`results/20260923-format02-zeroshot-fp32logit/`, registered in `eval/baselines.py` and tagged
 `baseline-zeroshot-0.2`. Its figures are the calibrated ones. Comparisons across prompt-format
 versions are refused by that module rather than shown, because a format change alters every
 prompt the model sees.
@@ -100,9 +100,9 @@ If the least confident answers go to a human, what is left is better than the he
 
 | coverage | zero-shot acc | zero-shot threshold | S1 acc | S1 threshold |
 |---|---|---|---|---|
-| 100% | 0.7645 | — | TBD | — |
-| 90% | 0.7997 | 0.4592 | TBD | TBD |
-| 80% | 0.8314 | 0.5497 | TBD | TBD |
+| 100% | 0.7638 | — | TBD | — |
+| 90% | 0.7997 | 0.4570 | TBD | TBD |
+| 80% | 0.8306 | 0.5492 | TBD | TBD |
 
 Full curve: `risk-coverage.png` in each run directory. Reliability diagrams:
 `reliability-calibrated.png`, and per option-count bucket in

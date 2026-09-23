@@ -72,14 +72,14 @@ result.**
 <!--metrics:zeroshot-->
 | | value |
 |---|---|
-| Accuracy | 0.7645 |
-| Brier skill vs base rate | +0.4602 |
-| ECE (15 equal-mass bins) | 0.0449 |
-| Accuracy at 80% coverage | 0.8314 |
+| Accuracy | 0.7638 |
+| Brier skill vs base rate | +0.4598 |
+| ECE (15 equal-mass bins) | 0.0428 |
+| Accuracy at 80% coverage | 0.8306 |
 <!--/metrics:zeroshot-->
 
 <!--metrics:zeroshot-provenance-->
-Evaluated on `pngwn/system-one-decisions` `test` — 1,520 questions, eval mode `full`, run `20260917-format02-zeroshot`.
+Evaluated on `pngwn/system-one-decisions` `test` — 1,520 questions, eval mode `full`, run `20260923-format02-zeroshot-fp32logit`.
 <!--/metrics:zeroshot-provenance-->
 
 Read the Brier skill score before the ECE. A base-rate control — a predictor that ignores the
@@ -90,13 +90,13 @@ control, which a non-committal predictor cannot win.
 <!--figure:reliability-->
 ![Reliability diagram. The calibrated model tracks the diagonal closely; the base-rate control also tracks it while being far less accurate, which is the point being made.](docs/figures/reliability.png)
 
-*Zero-shot, calibrated, with the base-rate control on the same axes. Generated from `20260917-format02-zeroshot` · NVIDIA GeForce RTX 3090 · nf4-bf16.*
+*Zero-shot, calibrated, with the base-rate control on the same axes. Generated from `20260923-format02-zeroshot-fp32logit` · NVIDIA GeForce RTX 3090 · nf4-bf16.*
 <!--/figure:reliability-->
 
 <!--figure:risk-coverage-->
 ![Risk-coverage curve. Model accuracy rises as the least confident answers are declined; the base-rate control stays almost flat, because its confidence carries little ranking information.](docs/figures/risk-coverage.png)
 
-*Accuracy on the answered set as the least confident are declined. Generated from `20260917-format02-zeroshot` · NVIDIA GeForce RTX 3090 · nf4-bf16.*
+*Accuracy on the answered set as the least confident are declined. Generated from `20260923-format02-zeroshot-fp32logit` · NVIDIA GeForce RTX 3090 · nf4-bf16.*
 <!--/figure:risk-coverage-->
 
 **One model, two 4-bit quantizations, different answers.** The same weights and the same 100

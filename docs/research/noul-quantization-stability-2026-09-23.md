@@ -131,3 +131,27 @@ path gave 88.7% agreement against 89.3%, so it moved the third digit and nothing
   switching 4-bit schemes shifts the log-odds by about two nats, which temperature cannot undo.
 - Open: whether the offset is stable across question families and option counts, or specific to
   the two-option case. Cheap to extend — the scoring path now exists for both runtimes.
+
+## Effect on the reference run
+
+The precision fix is a change to how every number in the project is produced, so the reference
+zero-shot eval was re-run under it and registered as a **new result row** rather than replacing
+the old one in place — the same rule that governs a kernel change.
+
+| | bf16 logits | fp32 logits | change |
+|---|---|---|---|
+| accuracy | 0.7645 | 0.7638 | −0.0007 (one question of 1,520) |
+| ECE, uncalibrated | 0.1026 | 0.1032 | +0.0006 |
+| **ECE, calibrated** | 0.0449 | **0.0428** | **−0.0022** |
+| MCE, uncalibrated | 0.1846 | 0.2060 | +0.0214 |
+| Brier skill vs base rate | 0.4602 | 0.4598 | −0.0004 |
+| accuracy at 80% coverage | 0.8314 | 0.8306 | −0.0008 |
+
+Calibrated ECE **improves**, which is the direction to expect: temperature fitting has more than
+eighty distinct confidences to work with. MCE moves most, and it is the number to read last — a
+maximum over bins is the noisiest statistic here, and finer probabilities re-draw the bin edges.
+Nothing else moves by more than a thousandth.
+
+`20260917-format02-zeroshot` stays committed and stays labelled: it cannot be reproduced by the
+current code. Every run from now on records `meta.logit_precision` alongside `meta.kernels`, for
+the same reason.

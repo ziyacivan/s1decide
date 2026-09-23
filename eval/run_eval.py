@@ -387,6 +387,10 @@ def run(config: RunConfig, out_root: Path | None = None) -> Path:
             # result should record the configuration that produced it.
             "hardware": getattr(getattr(engine, "hardware", None), "name", None),
             "kernels": kernel_report(),
+            # Part of what makes a row comparable, like the kernels: the answer-position
+            # logits were rounded to the compute dtype until 2026-09-23, which put a
+            # two-option probability on about eighty distinct values.
+            "logit_precision": "fp32",
         },
     )
     (directory / "metrics.json").write_text(
