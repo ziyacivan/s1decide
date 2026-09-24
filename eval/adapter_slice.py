@@ -11,9 +11,11 @@ adapter layout), loads the adapter weights, renders every slice row with the tra
 with. Its `val` output must reproduce S1's final checkpoint evaluation exactly — the same model,
 slice and code path — and ``score`` checks that before anything else is written.
 
-``calibrate`` (CPU): fits S2 on the `val` logits with `s1decide.calibrate.fit_calibration`
-(temperature per option-count bucket, and vector scaling reported beside it), applies the
-deployed method to `test`, and writes a second run directory.
+``calibrate`` (CPU): fits S2 on the `val` logits per (primitive, option-count bucket) with
+`s1decide.calibrate.fit_calibration_cells` (ADR 0008) — temperature and vector scaling both
+fitted in every cell, the method chosen per cell on held-out val folds — applies it to `test`,
+and writes a second run directory. ``--method`` forces one method everywhere, so both can be
+reported beside the chosen one.
 
     uv run python -m eval.adapter_slice score --adapter results/s1-3090/adapter \\
         --config train/configs/sft_3090_s1.yaml --out results/s1-3090-slices
@@ -70,7 +72,12 @@ def _write_predictions(
 
 
 def _score(
-    adapter: Path, config_path: Path, out: Path, splits: Sequence[str], s1_run: Path
+    adapter: Path | None,
+    config_path: Path,
+    out: Path,
+    splits: Sequence[str],
+    s1_run: Path,
+    eval_batch_size: int = 4,
 ) -> None:
     import torch
     from peft import set_peft_model_state_dict
@@ -86,21 +93,28 @@ def _score(
     config = load_config(config_path)
     tokenizer = AutoTokenizer.from_pretrained(config.model, local_files_only=True)
     model, loader = _load_model(config)
-    result = set_peft_model_state_dict(model, load_file(str(adapter / "adapter_model.safetensors")))
-    if getattr(result, "unexpected_keys", None):
-        raise ValueError(f"adapter weights the model does not have: {result.unexpected_keys[:5]}")
+    # With no adapter the freshly initialised LoRA is a no-op (its B matrices are zero): the
+    # zero-shot model, through exactly the same loader and read path as the trained one.
+    if adapter is not None:
+        state = load_file(str(adapter / "adapter_model.safetensors"))
+        result = set_peft_model_state_dict(model, state)
+        if getattr(result, "unexpected_keys", None):
+            raise ValueError(
+                f"adapter weights the model does not have: {result.unexpected_keys[:5]}"
+            )
     pad = tokenizer.pad_token_id or tokenizer.eos_token_id or 0
     rates = base_rates(_read(root / "data/processed/train.jsonl"))
     out.mkdir(parents=True, exist_ok=True)
 
     meta = {
         "model": config.model,
-        "adapter": str(adapter),
+        "adapter": str(adapter) if adapter is not None else None,
         "config": str(config_path),
         "loader": loader,
         "quantization": "nf4-bf16",
         "kernels": kernel_report(),
         "calibration": "none (raw logits)",
+        "eval_batch_size": eval_batch_size,
     }
     for split in splits:
         for suffix in (".jsonl", ".json"):
@@ -117,11 +131,11 @@ def _score(
         # Scored in build_examples' seeded order — the order S1's own evaluation used — because
         # the recurrent layers see left padding, so batch composition is part of the computation.
         # Only the outputs are put back in slice order.
-        shuffled_logits = predict_logits(model, examples, pad, config.eval_batch_size)
+        shuffled_logits = predict_logits(model, examples, pad, eval_batch_size)
         by_id = {ex["id"]: (ex, lg) for ex, lg in zip(examples, shuffled_logits, strict=True)}
         ordered = [by_id[row["id"]][0] for row in rows]
         logits = [by_id[row["id"]][1] for row in rows]
-        if split == "val":
+        if split == "val" and adapter is not None:
             # The reproduction check: S1's own final evaluation of the same slice.
             final = _read(s1_run / "evals.jsonl")[-1]["metrics"]
             ours = eval_metrics(ordered, logits, rates)
@@ -140,37 +154,59 @@ def _score(
     )
 
 
-def _calibrate(raw: Path, out: Path) -> None:
+def calibration_group(row: dict[str, Any]) -> str:
+    """The S2 cell a slice row is calibrated in (ADR 0008): its primitive, stage 1 apart."""
+    return "stage1" if row.get("stage") == 1 else str(row["qtype"])
+
+
+def _calibrate(
+    raw: Path, out: Path, method: str | None = None, exclude_families: Sequence[str] = ()
+) -> None:
     from eval.metrics import Prediction
-    from s1decide.calibrate import fit_calibration
+    from s1decide.calibrate import fit_calibration_cells
 
     val_rows = {r["id"]: r for r in _read(raw / "slice-val.jsonl")}
     val = [
         Prediction(
             id=p["id"],
             family=val_rows[p["id"]]["family"],
-            qtype=val_rows[p["id"]]["qtype"],
+            qtype=calibration_group(val_rows[p["id"]]),
             logits=tuple(p["logits"]),
             answer_idx=int(val_rows[p["id"]]["answer_idx"]),
             weight=float(val_rows[p["id"]].get("eval_weight", 1.0)),
         )
         for p in _read(raw / "predictions-val.jsonl")
     ]
-    calibration = fit_calibration(val, quantization="nf4-bf16", meta={"fitted_on": "val slice"})
+    cells = fit_calibration_cells(
+        val,
+        quantization="nf4-bf16",
+        group_of=lambda p: p.qtype,
+        exclude_families=exclude_families,
+    )
     out.mkdir(parents=True, exist_ok=True)
-    calibration.save(out / "calibration.json")
+    cells.save(out / "calibration.json")
+    deployed = method or "chosen per (primitive, bucket) on val, out of sample"
     base_meta = json.loads((raw / "predictions-val.meta.json").read_text(encoding="utf-8"))
     for split in ("val", "test"):
         for suffix in (".jsonl", ".json"):
             shutil.copy(raw / f"slice-{split}{suffix}", out / f"slice-{split}{suffix}")
         rows = _read(raw / f"slice-{split}.jsonl")
         predictions = {p["id"]: p["logits"] for p in _read(raw / f"predictions-{split}.jsonl")}
-        calibrated = [list(calibration.apply(predictions[r["id"]])) for r in rows]
+        calibrated = [
+            list(
+                cells.get("nf4-bf16", calibration_group(r)).apply(
+                    predictions[r["id"]], method=method
+                )
+            )
+            for r in rows
+        ]
         # `apply` returns probabilities; store their logs so downstream code sees logits.
         logits = [[math.log(max(p, 1e-12)) for p in probs] for probs in calibrated]
         meta = {
             **base_meta,
-            "calibration": f"S2 {calibration.method} fitted on the val slice (calibration.json)",
+            "calibration": f"S2 per cell (ADR 0008), method: {deployed}; fitted on the val slice "
+            "(calibration.json)",
+            "calibration_excluded_families": sorted(exclude_families),
             "calibration_fit_on_this_split": split == "val",
         }
         _write_predictions(out, split, rows, logits, meta)
@@ -182,7 +218,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="eval.adapter_slice")
     sub = parser.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("score")
-    s.add_argument("--adapter", required=True)
+    s.add_argument("--adapter", default=None, help="omit to score the zero-shot model")
+    s.add_argument("--eval-batch-size", type=int, default=4, help="4 by default since 2026-09-24")
     s.add_argument("--config", required=True)
     s.add_argument("--out", required=True)
     s.add_argument("--splits", nargs="+", default=["val", "test"])
@@ -190,13 +227,25 @@ def main(argv: Sequence[str] | None = None) -> int:
     c = sub.add_parser("calibrate")
     c.add_argument("--raw", required=True)
     c.add_argument("--out", required=True)
+    c.add_argument(
+        "--method",
+        choices=["temperature", "vector"],
+        default=None,
+        help="force one method in every cell; omit to deploy the per-cell choice (ADR 0008)",
+    )
+    c.add_argument("--exclude-families", nargs="*", default=[])
     args = parser.parse_args(list(argv) if argv is not None else None)
     if args.cmd == "score":
         _score(
-            Path(args.adapter), Path(args.config), Path(args.out), args.splits, Path(args.s1_run)
+            Path(args.adapter) if args.adapter else None,
+            Path(args.config),
+            Path(args.out),
+            args.splits,
+            Path(args.s1_run),
+            args.eval_batch_size,
         )
     else:
-        _calibrate(Path(args.raw), Path(args.out))
+        _calibrate(Path(args.raw), Path(args.out), args.method, args.exclude_families)
     return 0
 
 

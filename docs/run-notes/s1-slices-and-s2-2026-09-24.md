@@ -39,3 +39,26 @@ On val — the split it was fitted on — teacher `Score` ECE *worsens*. Brier s
 and one temperature has to serve both; minimising NLL over the bucket does not minimise either
 group's ECE. **Proposal (ADR, not a tweak): fit S2 per primitive × option-count, not per
 option-count alone**, and report both until the choice is made. Not done here.
+
+## Re-run under ADR 0008 (per primitive × bucket)
+
+`uv run --no-sync python -m eval.adapter_slice calibrate --raw results/s1-3090-slices --out …`
+with `--exclude-families ordinal_control` (deployed), `--method temperature` / `--method vector`
+(the two columns), and without the exclusion (`-withcontrol`). Runs:
+`results/s1-3090-slices-s2cells{,-temperature,-vector,-withcontrol}/`; the per-cell choice and
+both held-out NLLs are in each `calibration.json` under `meta.method_selection`.
+
+Selected on held-out val folds: `choice` temperature (both buckets), `noul` vector (small margin),
+`score` vector, `stage1` vector (held-out NLL about halves).
+
+Test, raw → deployed (each run's `metrics.json`, `splits.test.model`):
+
+- stage 1: the largest S2 gain so far — Brier skill and KL both clearly better.
+- choice, noul: small improvements in KL and ECE; skill ~unchanged.
+- teacher `Score`: accuracy, skill and ECE against the hard label better; **KL to the soft teacher
+  target worse**. Open question in ADR 0008 (fit on the soft target for `Score`).
+- rule-labelled `Score`: worse than raw under every variant; least bad with the control in the
+  fit. It is near-certain and correct; a fit on uncertain teacher rows softens it.
+
+The calibrated columns of the comparison table now come from `s1-3090-slices-s2cells`, with the
+temperature-only and vector-only runs beside it.

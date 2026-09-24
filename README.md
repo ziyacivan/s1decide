@@ -62,7 +62,7 @@ something wrong.
 | Latency benchmark against the definition of done | working, all four targets met |
 | Zero-shot baseline on the 27B | measured and committed |
 | **Stage-1 QLoRA training** | **trained once on an RTX 3090 (`s1-3090`); in-distribution only so far** |
-| Stage-2 calibration — temperature and vector scaling | fitted on S1 per option count; per-primitive fitting (ADR 0008) next |
+| Stage-2 calibration — temperature and vector scaling | fitted on S1 per primitive and option count, method chosen out of sample ([ADR 0008](docs/adr/0008-calibration-per-primitive.md)) |
 | GGUF export, `/decide` server | not started |
 
 ## Measured so far

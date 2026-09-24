@@ -1,0 +1,74 @@
+{
+  "model": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+  "adapter": "results\\s1-3090\\adapter",
+  "config": "train\\configs\\sft_3090_s1.yaml",
+  "loader": {
+    "prequantized": true,
+    "targets": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ],
+    "unsloth_import_error": null,
+    "dtype_fix": {
+      "linear4bit": 352,
+      "quant_states": 0,
+      "params_cast": 498
+    },
+    "path": "unsloth",
+    "quantized": true,
+    "layout": {
+      "expected": 256,
+      "adapted": 256,
+      "attention_layers": 16,
+      "mlp_layers": 64
+    }
+  },
+  "quantization": "nf4-bf16",
+  "kernels": {
+    "packages": {
+      "fla": true,
+      "causal_conv1d": false,
+      "triton": true,
+      "triton_kernels": false,
+      "kernels": false
+    },
+    "versions": {
+      "torch": "2.10.0+cu130",
+      "transformers": "5.5.0",
+      "peft": "0.18.1",
+      "trl": "0.23.1",
+      "bitsandbytes": "0.50.2",
+      "unsloth": "2026.9.2",
+      "unsloth_zoo": "2026.9.1",
+      "triton": null,
+      "triton-windows": "3.6.0.post26",
+      "kernels": null,
+      "flash-linear-attention": null,
+      "accelerate": "1.14.0"
+    },
+    "gated_deltanet": {
+      "chunk_gated_delta_rule": "accelerated",
+      "fused_recurrent_gated_delta_rule": "accelerated",
+      "causal_conv1d_fn": "torch",
+      "causal_conv1d_update": "torch"
+    },
+    "fast_path_all": false,
+    "attention": "sdpa",
+    "notes": [
+      "2 of 4 gated-deltanet kernels are accelerated, but transformers reports is_fast_path_available=False because it is an all() over the four; the 'falling back to torch' warning in the log understates what is active",
+      "causal-conv1d has no Windows wheel and fails to build; its two functions use the torch path (a 4-wide depthwise convolution, the cheap part)",
+      "the `kernels` package is absent: MXFP4 checkpoints dequantize to bf16 and a 20B MoE will not fit on a 24 GB card; `kernels` is not in uv.lock"
+    ]
+  },
+  "calibration": "S2 per cell (ADR 0008), method: chosen per (primitive, bucket) on val, out of sample; fitted on the val slice (calibration.json)",
+  "reproduces_s1_final_eval": true,
+  "split": "test",
+  "rows": 8350,
+  "calibration_excluded_families": [],
+  "calibration_fit_on_this_split": false
+}

@@ -17,6 +17,7 @@ Two rules from CLAUDE.md are baked in here:
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import math
 from collections.abc import Mapping, Sequence
@@ -37,12 +38,14 @@ __all__ = [
     "CalibrationSet",
     "default_method",
     "fit_calibration",
+    "fit_calibration_cells",
     "fit_temperature",
     "fit_vector_scaling",
     "is_gguf",
     "nll_at_temperature",
     "nll_with_vector",
     "option_count_bucket",
+    "select_methods",
 ]
 
 #: Schema version of ``calibration.json``.
@@ -357,6 +360,9 @@ class Calibration:
             so a two-option `Noul` fit has nothing to lend a five-level `Score`.
         method: Which method :meth:`apply` uses. Both are always fitted and reported; this names
             the one that is deployed. :func:`default_method` chooses it from the quantization.
+        method_by_bucket: Per option-count bucket, the method chosen for that cell (ADR 0008),
+            overriding ``method`` there. Chosen out of sample by :func:`select_methods`; empty
+            for a fit made before per-cell selection existed.
         meta: Provenance — model, dataset, split, run id, commit, fit NLL before and after.
         version: Schema version.
     """
@@ -369,8 +375,12 @@ class Calibration:
     method: str = "temperature"
     meta: dict[str, Any] = field(default_factory=dict)
     version: str = CALIBRATION_VERSION
+    method_by_bucket: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        for bucket, chosen in self.method_by_bucket.items():
+            if chosen not in CALIBRATION_METHODS:
+                raise ValueError(f"bucket {bucket!r}: unknown method {chosen!r}")
         for bucket, t in self.temperatures.items():
             if not math.isfinite(t) or t <= 0:
                 raise ValueError(f"bucket {bucket!r}: temperature must be positive, got {t}")
@@ -411,7 +421,7 @@ class Calibration:
         Raises:
             ValueError: If ``method`` is not a known method.
         """
-        chosen = method or self.method
+        chosen = method or self.method_by_bucket.get(option_count_bucket(len(logits)), self.method)
         if chosen not in CALIBRATION_METHODS:
             raise ValueError(f"unknown method {chosen!r}; known: {CALIBRATION_METHODS}")
         z = np.asarray(logits, dtype=np.float64)
@@ -468,6 +478,7 @@ class Calibration:
             "quantization": self.quantization,
             "primitive": self.primitive,
             "method": self.method,
+            "method_by_bucket": dict(sorted(self.method_by_bucket.items())),
             "default": self.default,
             "temperatures": dict(sorted(self.temperatures.items())),
             "vectors": {k: self.vectors[k] for k in sorted(self.vectors, key=int)},
@@ -502,6 +513,9 @@ class Calibration:
             method=str(raw.get("method", "temperature")),
             meta=dict(raw.get("meta", {})),
             version=str(raw["version"]),
+            # Absent in fits made before per-cell selection (ADR 0008); `method` then applies
+            # to every bucket, which is what those fits meant.
+            method_by_bucket={str(k): str(v) for k, v in raw.get("method_by_bucket", {}).items()},
         )
 
     @classmethod
@@ -649,6 +663,124 @@ GGUF_QUANTIZATION_MARKERS: tuple[str, ...] = (
     "q5_0",
     "q5_1",
 )
+
+
+def _fold_of(prediction_id: str, folds: int) -> int:
+    """A stable fold assignment from the row id, independent of iteration order and seed."""
+    import hashlib
+
+    return (
+        int(hashlib.blake2b(prediction_id.encode("utf-8"), digest_size=4).hexdigest(), 16) % folds
+    )
+
+
+def select_methods(
+    predictions: Sequence[Any],
+    *,
+    quantization: str,
+    primitive: str,
+    folds: int = 2,
+    min_count: int = 30,
+) -> dict[str, dict[str, Any]]:
+    """Choose temperature or vector scaling per option-count bucket, **out of sample** (ADR 0008).
+
+    Choosing on the rows a method was fitted to always favours vector scaling — it has more
+    parameters, so it always fits its own data better. Each fold is therefore fitted on the other
+    folds and scored on itself; the method with the lower pooled held-out NLL wins the bucket.
+
+    Args:
+        predictions: One primitive's validation predictions (``id``, ``logits``, ``answer_idx``,
+            ``weight``).
+        quantization: Recorded on the fold fits.
+        primitive: Recorded on the fold fits.
+        folds: Number of folds, assigned by a hash of the row id.
+        min_count: Passed to each fold's fit.
+
+    Returns:
+        ``{bucket: {"method", "heldout_nll": {"temperature": x, "vector": y}, "rows": n}}``.
+    """
+    totals: dict[str, dict[str, float]] = {}
+    weights: dict[str, float] = {}
+    counts: dict[str, int] = {}
+    for fold in range(folds):
+        held = [p for p in predictions if _fold_of(str(p.id), folds) == fold]
+        rest = [p for p in predictions if _fold_of(str(p.id), folds) != fold]
+        if not held or not rest:
+            continue
+        fit = fit_calibration(
+            rest, quantization=quantization, primitive=primitive, min_count=min_count
+        )
+        for p in held:
+            bucket = option_count_bucket(len(p.logits))
+            w = float(getattr(p, "weight", 1.0))
+            cell = totals.setdefault(bucket, {"temperature": 0.0, "vector": 0.0})
+            for chosen in CALIBRATION_METHODS:
+                prob = float(fit.apply(p.logits, method=chosen)[int(p.answer_idx)])
+                cell[chosen] += -w * math.log(max(prob, 1e-300))
+            weights[bucket] = weights.get(bucket, 0.0) + w
+            counts[bucket] = counts.get(bucket, 0) + 1
+    out: dict[str, dict[str, Any]] = {}
+    for bucket, nll in totals.items():
+        mean = {m: nll[m] / weights[bucket] for m in nll}
+        out[bucket] = {
+            # Ties go to temperature: fewer parameters, and it cannot change the argmax.
+            "method": "vector" if mean["vector"] < mean["temperature"] else "temperature",
+            "heldout_nll": mean,
+            "rows": counts[bucket],
+        }
+    return out
+
+
+def fit_calibration_cells(
+    predictions: Sequence[Any],
+    *,
+    quantization: str,
+    group_of: Any,
+    exclude_families: Sequence[str] = (),
+    min_count: int = 30,
+) -> CalibrationSet:
+    """S2 per (primitive, option-count bucket): both methods fitted, method chosen per cell.
+
+    Args:
+        predictions: Validation predictions (``id``, ``family``, ``logits``, ``answer_idx``,
+            ``weight``).
+        quantization: Deployment quantization, recorded and enforced.
+        group_of: Maps a prediction to its calibration primitive — ``choice``, ``noul``,
+            ``stage1`` or ``score``. Stage-1 rows get their own cell because the two-stage path
+            knows at inference time that it is running stage 1, and their 99:1 prior has
+            nothing to lend a genuine `Noul`.
+        exclude_families: Families left out of the fit (still evaluated) — e.g. rule-labelled
+            controls whose labels are exact by construction and are not deployment data.
+        min_count: Minimum rows for a bucket or option count to be fitted.
+
+    Returns:
+        A :class:`CalibrationSet` keyed ``quantization/primitive``.
+    """
+    fitted = [p for p in predictions if getattr(p, "family", None) not in set(exclude_families)]
+    groups: dict[str, list[Any]] = {}
+    for p in fitted:
+        groups.setdefault(str(group_of(p)), []).append(p)
+    out = CalibrationSet()
+    for primitive, rows in sorted(groups.items()):
+        fit = fit_calibration(
+            rows, quantization=quantization, primitive=primitive, min_count=min_count
+        )
+        selection = select_methods(
+            rows, quantization=quantization, primitive=primitive, min_count=min_count
+        )
+        out.add(
+            dataclasses.replace(
+                fit,
+                method_by_bucket={bucket: cell["method"] for bucket, cell in selection.items()},
+                meta={
+                    **fit.meta,
+                    "method_selection": selection,
+                    "excluded_families": sorted(exclude_families),
+                    "rows": len(rows),
+                },
+            )
+        )
+    return out
 
 
 def is_gguf(quantization: str) -> bool:

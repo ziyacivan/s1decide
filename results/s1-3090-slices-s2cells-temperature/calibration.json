@@ -1,0 +1,295 @@
+{
+  "version": "0.1",
+  "entries": {
+    "nf4-bf16/choice": {
+      "version": "0.1",
+      "quantization": "nf4-bf16",
+      "primitive": "choice",
+      "method": "temperature",
+      "method_by_bucket": {
+        "3-5": "temperature",
+        "6-16": "temperature"
+      },
+      "default": 1.0,
+      "temperatures": {
+        "3-5": 1.5055395884085105,
+        "6-16": 1.1225588384950502
+      },
+      "vectors": {
+        "4": {
+          "temperature": 1.4970569050060085,
+          "bias": [
+            0.12274170319529204,
+            -0.16553434323820684,
+            -0.16616723137656117,
+            0.20895987141947597
+          ],
+          "n": 178
+        },
+        "8": {
+          "temperature": 1.0657587088485605,
+          "bias": [
+            -0.08432645807672341,
+            0.6291435155582843,
+            -1.0272012773573418,
+            -0.588365453055529,
+            0.6293988485175962,
+            -0.047401812288306366,
+            0.28316215916658527,
+            0.20559047753543472
+          ],
+          "n": 1202
+        }
+      },
+      "meta": {
+        "fitted_at": "2026-09-24T10:29:10+00:00",
+        "n_predictions": 1380,
+        "min_count": 30,
+        "primitive": "choice",
+        "method_default_for_quantization": "temperature",
+        "fit_target": "validation labels; never agreement with another runtime",
+        "buckets": {
+          "3-5": {
+            "n": 178,
+            "temperature": 1.5055395884085105,
+            "nll_before": 0.5394422795738665,
+            "nll_after": 0.4942947021469638
+          },
+          "6-16": {
+            "n": 1202,
+            "temperature": 1.1225588384950502,
+            "nll_before": 0.07568566687293254,
+            "nll_after": 0.0746631488661487
+          }
+        },
+        "vector_scaling": {
+          "4": {
+            "n": 178,
+            "temperature": 1.4970569050060085,
+            "max_abs_bias": 0.20895987141947597,
+            "nll_temperature_only": 0.4942947021469638,
+            "nll_vector": 0.48924500769067286
+          },
+          "8": {
+            "n": 1202,
+            "temperature": 1.0657587088485605,
+            "max_abs_bias": 1.0272012773573418,
+            "nll_temperature_only": 0.0746631488661487,
+            "nll_vector": 0.06939460838716134
+          }
+        },
+        "method_selection": {
+          "6-16": {
+            "method": "temperature",
+            "heldout_nll": {
+              "temperature": 0.07891227933042397,
+              "vector": 0.09168910288989053
+            },
+            "rows": 1202
+          },
+          "3-5": {
+            "method": "temperature",
+            "heldout_nll": {
+              "temperature": 0.5023653792179531,
+              "vector": 0.5023653792179531
+            },
+            "rows": 178
+          }
+        },
+        "excluded_families": [
+          "ordinal_control"
+        ],
+        "rows": 1380
+      }
+    },
+    "nf4-bf16/noul": {
+      "version": "0.1",
+      "quantization": "nf4-bf16",
+      "primitive": "noul",
+      "method": "temperature",
+      "method_by_bucket": {
+        "2": "vector"
+      },
+      "default": 1.0,
+      "temperatures": {
+        "2": 1.1901893191080806
+      },
+      "vectors": {
+        "2": {
+          "temperature": 1.2102024880934303,
+          "bias": [
+            0.10016095046747363,
+            -0.10016095046747363
+          ],
+          "n": 1289
+        }
+      },
+      "meta": {
+        "fitted_at": "2026-09-24T10:29:11+00:00",
+        "n_predictions": 1289,
+        "min_count": 30,
+        "primitive": "noul",
+        "method_default_for_quantization": "temperature",
+        "fit_target": "validation labels; never agreement with another runtime",
+        "buckets": {
+          "2": {
+            "n": 1289,
+            "temperature": 1.1901893191080806,
+            "nll_before": 0.31571886390441967,
+            "nll_after": 0.3115695626934378
+          }
+        },
+        "vector_scaling": {
+          "2": {
+            "n": 1289,
+            "temperature": 1.2102024880934303,
+            "max_abs_bias": 0.10016095046747363,
+            "nll_temperature_only": 0.3115695626934378,
+            "nll_vector": 0.30964939544100917
+          }
+        },
+        "method_selection": {
+          "2": {
+            "method": "vector",
+            "heldout_nll": {
+              "temperature": 0.31187557517825604,
+              "vector": 0.3105264163767321
+            },
+            "rows": 1289
+          }
+        },
+        "excluded_families": [
+          "ordinal_control"
+        ],
+        "rows": 1289
+      }
+    },
+    "nf4-bf16/score": {
+      "version": "0.1",
+      "quantization": "nf4-bf16",
+      "primitive": "score",
+      "method": "temperature",
+      "method_by_bucket": {
+        "3-5": "vector"
+      },
+      "default": 1.0,
+      "temperatures": {
+        "3-5": 1.2132799070536848
+      },
+      "vectors": {
+        "5": {
+          "temperature": 1.0907882188213944,
+          "bias": [
+            -0.3084876263311069,
+            0.442883534180286,
+            0.23996512275430973,
+            0.12274675121819953,
+            -0.4971077818216883
+          ],
+          "n": 468
+        }
+      },
+      "meta": {
+        "fitted_at": "2026-09-24T10:29:11+00:00",
+        "n_predictions": 468,
+        "min_count": 30,
+        "primitive": "score",
+        "method_default_for_quantization": "temperature",
+        "fit_target": "validation labels; never agreement with another runtime",
+        "buckets": {
+          "3-5": {
+            "n": 468,
+            "temperature": 1.2132799070536848,
+            "nll_before": 0.6153306030079719,
+            "nll_after": 0.6070508830580376
+          }
+        },
+        "vector_scaling": {
+          "5": {
+            "n": 468,
+            "temperature": 1.0907882188213944,
+            "max_abs_bias": 0.4971077818216883,
+            "nll_temperature_only": 0.6070508830580376,
+            "nll_vector": 0.5814556669655242
+          }
+        },
+        "method_selection": {
+          "3-5": {
+            "method": "vector",
+            "heldout_nll": {
+              "temperature": 0.6082395070047784,
+              "vector": 0.6027938589902967
+            },
+            "rows": 468
+          }
+        },
+        "excluded_families": [
+          "ordinal_control"
+        ],
+        "rows": 468
+      }
+    },
+    "nf4-bf16/stage1": {
+      "version": "0.1",
+      "quantization": "nf4-bf16",
+      "primitive": "stage1",
+      "method": "temperature",
+      "method_by_bucket": {
+        "2": "vector"
+      },
+      "default": 1.0,
+      "temperatures": {
+        "2": 0.9849448095624641
+      },
+      "vectors": {
+        "2": {
+          "temperature": 0.9710655474875839,
+          "bias": [
+            1.2467024569044673,
+            -1.2467024569044673
+          ],
+          "n": 5100
+        }
+      },
+      "meta": {
+        "fitted_at": "2026-09-24T10:29:11+00:00",
+        "n_predictions": 5100,
+        "min_count": 30,
+        "primitive": "stage1",
+        "method_default_for_quantization": "temperature",
+        "fit_target": "validation labels; never agreement with another runtime",
+        "buckets": {
+          "2": {
+            "n": 5100,
+            "temperature": 0.9849448095624641,
+            "nll_before": 0.03515603050517983,
+            "nll_after": 0.035148793582003984
+          }
+        },
+        "vector_scaling": {
+          "2": {
+            "n": 5100,
+            "temperature": 0.9710655474875839,
+            "max_abs_bias": 1.2467024569044673,
+            "nll_temperature_only": 0.023455619820301102,
+            "nll_vector": 0.011077268620120395
+          }
+        },
+        "method_selection": {
+          "2": {
+            "method": "vector",
+            "heldout_nll": {
+              "temperature": 0.023620639549750543,
+              "vector": 0.011226333483386685
+            },
+            "rows": 5100
+          }
+        },
+        "excluded_families": [
+          "ordinal_control"
+        ],
+        "rows": 5100
+      }
+    }
+  }
+}

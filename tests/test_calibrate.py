@@ -15,9 +15,11 @@ from s1decide.calibrate import (
     CalibrationSet,
     default_method,
     fit_calibration,
+    fit_calibration_cells,
     fit_temperature,
     nll_at_temperature,
     option_count_bucket,
+    select_methods,
 )
 
 
@@ -300,3 +302,95 @@ def test_an_older_single_fit_file_still_loads(tmp_path, binary_predictions) -> N
     path = single.save(tmp_path / "calibration.json")
     loaded = CalibrationSet.load(path)
     assert set(loaded.entries) == {"nf4-bf16/all"}
+
+
+# --- ADR 0008: method chosen per (primitive, bucket), out of sample ----------------
+
+
+def shifted(n: int, shift: float, seed: int = 0) -> list[Prediction]:
+    """Two-option rows whose labels come from the logits with a constant bias on option 0.
+
+    A temperature is monotone in the log-odds and cannot remove a constant shift; a bias can.
+    """
+    rng = np.random.default_rng(seed)
+    out = []
+    for i in range(n):
+        logits = rng.normal(scale=2.0, size=2)
+        z = logits + np.array([shift, 0.0])
+        p = np.exp(z - z.max())
+        p /= p.sum()
+        out.append(
+            Prediction(
+                id=f"v{seed}-{i}",
+                family="synthetic",
+                qtype="noul",
+                logits=tuple(logits),
+                answer_idx=int(rng.choice(2, p=p)),
+            )
+        )
+    return out
+
+
+def test_selection_picks_vector_when_the_error_is_a_positional_shift() -> None:
+    chosen = select_methods(shifted(600, 2.0), quantization="nf4-bf16", primitive="noul")
+    assert chosen["2"]["method"] == "vector"
+    assert chosen["2"]["rows"] == 600
+
+
+def test_selection_keeps_temperature_when_there_is_no_shift() -> None:
+    """Out of sample the extra parameters of vector scaling buy nothing, so it must not win."""
+    chosen = select_methods(
+        synthetic(600, 2, true_temperature=1.7), quantization="nf4-bf16", primitive="noul"
+    )
+    assert chosen["2"]["method"] == "temperature"
+
+
+def test_cells_fit_each_primitive_separately_and_deploy_the_chosen_method() -> None:
+    noul = shifted(600, 2.0)
+    choice = [
+        Prediction(
+            id=f"c{p.id}", family="other", qtype="choice", logits=p.logits, answer_idx=p.answer_idx
+        )
+        for p in synthetic(600, 2, true_temperature=1.7, seed=3)
+    ]
+    cells = fit_calibration_cells(
+        noul + choice, quantization="nf4-bf16", group_of=lambda p: p.qtype
+    )
+    assert set(cells.entries) == {"nf4-bf16/choice", "nf4-bf16/noul"}
+    noul_fit = cells.get("nf4-bf16", "noul")
+    assert noul_fit.method_by_bucket == {"2": "vector"}
+    assert noul_fit.meta["rows"] == 600
+    # `apply` without a method deploys the cell's choice, not the fit-wide default.
+    logits = (0.3, 0.1)
+    assert list(noul_fit.apply(logits)) == list(noul_fit.apply(logits, method="vector"))
+    assert list(noul_fit.apply(logits)) != list(noul_fit.apply(logits, method="temperature"))
+
+
+def test_excluded_families_are_left_out_of_the_fit() -> None:
+    rows = shifted(600, 2.0)
+    control = [
+        Prediction(
+            id=f"x{i}", family="ordinal_control", qtype="noul", logits=(5.0, -5.0), answer_idx=0
+        )
+        for i in range(200)
+    ]
+    cells = fit_calibration_cells(
+        rows + control,
+        quantization="nf4-bf16",
+        group_of=lambda p: p.qtype,
+        exclude_families=["ordinal_control"],
+    )
+    fit = cells.get("nf4-bf16", "noul")
+    assert fit.meta["rows"] == 600
+    assert fit.meta["excluded_families"] == ["ordinal_control"]
+
+
+def test_method_by_bucket_round_trips_and_is_validated(tmp_path) -> None:
+    fit = fit_calibration(shifted(400, 2.0), quantization="nf4-bf16", primitive="noul")
+    import dataclasses
+
+    chosen = dataclasses.replace(fit, method_by_bucket={"2": "vector"})
+    loaded = Calibration.load(chosen.save(tmp_path / "c.json"))
+    assert loaded.method_by_bucket == {"2": "vector"}
+    with pytest.raises(ValueError, match="unknown method"):
+        dataclasses.replace(fit, method_by_bucket={"2": "platt"})
