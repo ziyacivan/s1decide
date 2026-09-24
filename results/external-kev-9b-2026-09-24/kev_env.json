@@ -1,0 +1,15 @@
+{
+  "kev_commit": "c9c1f855505336ac32092a5f68305d397f7fcc3e",
+  "adapter": {
+    "repo": "jaredpalmer/kev-9b",
+    "revision": "2629c06a5aeb0feb3b9783bafed17ed8f39ecf5c"
+  },
+  "base": {
+    "repo": "Qwen/Qwen3.5-9B-Base",
+    "revision": "68c46c4b3498877f3ef123c856ecfde50c39f404"
+  },
+  "environment": "Kev's own uv lock; torch swapped from PyPI 2.8.0 (CPU-only on Windows) to 2.8.0+cu128",
+  "serve_dtype": "bf16 (default)",
+  "temperature": "as shipped (KEV_TEMPERATURE unset)",
+  "gpu_free_mib_before": 417
+}
