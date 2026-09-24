@@ -78,6 +78,7 @@ def _score(
     splits: Sequence[str],
     s1_run: Path,
     eval_batch_size: int = 4,
+    slices: Path = LAYA_SLICES,
 ) -> None:
     import torch
     from peft import set_peft_model_state_dict
@@ -118,9 +119,7 @@ def _score(
     }
     for split in splits:
         for suffix in (".jsonl", ".json"):
-            shutil.copy(
-                root / LAYA_SLICES / f"slice-{split}{suffix}", out / f"slice-{split}{suffix}"
-            )
+            shutil.copy(root / slices / f"slice-{split}{suffix}", out / f"slice-{split}{suffix}")
         rows = _read(out / f"slice-{split}.jsonl")
         stats: dict[str, int] = {"dropped_over_cap": 0}
         examples = build_examples(rows, tokenizer, config, stats)
@@ -224,6 +223,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     s.add_argument("--out", required=True)
     s.add_argument("--splits", nargs="+", default=["val", "test"])
     s.add_argument("--s1-run", default="results/s1-3090")
+    s.add_argument(
+        "--slices",
+        default=str(LAYA_SLICES),
+        help="directory holding slice-<split>.jsonl (the fair-ground slice: --splits eval)",
+    )
     c = sub.add_parser("calibrate")
     c.add_argument("--raw", required=True)
     c.add_argument("--out", required=True)
@@ -243,6 +247,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.splits,
             Path(args.s1_run),
             args.eval_batch_size,
+            Path(args.slices),
         )
     else:
         _calibrate(Path(args.raw), Path(args.out), args.method, args.exclude_families)
