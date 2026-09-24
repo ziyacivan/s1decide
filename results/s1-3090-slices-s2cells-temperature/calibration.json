@@ -8,7 +8,7 @@
       "method": "temperature",
       "method_by_bucket": {
         "3-5": "temperature",
-        "6-16": "temperature"
+        "6-16": "none"
       },
       "default": 1.0,
       "temperatures": {
@@ -42,12 +42,13 @@
         }
       },
       "meta": {
-        "fitted_at": "2026-09-24T10:29:10+00:00",
+        "fitted_at": "2026-09-24T11:24:04+00:00",
         "n_predictions": 1380,
         "min_count": 30,
         "primitive": "choice",
         "method_default_for_quantization": "temperature",
-        "fit_target": "validation labels; never agreement with another runtime",
+        "fit_target": "validation labels \u2014 the soft target where a row has one (ADR 0008 option B), else the answer; never agreement with another runtime",
+        "soft_target_rows": 0,
         "buckets": {
           "3-5": {
             "n": 178,
@@ -80,8 +81,9 @@
         },
         "method_selection": {
           "6-16": {
-            "method": "temperature",
+            "method": "none",
             "heldout_nll": {
+              "none": 0.07568566687293263,
               "temperature": 0.07891227933042397,
               "vector": 0.09168910288989053
             },
@@ -90,6 +92,7 @@
           "3-5": {
             "method": "temperature",
             "heldout_nll": {
+              "none": 0.5394422795738664,
               "temperature": 0.5023653792179531,
               "vector": 0.5023653792179531
             },
@@ -125,12 +128,13 @@
         }
       },
       "meta": {
-        "fitted_at": "2026-09-24T10:29:11+00:00",
+        "fitted_at": "2026-09-24T11:24:04+00:00",
         "n_predictions": 1289,
         "min_count": 30,
         "primitive": "noul",
         "method_default_for_quantization": "temperature",
-        "fit_target": "validation labels; never agreement with another runtime",
+        "fit_target": "validation labels \u2014 the soft target where a row has one (ADR 0008 option B), else the answer; never agreement with another runtime",
+        "soft_target_rows": 0,
         "buckets": {
           "2": {
             "n": 1289,
@@ -152,6 +156,7 @@
           "2": {
             "method": "vector",
             "heldout_nll": {
+              "none": 0.31571886390441967,
               "temperature": 0.31187557517825604,
               "vector": 0.3105264163767321
             },
@@ -170,55 +175,57 @@
       "primitive": "score",
       "method": "temperature",
       "method_by_bucket": {
-        "3-5": "vector"
+        "3-5": "temperature"
       },
       "default": 1.0,
       "temperatures": {
-        "3-5": 1.2132799070536848
+        "3-5": 1.275783560422186
       },
       "vectors": {
         "5": {
-          "temperature": 1.0907882188213944,
+          "temperature": 1.2380529204866422,
           "bias": [
-            -0.3084876263311069,
-            0.442883534180286,
-            0.23996512275430973,
-            0.12274675121819953,
-            -0.4971077818216883
+            -0.30456155497204745,
+            -0.17760032808177215,
+            0.11614756520999724,
+            0.04371772702965972,
+            0.3222965908141626
           ],
           "n": 468
         }
       },
       "meta": {
-        "fitted_at": "2026-09-24T10:29:11+00:00",
+        "fitted_at": "2026-09-24T11:24:04+00:00",
         "n_predictions": 468,
         "min_count": 30,
         "primitive": "score",
         "method_default_for_quantization": "temperature",
-        "fit_target": "validation labels; never agreement with another runtime",
+        "fit_target": "validation labels \u2014 the soft target where a row has one (ADR 0008 option B), else the answer; never agreement with another runtime",
+        "soft_target_rows": 468,
         "buckets": {
           "3-5": {
             "n": 468,
-            "temperature": 1.2132799070536848,
-            "nll_before": 0.6153306030079719,
-            "nll_after": 0.6070508830580376
+            "temperature": 1.275783560422186,
+            "nll_before": 0.6427077397601089,
+            "nll_after": 0.6290505775415333
           }
         },
         "vector_scaling": {
           "5": {
             "n": 468,
-            "temperature": 1.0907882188213944,
-            "max_abs_bias": 0.4971077818216883,
-            "nll_temperature_only": 0.6070508830580376,
-            "nll_vector": 0.5814556669655242
+            "temperature": 1.2380529204866422,
+            "max_abs_bias": 0.3222965908141626,
+            "nll_temperature_only": 0.6290505775415333,
+            "nll_vector": 0.6241063109736826
           }
         },
         "method_selection": {
           "3-5": {
-            "method": "vector",
+            "method": "temperature",
             "heldout_nll": {
-              "temperature": 0.6082395070047784,
-              "vector": 0.6027938589902967
+              "none": 0.6427077397601086,
+              "temperature": 0.6299108266176038,
+              "vector": 0.6364836744104286
             },
             "rows": 468
           }
@@ -239,7 +246,7 @@
       },
       "default": 1.0,
       "temperatures": {
-        "2": 0.9849448095624641
+        "2": 0.9140512859787332
       },
       "vectors": {
         "2": {
@@ -252,18 +259,19 @@
         }
       },
       "meta": {
-        "fitted_at": "2026-09-24T10:29:11+00:00",
+        "fitted_at": "2026-09-24T11:24:05+00:00",
         "n_predictions": 5100,
         "min_count": 30,
         "primitive": "stage1",
         "method_default_for_quantization": "temperature",
-        "fit_target": "validation labels; never agreement with another runtime",
+        "fit_target": "validation labels \u2014 the soft target where a row has one (ADR 0008 option B), else the answer; never agreement with another runtime",
+        "soft_target_rows": 0,
         "buckets": {
           "2": {
             "n": 5100,
-            "temperature": 0.9849448095624641,
-            "nll_before": 0.03515603050517983,
-            "nll_after": 0.035148793582003984
+            "temperature": 0.9140512859787332,
+            "nll_before": 0.023641230591782976,
+            "nll_after": 0.023455619820301102
           }
         },
         "vector_scaling": {
@@ -279,7 +287,8 @@
           "2": {
             "method": "vector",
             "heldout_nll": {
-              "temperature": 0.023620639549750543,
+              "none": 0.02364123059178327,
+              "temperature": 0.0234557882578266,
               "vector": 0.011226333483386685
             },
             "rows": 5100

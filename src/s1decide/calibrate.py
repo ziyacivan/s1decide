@@ -31,6 +31,7 @@ import numpy as np
 __all__ = [
     "CALIBRATION_METHODS",
     "CALIBRATION_VERSION",
+    "DEPLOYABLE_METHODS",
     "GGUF_QUANTIZATION_MARKERS",
     "MIN_VECTOR_SAMPLES_PER_PARAMETER",
     "OPTION_COUNT_BUCKETS",
@@ -100,12 +101,38 @@ TEMPERATURE_BOUNDS = (0.05, 20.0)
 #: methods are fitted, both are reported, and the deployed one is named in `calibration.json`.
 CALIBRATION_METHODS: tuple[str, ...] = ("temperature", "vector")
 
+#: What a cell may deploy (ADR 0008): the fitted methods, or ``none`` — the raw softmax, for a
+#: cell no fit improves out of sample. Listed in order of preference on a tie: fewest parameters
+#: first.
+DEPLOYABLE_METHODS: tuple[str, ...] = ("none", *CALIBRATION_METHODS)
+
 #: A bias vector has one free parameter per option, so a bucket spanning 3-5 options cannot
 #: share one. Vector scaling is therefore fitted per **exact** option count, and only where
 #: there is enough data for `n + 1` parameters not to be fitted to noise.
 MIN_VECTOR_SAMPLES_PER_PARAMETER = 20
 
 _GOLDEN = (math.sqrt(5.0) - 1.0) / 2.0
+
+#: A label: an option index, or a soft target — a probability distribution over the options.
+Label = int | Sequence[float]
+
+
+def _target_row(label: Any, n_options: int) -> np.ndarray:
+    """One label as a target distribution: one-hot for an index, the row itself for a soft one.
+
+    Raises:
+        ValueError: If a soft target has the wrong length or is not a distribution.
+    """
+    if isinstance(label, int | np.integer):
+        row = np.zeros(n_options, dtype=np.float64)
+        row[int(label)] = 1.0
+        return row
+    row = np.asarray(label, dtype=np.float64)
+    if row.shape != (n_options,):
+        raise ValueError(f"soft target of shape {row.shape} for {n_options} options")
+    if np.any(row < 0) or abs(float(row.sum()) - 1.0) > 1e-6:
+        raise ValueError("a soft target must be a probability distribution")
+    return row
 
 
 def _validate_weights(weights: Sequence[float] | None, n: int) -> np.ndarray:
@@ -135,11 +162,14 @@ def _validate_weights(weights: Sequence[float] | None, n: int) -> np.ndarray:
 
 def nll_at_temperature(
     logits: Sequence[Sequence[float]],
-    labels: Sequence[int],
+    labels: Sequence[Label],
     temperature: float,
     weights: Sequence[float] | None = None,
 ) -> float:
     """Mean negative log-likelihood of the correct option at a given temperature.
+
+    A soft label (a distribution over the options) makes it the cross-entropy against that
+    target, which is what ADR 0008 option B fits `Score` on.
 
     Args:
         logits: Raw masked logits, one row per question (rows may differ in length).
@@ -157,15 +187,16 @@ def nll_at_temperature(
         raise ValueError(f"temperature must be positive, got {temperature}")
     w = _validate_weights(weights, len(labels))
     total = 0.0
-    for row, target, weight in zip(logits, labels, w):
+    for row, label, weight in zip(logits, labels, w):
         z = np.asarray(row, dtype=np.float64) / temperature
-        total += weight * float(np.logaddexp.reduce(z) - z[target])
+        t = _target_row(label, z.size)
+        total += weight * float(np.logaddexp.reduce(z) - np.dot(t, z))
     return total / float(w.sum())
 
 
 def fit_temperature(
     logits: Sequence[Sequence[float]],
-    labels: Sequence[int],
+    labels: Sequence[Label],
     bounds: tuple[float, float] = TEMPERATURE_BOUNDS,
     tolerance: float = 1e-4,
     weights: Sequence[float] | None = None,
@@ -200,7 +231,8 @@ def fit_temperature(
         raise ValueError(f"invalid bounds {bounds}")
 
     rows = [np.asarray(r, dtype=np.float64) for r in logits]
-    targets = np.asarray(labels, dtype=np.int64)
+    # Soft or one-hot, cross-entropy against a fixed target is still convex in beta.
+    targets = [_target_row(label, row.size) for label, row in zip(labels, rows, strict=True)]
     w = _validate_weights(weights, len(rows))
     mass = float(w.sum())
 
@@ -208,7 +240,7 @@ def fit_temperature(
         total = 0.0
         for row, target, weight in zip(rows, targets, w):
             z = row * beta
-            total += weight * float(np.logaddexp.reduce(z) - z[target])
+            total += weight * float(np.logaddexp.reduce(z) - np.dot(target, z))
         return total / mass
 
     lo, hi = 1.0 / high_t, 1.0 / low_t
@@ -228,7 +260,7 @@ def fit_temperature(
 
 def fit_vector_scaling(
     logits: Sequence[Sequence[float]],
-    labels: Sequence[int],
+    labels: Sequence[Label],
     *,
     weights: Sequence[float] | None = None,
     iterations: int = 500,
@@ -271,20 +303,19 @@ def fit_vector_scaling(
             "group by option count first"
         )
     z = np.asarray(logits, dtype=np.float64)
-    y = np.asarray(labels, dtype=np.int64)
-    if z.shape[0] != y.size:
-        raise ValueError(f"{z.shape[0]} logit rows but {y.size} labels")
+    if z.shape[0] != len(labels):
+        raise ValueError(f"{z.shape[0]} logit rows but {len(labels)} labels")
     w = _validate_weights(weights, z.shape[0])
     mass = float(w.sum())
     n_options = z.shape[1]
-    onehot = np.zeros_like(z)
-    onehot[np.arange(y.size), y] = 1.0
+    # One-hot for index labels, the row itself for soft ones: cross-entropy either way.
+    onehot = np.stack([_target_row(label, n_options) for label in labels])
 
     def objective(beta: float, bias: np.ndarray) -> float:
         scores = beta * z + bias
         shifted = scores - scores.max(axis=1, keepdims=True)
         log_norm = np.log(np.exp(shifted).sum(axis=1)) + scores.max(axis=1)
-        return float(np.sum(w * (log_norm - scores[np.arange(y.size), y])) / mass)
+        return float(np.sum(w * (log_norm - np.sum(onehot * scores, axis=1))) / mass)
 
     beta = 1.0
     bias = np.zeros(n_options, dtype=np.float64)
@@ -327,7 +358,7 @@ def fit_vector_scaling(
 
 def nll_with_vector(
     logits: Sequence[Sequence[float]],
-    labels: Sequence[int],
+    labels: Sequence[Label],
     temperature: float,
     bias: Sequence[float],
     weights: Sequence[float] | None = None,
@@ -337,10 +368,10 @@ def nll_with_vector(
         raise ValueError(f"temperature must be positive, got {temperature}")
     z = np.asarray(logits, dtype=np.float64) / temperature + np.asarray(bias, dtype=np.float64)
     w = _validate_weights(weights, z.shape[0])
-    y = np.asarray(labels, dtype=np.int64)
+    t = np.stack([_target_row(label, z.shape[1]) for label in labels])
     shifted = z - z.max(axis=1, keepdims=True)
     log_norm = np.log(np.exp(shifted).sum(axis=1)) + z.max(axis=1)
-    return float(np.sum(w * (log_norm - z[np.arange(y.size), y])) / float(w.sum()))
+    return float(np.sum(w * (log_norm - np.sum(t * z, axis=1))) / float(w.sum()))
 
 
 @dataclass(frozen=True)
@@ -379,15 +410,15 @@ class Calibration:
 
     def __post_init__(self) -> None:
         for bucket, chosen in self.method_by_bucket.items():
-            if chosen not in CALIBRATION_METHODS:
+            if chosen not in DEPLOYABLE_METHODS:
                 raise ValueError(f"bucket {bucket!r}: unknown method {chosen!r}")
         for bucket, t in self.temperatures.items():
             if not math.isfinite(t) or t <= 0:
                 raise ValueError(f"bucket {bucket!r}: temperature must be positive, got {t}")
         if not math.isfinite(self.default) or self.default <= 0:
             raise ValueError(f"default temperature must be positive, got {self.default}")
-        if self.method not in CALIBRATION_METHODS:
-            raise ValueError(f"unknown method {self.method!r}; known: {CALIBRATION_METHODS}")
+        if self.method not in DEPLOYABLE_METHODS:
+            raise ValueError(f"unknown method {self.method!r}; known: {DEPLOYABLE_METHODS}")
         for count, fit in self.vectors.items():
             bias = fit.get("bias", [])
             if len(bias) != int(count):
@@ -422,11 +453,13 @@ class Calibration:
             ValueError: If ``method`` is not a known method.
         """
         chosen = method or self.method_by_bucket.get(option_count_bucket(len(logits)), self.method)
-        if chosen not in CALIBRATION_METHODS:
-            raise ValueError(f"unknown method {chosen!r}; known: {CALIBRATION_METHODS}")
+        if chosen not in DEPLOYABLE_METHODS:
+            raise ValueError(f"unknown method {chosen!r}; known: {DEPLOYABLE_METHODS}")
         z = np.asarray(logits, dtype=np.float64)
         fit = self.vector_for(len(logits)) if chosen == "vector" else None
-        if fit is not None:
+        if chosen == "none":
+            pass  # the raw softmax: the cell's own out-of-sample choice when no fit helps
+        elif fit is not None:
             # Vector scaling where it was fitted; a count with too little data falls back to the
             # temperature rather than to an unfitted bias of zeros, which would silently be a
             # different method under the same name.
@@ -440,8 +473,8 @@ class Calibration:
 
     def with_method(self, method: str) -> Calibration:
         """A copy that deploys ``method``. Both fits are carried either way."""
-        if method not in CALIBRATION_METHODS:
-            raise ValueError(f"unknown method {method!r}; known: {CALIBRATION_METHODS}")
+        if method not in DEPLOYABLE_METHODS:
+            raise ValueError(f"unknown method {method!r}; known: {DEPLOYABLE_METHODS}")
         return Calibration(
             temperatures=dict(self.temperatures),
             default=self.default,
@@ -529,6 +562,12 @@ class Calibration:
         return cls(temperatures={}, default=1.0, quantization=quantization)
 
 
+def _label_of(prediction: Any) -> Label:
+    """A prediction's fit label: its soft target when it has one, else its answer index."""
+    target = getattr(prediction, "target", None)
+    return tuple(target) if target is not None else int(prediction.answer_idx)
+
+
 def fit_calibration(
     predictions: Sequence[Any],
     *,
@@ -572,17 +611,20 @@ def fit_calibration(
     fit_info: dict[str, Any] = {}
     for bucket, group in sorted(by_bucket.items()):
         logits = [p.logits for p in group]
-        labels = [p.answer_idx for p in group]
+        labels = [_label_of(p) for p in group]
+        # Weighted: before 2026-09-24 the bucket temperature ignored case-control weights while
+        # vector scaling used them, so the two methods were fitted to different populations.
+        weights = [getattr(p, "weight", 1.0) for p in group]
         if len(group) < min_count:
             fit_info[bucket] = {"n": len(group), "skipped": f"fewer than {min_count} examples"}
             continue
-        temperature = fit_temperature(logits, labels)
+        temperature = fit_temperature(logits, labels, weights=weights)
         temperatures[bucket] = temperature
         fit_info[bucket] = {
             "n": len(group),
             "temperature": temperature,
-            "nll_before": nll_at_temperature(logits, labels, 1.0),
-            "nll_after": nll_at_temperature(logits, labels, temperature),
+            "nll_before": nll_at_temperature(logits, labels, 1.0, weights),
+            "nll_after": nll_at_temperature(logits, labels, temperature, weights),
         }
 
     # Vector scaling, per exact option count. A bias vector has one parameter per option, so
@@ -597,7 +639,7 @@ def fit_calibration(
     for count, group in sorted(by_count.items()):
         needed = MIN_VECTOR_SAMPLES_PER_PARAMETER * (count + 1)
         logits = [item.logits for item in group]
-        labels = [item.answer_idx for item in group]
+        labels = [_label_of(item) for item in group]
         weights = [getattr(item, "weight", 1.0) for item in group]
         if len(group) < needed:
             vector_info[str(count)] = {
@@ -639,7 +681,9 @@ def fit_calibration(
             "min_count": min_count,
             "primitive": primitive,
             "method_default_for_quantization": default_method(quantization),
-            "fit_target": "validation labels; never agreement with another runtime",
+            "fit_target": "validation labels — the soft target where a row has one (ADR 0008 "
+            "option B), else the answer; never agreement with another runtime",
+            "soft_target_rows": sum(getattr(p, "target", None) is not None for p in predictions),
             "buckets": fit_info,
             "vector_scaling": vector_info,
         },
@@ -682,22 +726,25 @@ def select_methods(
     folds: int = 2,
     min_count: int = 30,
 ) -> dict[str, dict[str, Any]]:
-    """Choose temperature or vector scaling per option-count bucket, **out of sample** (ADR 0008).
+    """Choose none, temperature or vector scaling per option-count bucket, **out of sample**.
 
-    Choosing on the rows a method was fitted to always favours vector scaling — it has more
-    parameters, so it always fits its own data better. Each fold is therefore fitted on the other
-    folds and scored on itself; the method with the lower pooled held-out NLL wins the bucket.
+    ADR 0008. Choosing on the rows a method was fitted to always favours vector scaling — it has
+    more parameters, so it always fits its own data better. Each fold is therefore fitted on the
+    other folds and scored on itself; the method with the lowest pooled held-out cross-entropy
+    wins the bucket, against each row's soft target where it has one (option B), else its
+    answer. ``none`` — the raw softmax — is a candidate, so a cell no fit helps stays raw.
 
     Args:
         predictions: One primitive's validation predictions (``id``, ``logits``, ``answer_idx``,
-            ``weight``).
+            ``weight``, optional ``target``).
         quantization: Recorded on the fold fits.
         primitive: Recorded on the fold fits.
         folds: Number of folds, assigned by a hash of the row id.
         min_count: Passed to each fold's fit.
 
     Returns:
-        ``{bucket: {"method", "heldout_nll": {"temperature": x, "vector": y}, "rows": n}}``.
+        ``{bucket: {"method", "heldout_nll": {"none": x, "temperature": y, "vector": z},
+        "rows": n}}``.
     """
     totals: dict[str, dict[str, float]] = {}
     weights: dict[str, float] = {}
@@ -713,18 +760,20 @@ def select_methods(
         for p in held:
             bucket = option_count_bucket(len(p.logits))
             w = float(getattr(p, "weight", 1.0))
-            cell = totals.setdefault(bucket, {"temperature": 0.0, "vector": 0.0})
-            for chosen in CALIBRATION_METHODS:
-                prob = float(fit.apply(p.logits, method=chosen)[int(p.answer_idx)])
-                cell[chosen] += -w * math.log(max(prob, 1e-300))
+            cell = totals.setdefault(bucket, dict.fromkeys(DEPLOYABLE_METHODS, 0.0))
+            target = _target_row(_label_of(p), len(p.logits))
+            for chosen in DEPLOYABLE_METHODS:
+                probs = np.maximum(fit.apply(p.logits, method=chosen), 1e-300)
+                cell[chosen] += -w * float(np.dot(target, np.log(probs)))
             weights[bucket] = weights.get(bucket, 0.0) + w
             counts[bucket] = counts.get(bucket, 0) + 1
     out: dict[str, dict[str, Any]] = {}
     for bucket, nll in totals.items():
         mean = {m: nll[m] / weights[bucket] for m in nll}
         out[bucket] = {
-            # Ties go to temperature: fewer parameters, and it cannot change the argmax.
-            "method": "vector" if mean["vector"] < mean["temperature"] else "temperature",
+            # Lowest held-out cross-entropy wins; ties go to the method with fewer parameters
+            # (DEPLOYABLE_METHODS is in that order), so `none` holds unless a fit beats it.
+            "method": min(DEPLOYABLE_METHODS, key=lambda m: (mean[m], DEPLOYABLE_METHODS.index(m))),
             "heldout_nll": mean,
             "rows": counts[bucket],
         }

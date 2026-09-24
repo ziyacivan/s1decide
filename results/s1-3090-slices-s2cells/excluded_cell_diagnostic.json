@@ -1,0 +1,18 @@
+{
+  "families": [
+    "ordinal_control"
+  ],
+  "rows": 92,
+  "selection": {
+    "3-5": {
+      "method": "none",
+      "heldout_nll": {
+        "none": 0.19003619990591256,
+        "temperature": 0.328163841407732,
+        "vector": 0.328163841407732
+      },
+      "rows": 92
+    }
+  },
+  "deployed": false
+}

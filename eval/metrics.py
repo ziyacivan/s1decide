@@ -84,8 +84,16 @@ class Prediction:
     logits: tuple[float, ...]
     answer_idx: int
     weight: float = 1.0
+    #: The row's soft target, when it has one (teacher-labelled `Score`); calibration is fitted
+    #: against it (ADR 0008 option B). ``None`` means one-hot on ``answer_idx``.
+    target: tuple[float, ...] | None = None
 
     def __post_init__(self) -> None:
+        if self.target is not None:
+            if len(self.target) != len(self.logits):
+                raise ValueError(f"{self.id}: target has {len(self.target)} entries")
+            if any(t < 0 for t in self.target) or abs(sum(self.target) - 1.0) > 1e-6:
+                raise ValueError(f"{self.id}: target is not a probability distribution")
         if len(self.logits) < 2:
             raise ValueError(f"{self.id}: a prediction needs at least 2 logits")
         # Coerce to a true int: a bool would index a numpy array as a *mask* rather than a

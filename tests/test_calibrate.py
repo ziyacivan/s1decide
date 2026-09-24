@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import math
 
@@ -394,3 +395,70 @@ def test_method_by_bucket_round_trips_and_is_validated(tmp_path) -> None:
     assert loaded.method_by_bucket == {"2": "vector"}
     with pytest.raises(ValueError, match="unknown method"):
         dataclasses.replace(fit, method_by_bucket={"2": "platt"})
+
+
+# --- ADR 0008 option B: soft targets, and `none` as a choice ---------------------------
+
+
+def soft_rows(n: int, k: int, true_temperature: float, seed: int = 0) -> list[Prediction]:
+    """Rows whose soft target *is* softmax(z / T): cross-entropy is minimised exactly at T."""
+    rng = np.random.default_rng(seed)
+    out = []
+    for i in range(n):
+        logits = rng.normal(scale=3.0, size=k)
+        z = logits / true_temperature
+        p = np.exp(z - z.max())
+        p /= p.sum()
+        out.append(
+            Prediction(
+                id=f"soft{seed}-{i}",
+                family="score_teacher",
+                qtype="score",
+                logits=tuple(logits),
+                answer_idx=int(np.argmax(p)),
+                target=tuple(float(x) for x in p),
+            )
+        )
+    return out
+
+
+def test_a_soft_target_fit_recovers_the_generating_temperature_exactly() -> None:
+    rows = soft_rows(300, 5, true_temperature=2.5)
+    fitted = fit_temperature([r.logits for r in rows], [r.target for r in rows])
+    assert fitted == pytest.approx(2.5, rel=1e-3)
+
+
+def test_fit_calibration_fits_the_soft_target_not_the_argmax() -> None:
+    """On the hard label (the argmax) the best temperature is far sharper than the truth."""
+    rows = soft_rows(300, 5, true_temperature=2.5)
+    soft = fit_calibration(rows, quantization="nf4-bf16", primitive="score")
+    hard = fit_calibration(
+        [dataclasses.replace(r, target=None) for r in rows], quantization="nf4-bf16"
+    )
+    assert soft.temperatures["3-5"] == pytest.approx(2.5, rel=1e-3)
+    assert hard.temperatures["3-5"] < 1.0
+    assert soft.meta["soft_target_rows"] == 300
+
+
+def test_selection_keeps_none_when_the_raw_softmax_is_already_the_target() -> None:
+    rows = soft_rows(600, 5, true_temperature=1.0)
+    chosen = select_methods(rows, quantization="nf4-bf16", primitive="score")
+    assert chosen["3-5"]["method"] == "none"
+    assert set(chosen["3-5"]["heldout_nll"]) == {"none", "temperature", "vector"}
+
+
+def test_none_deploys_the_raw_softmax() -> None:
+    fit = dataclasses.replace(
+        fit_calibration(synthetic(400, 2, 1.7), quantization="nf4-bf16"),
+        method_by_bucket={"2": "none"},
+    )
+    z = np.array([0.3, -1.2])
+    raw = np.exp(z - z.max()) / np.exp(z - z.max()).sum()
+    assert fit.apply(z) == pytest.approx(raw)
+
+
+def test_a_prediction_refuses_a_target_that_is_not_a_distribution() -> None:
+    with pytest.raises(ValueError, match="probability distribution"):
+        Prediction(
+            id="x", family="f", qtype="score", logits=(0.0, 1.0), answer_idx=0, target=(0.7, 0.7)
+        )

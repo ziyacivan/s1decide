@@ -62,3 +62,15 @@ Test, raw → deployed (each run's `metrics.json`, `splits.test.model`):
 
 The calibrated columns of the comparison table now come from `s1-3090-slices-s2cells`, with the
 temperature-only and vector-only runs beside it.
+
+## Re-run after ADR 0008's amendment (option B, `none`, weighted temperatures)
+
+Same four run directories, overwritten by the same commands. Changes against the first per-cell
+run (each run's `metrics.json`, `splits.test.model`; the choices in `calibration.json`):
+
+- `choice` `6-16` now deploys `none`; `3-5` temperature. `noul` and stage 1 vector, as before.
+- teacher `Score` now picks temperature on the soft target: KL to the teacher and ECE improve over
+  raw, skill flat, accuracy unchanged. The previous hard-label vector fit raised accuracy but
+  moved KL the wrong way; that trade is gone.
+- rule-labelled `Score` still loses to raw under the deployed fit; as a cell of its own it would
+  pick `none` (`excluded_cell_diagnostic.json`), but it has no deployment-time key.

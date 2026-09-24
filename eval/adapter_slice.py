@@ -160,6 +160,15 @@ def _score(
     )
 
 
+def _soft_target(row: dict[str, Any]) -> tuple[float, ...] | None:
+    """A row's soft target as a normalised tuple, or ``None`` for a one-hot row."""
+    target = row.get("target")
+    if not isinstance(target, list) or len(target) != len(row["options"]):
+        return None
+    total = sum(float(t) for t in target)
+    return tuple(float(t) / total for t in target)
+
+
 def calibration_group(row: dict[str, Any]) -> str:
     """The S2 cell a slice row is calibrated in (ADR 0008): its primitive, stage 1 apart."""
     return "stage1" if row.get("stage") == 1 else str(row["qtype"])
@@ -180,6 +189,8 @@ def _calibrate(
             logits=tuple(p["logits"]),
             answer_idx=int(val_rows[p["id"]]["answer_idx"]),
             weight=float(val_rows[p["id"]].get("eval_weight", 1.0)),
+            # ADR 0008 option B: a row with a soft target is calibrated against it.
+            target=_soft_target(val_rows[p["id"]]),
         )
         for p in _read(raw / "predictions-val.jsonl")
     ]
@@ -191,6 +202,30 @@ def _calibrate(
     )
     out.mkdir(parents=True, exist_ok=True)
     cells.save(out / "calibration.json")
+    if exclude_families:
+        # Diagnostic only, never deployed: what the excluded rows would choose as a cell of their
+        # own. A caller cannot say a question is rule-labelled, so no such cell exists at runtime.
+        from s1decide.calibrate import select_methods
+
+        excluded = [p for p in val if p.family in set(exclude_families)]
+        (out / "excluded_cell_diagnostic.json").write_text(
+            json.dumps(
+                {
+                    "families": sorted(exclude_families),
+                    "rows": len(excluded),
+                    "selection": select_methods(
+                        excluded, quantization="nf4-bf16", primitive="excluded", min_count=10
+                    )
+                    if excluded
+                    else None,
+                    "deployed": False,
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
     deployed = method or "chosen per (primitive, bucket) on val, out of sample"
     base_meta = json.loads((raw / "predictions-val.meta.json").read_text(encoding="utf-8"))
     for split in ("val", "test"):

@@ -1,6 +1,6 @@
 # ADR 0008 — S2 calibration per (primitive, option-count bucket)
 
-**Status:** accepted 2026-09-24 (owner decision); one open question at the end.
+**Status:** accepted 2026-09-24 (owner decision); the open question was decided the same day — option B, plus `none` as a selectable method (see the end).
 **Context:** locked decision 6 makes S2 post-hoc temperature scaling "per option-count bucket".
 The first S2 fit on S1 (`results/s1-3090-slices-s2/`, run note
 `docs/run-notes/s1-slices-and-s2-2026-09-24.md`) was mixed: the `3-5` bucket held teacher-labelled
@@ -35,9 +35,26 @@ Implemented in `s1decide.calibrate.select_methods` / `fit_calibration_cells` and
 columns). Tests: `tests/test_calibrate.py` (a positional shift selects vector; pure temperature
 data keeps temperature; excluded families are out of the fit; the choice round-trips).
 
+## Amendment, same day: option B and `none` (owner decision)
+
+- **Fit and selection use the soft target where a row has one** — teacher-labelled `Score`.
+  Temperature and vector scaling minimise cross-entropy against it; held-out selection scores
+  against it. Accuracy against the hard label is still reported. Everything else has one-hot
+  targets, where the two coincide.
+- **`none` is a selectable method per cell** — the raw softmax. It is scored out of sample like
+  the others, and on a tie the method with fewer parameters wins (`none`, then temperature, then
+  vector), so a cell stays raw unless a fit beats it.
+- **Bucket temperatures are now fitted with the case-control weights**, as vector scaling already
+  was. Before this they were fitted unweighted, so the two methods were fitted to different
+  populations. The fix changes stage-1 temperature fits; the runs below include it.
+
+Tests: `tests/test_calibrate.py` (a soft-target fit recovers the generating temperature exactly
+while a hard-label fit on the same rows does not; `none` wins when the raw softmax is already
+the target; `none` deploys the raw softmax).
+
 ## What it did on S1 (test slice)
 
-Runs, all from `results/s1-3090-slices` raw logits:
+Runs, all from `results/s1-3090-slices` raw logits, re-fitted after the amendment:
 
 | run | what |
 |---|---|
@@ -46,31 +63,19 @@ Runs, all from `results/s1-3090-slices` raw logits:
 | `s1-3090-slices-s2cells-vector` | vector in every cell |
 | `s1-3090-slices-s2cells-withcontrol` | per-cell choice, control included in the fit |
 
-The numbers are in each run's `metrics.json`; the run note reads them. In short:
+Numbers in each run's `metrics.json`; the choice and all three held-out losses per cell in each
+`calibration.json` (`meta.method_selection`). In short:
 
-- **stage 1 selects vector and it is the largest gain S2 has produced** — held-out NLL roughly
-  halves, and Brier skill on stage-1 rows rises on test. A per-position bias fixes what a
-  temperature cannot: a constant lean toward "no" in a 99:1 cell.
-- `choice` keeps temperature in both buckets; `noul` selects vector by a small margin.
-- **teacher `Score` selects vector**: accuracy, Brier skill and ECE against the hard label
-  improve on test, but **KL to the teacher's soft distribution gets worse**. See the open
-  question.
-- **rule-labelled `Score` is worse after any S2 fit** than raw, and least bad when it is in the
-  fit. Expected: it is near-certain and correctly so, and a cell fitted on genuinely uncertain
-  teacher rows softens it.
-
-## Open question (owner)
-
-Selection and fitting both use the hard label (`answer_idx`). For teacher `Score`, the training
-target is soft (1,805 of 4,804 teacher rows split across two levels), and the vector bias that
-wins on hard-label NLL moves the distribution away from the soft target. Options:
-
-- **A (current):** hard-label NLL everywhere. Simple, one rule; accepts the KL cost on teacher
-  `Score` and reports it.
-- **B:** for cells whose rows carry soft targets, fit and select on cross-entropy against the
-  soft target. Calibrates toward the teacher's uncertainty, which is what `Score` was trained to
-  express.
-
-Recommendation: **B for `Score`**, because the soft target is the thing a `Score` distribution
-claims to be; A elsewhere, where targets are one-hot and the two coincide. Not implemented until
-decided.
+- **stage 1 picks vector**, the largest gain S2 produces: Brier skill and KL both clearly better.
+- **`choice`**: `6-16` now picks **`none`** (no fit beats the raw softmax out of sample); `3-5`
+  keeps temperature. **`noul`** picks vector by a small margin.
+- **teacher `Score` picks temperature on the soft target.** KL to the teacher and ECE both
+  improve; skill is flat; accuracy is unchanged (temperature cannot move the argmax). The
+  hard-label vector fit that won before this amendment is gone, and so is its KL cost.
+- **Rule-labelled `Score` is still worse than raw under the deployed fit.** It shares the `score`
+  cell with teacher rows, because a caller cannot tell us whether a `Score` question is
+  rule-labelled — a separate cell has no deployment-time key. Scored as a cell of its own on its
+  92 val rows it would pick `none` (`s1-3090-slices-s2cells/excluded_cell_diagnostic.json`),
+  which is the owner's expectation and the right answer for that data, but it cannot be
+  deployed as such. Including the controls in the fit (`-withcontrol`) makes them less bad and
+  leaves teacher `Score` no worse; the deployed variant excludes them per the decision above.
