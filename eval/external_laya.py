@@ -20,6 +20,12 @@ Questions are passed with **the text our model sees**: stage-1 rows keep their
 question would be a different comparison. Laya's probabilities are used as shipped — its card
 applies post-hoc temperature per question type and option count — and the meta says so.
 
+That native form is our model's text, not a statement, and external models read it as "is this
+plausible?". ``--stage1-phrasing plain`` asks stage-1 rows instead as a labelled plain
+proposition (`plain_proposition`); ``--only-stage1`` sends just those rows, and ``merge`` builds
+a run directory from a native run with its stage-1 predictions replaced. Both forms are
+reported; the meta names the one used.
+
     uv run --no-sync python -m eval.external_laya export --split val --out results/<run>
     <laya-env>/python -m eval.external_laya predict --slice results/<run>/slice-val.jsonl \\
         --checkpoint typed-decisions --out results/<run>/predictions-val.jsonl
@@ -36,7 +42,15 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-__all__ = ["from_laya_answer", "main", "to_laya_question"]
+__all__ = ["from_laya_answer", "main", "plain_proposition", "select_rows", "to_laya_question"]
+
+#: How the pipeline appends a stage-1 candidate to the parent question; must match
+#: `s1decide.prompt.STAGE1_CANDIDATE_PREFIX` (a test holds them together). Not imported, because
+#: ``predict`` runs in the external model's environment where `s1decide` is not installed.
+STAGE1_SEPARATOR = "\nCandidate: "
+
+#: The stage-1 phrasings an external row can be asked in.
+STAGE1_PHRASINGS = ("native", "plain")
 
 #: The S1 periodic-eval slice parameters; a different slice would be a different comparison.
 SLICE = {"stage1_questions": 300, "negatives": 16, "seed": 20260923}
@@ -45,12 +59,37 @@ SLICE = {"stage1_questions": 300, "negatives": 16, "seed": 20260923}
 CHECKPOINTS = {"laya": None, "typed-decisions": "typed-decisions", "multilingual": "multilingual"}
 
 
-def to_laya_question(row: Mapping[str, Any]) -> dict[str, Any]:
+def plain_proposition(instructions: str) -> str:
+    """A stage-1 row's question as a statement that is true or false.
+
+    ``"Which intent does this request have?\\nCandidate: play music"`` becomes
+    ``'The answer to "Which intent does this request have?" is "play music".'``
+
+    Raises:
+        ValueError: If the instructions are not in the stage-1 form.
+    """
+    question, sep, candidate = instructions.rpartition(STAGE1_SEPARATOR)
+    if not sep or not question.strip() or not candidate.strip():
+        raise ValueError(f"not a stage-1 question: {instructions!r}")
+    return f'The answer to "{question.strip()}" is "{candidate.strip()}".'
+
+
+def select_rows(rows: Sequence[dict[str, Any]], only_stage1: bool) -> list[dict[str, Any]]:
+    """The rows a predict call asks: all of them, or just the stage-1 ones."""
+    return [r for r in rows if r.get("stage") == 1] if only_stage1 else list(rows)
+
+
+def to_laya_question(row: Mapping[str, Any], stage1_phrasing: str = "native") -> dict[str, Any]:
     """Our row as a Laya question: same instructions, same options, same order.
 
-    Stage-1 rows are `Noul`-shaped (``["no", "yes"]``) and are asked as `noul`.
+    Stage-1 rows are `Noul`-shaped (``["no", "yes"]``) and are asked as `noul`, in our own text
+    (``native``) or as a plain proposition (``plain``).
     """
+    if stage1_phrasing not in STAGE1_PHRASINGS:
+        raise ValueError(f"unknown stage-1 phrasing {stage1_phrasing!r}; known: {STAGE1_PHRASINGS}")
     options = list(row["options"])
+    if row.get("stage") == 1 and stage1_phrasing == "plain":
+        return {"type": "noul", "instructions": plain_proposition(row["instructions"])}
     if row["qtype"] == "noul" or row.get("stage") == 1:
         return {"type": "noul", "instructions": row["instructions"]}
     if row["qtype"] == "score":
@@ -133,7 +172,14 @@ def _export(split: str, out: Path) -> Path:
 # --- 2. predict (Laya env) -------------------------------------------------------------------
 
 
-def _predict(slice_path: Path, checkpoint: str, out: Path, threads: int) -> Path:
+def _predict(
+    slice_path: Path,
+    checkpoint: str,
+    out: Path,
+    threads: int,
+    stage1_phrasing: str = "native",
+    only_stage1: bool = False,
+) -> Path:
     import time
     import warnings
 
@@ -146,11 +192,14 @@ def _predict(slice_path: Path, checkpoint: str, out: Path, threads: int) -> Path
         warnings.simplefilter("always")
         agent = laya.load("convaiinnovations/laya", subfolder=CHECKPOINTS[checkpoint])
         caught += [f"{w.category.__name__}: {w.message}" for w in seen]
-    rows = [json.loads(x) for x in slice_path.read_text(encoding="utf-8").split("\n") if x.strip()]
+    rows = select_rows(
+        [json.loads(x) for x in slice_path.read_text(encoding="utf-8").split("\n") if x.strip()],
+        only_stage1,
+    )
     started = time.perf_counter()
     with out.open("w", encoding="utf-8", newline="\n") as handle:
         for i, row in enumerate(rows):
-            result = agent.predict(row["state"], {"q": to_laya_question(row)})
+            result = agent.predict(row["state"], {"q": to_laya_question(row, stage1_phrasing)})
             probs = from_laya_answer(row, result["answers"]["q"])
             handle.write(json.dumps({"id": row["id"], "probabilities": probs}) + "\n")
             if (i + 1) % 500 == 0:
@@ -173,6 +222,8 @@ def _predict(slice_path: Path, checkpoint: str, out: Path, threads: int) -> Path
         "device": "cpu",
         "threads": threads,
         "rows": len(rows),
+        "stage1_phrasing": stage1_phrasing,
+        "only_stage1": only_stage1,
         "seconds": round(time.perf_counter() - started, 1),
         "load_warnings": caught,
         "probabilities": "as shipped: Laya's post-hoc temperature per question type and option count",
@@ -249,8 +300,59 @@ def _report(directory: Path, splits: Sequence[str]) -> Path:
     return out
 
 
+def _read_predictions(path: Path) -> dict[str, dict[str, Any]]:
+    return {
+        p["id"]: p
+        for p in (json.loads(x) for x in path.read_text(encoding="utf-8").split("\n") if x.strip())
+    }
+
+
+def _merge(native: Path, stage1: Path, out: Path, splits: Sequence[str]) -> Path:
+    """A run directory from ``native`` with every stage-1 prediction taken from ``stage1``.
+
+    ``stage1`` holds ``predictions-<split>.jsonl`` written with ``--only-stage1``; it must cover
+    every stage-1 row of the slice and nothing else.
+    """
+    import shutil
+
+    out.mkdir(parents=True, exist_ok=True)
+    for split in splits:
+        for suffix in (".jsonl", ".json"):
+            shutil.copy(native / f"slice-{split}{suffix}", out / f"slice-{split}{suffix}")
+        rows = [
+            json.loads(x)
+            for x in (native / f"slice-{split}.jsonl").read_text(encoding="utf-8").split("\n")
+            if x.strip()
+        ]
+        wanted = {r["id"] for r in rows if r.get("stage") == 1}
+        base = _read_predictions(native / f"predictions-{split}.jsonl")
+        replaced = _read_predictions(stage1 / f"predictions-{split}.jsonl")
+        if set(replaced) != wanted:
+            raise ValueError(
+                f"{split}: stage-1 predictions cover {len(set(replaced) & wanted)} of "
+                f"{len(wanted)} stage-1 rows, plus {len(set(replaced) - wanted)} other rows"
+            )
+        with (out / f"predictions-{split}.jsonl").open("w", encoding="utf-8", newline="\n") as h:
+            for r in rows:
+                h.write(json.dumps(replaced.get(r["id"], base[r["id"]])) + "\n")
+        meta = {
+            **json.loads((native / f"predictions-{split}.meta.json").read_text(encoding="utf-8")),
+            "stage1_phrasing": "plain",
+            "stage1_predictions_from": str(stage1),
+            "stage1_meta": json.loads(
+                (stage1 / f"predictions-{split}.meta.json").read_text(encoding="utf-8")
+            ),
+            "non_stage1_predictions_from": str(native),
+        }
+        (out / f"predictions-{split}.meta.json").write_text(
+            json.dumps(meta, indent=2) + "\n", encoding="utf-8", newline="\n"
+        )
+    print(f"wrote {out}")
+    return out
+
+
 def main(argv: Sequence[str] | None = None) -> int:
-    """``export`` / ``predict`` / ``report``; see the module docstring."""
+    """``export`` / ``predict`` / ``merge`` / ``report``; see the module docstring."""
     parser = argparse.ArgumentParser(prog="eval.external_laya")
     sub = parser.add_subparsers(dest="cmd", required=True)
     e = sub.add_parser("export")
@@ -261,6 +363,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     p.add_argument("--checkpoint", choices=sorted(CHECKPOINTS), required=True)
     p.add_argument("--out", required=True)
     p.add_argument("--threads", type=int, default=6)
+    p.add_argument("--stage1-phrasing", choices=STAGE1_PHRASINGS, default="native")
+    p.add_argument("--only-stage1", action="store_true")
+    m = sub.add_parser("merge")
+    m.add_argument("--native", required=True)
+    m.add_argument("--stage1", required=True)
+    m.add_argument("--out", required=True)
+    m.add_argument("--splits", nargs="+", default=["val", "test"])
     r = sub.add_parser("report")
     r.add_argument("--dir", required=True)
     r.add_argument("--splits", nargs="+", default=["val", "test"])
@@ -268,7 +377,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.cmd == "export":
         _export(args.split, Path(args.out))
     elif args.cmd == "predict":
-        _predict(Path(args.slice), args.checkpoint, Path(args.out), args.threads)
+        _predict(
+            Path(args.slice),
+            args.checkpoint,
+            Path(args.out),
+            args.threads,
+            args.stage1_phrasing,
+            args.only_stage1,
+        )
+    elif args.cmd == "merge":
+        _merge(Path(args.native), Path(args.stage1), Path(args.out), args.splits)
     else:
         _report(Path(args.dir), args.splits)
     return 0

@@ -21,20 +21,23 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from eval.external_laya import from_laya_answer, to_laya_question
+from eval.external_laya import STAGE1_PHRASINGS, from_laya_answer, select_rows, to_laya_question
 
 __all__ = ["main", "to_systemone_question"]
 
 
-def to_systemone_question(row: Mapping[str, Any], describe_options: bool = False) -> dict[str, Any]:
+def to_systemone_question(
+    row: Mapping[str, Any], describe_options: bool = False, stage1_phrasing: str = "native"
+) -> dict[str, Any]:
     """Our row as a ``/v1/systemone`` question.
 
     Args:
         row: A slice row.
         describe_options: Repeat each `Choice` option as its own description (what Laya was
             given) instead of ``null`` (Kev's documented form for an undescribed option).
+        stage1_phrasing: ``native`` (our text) or ``plain`` (a labelled plain proposition).
     """
-    question = to_laya_question(row)
+    question = to_laya_question(row, stage1_phrasing)
     if question["type"] == "choice" and not describe_options:
         question["criteria"] = {option: None for option in row["options"]}
     return question
@@ -62,11 +65,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--source-commit", default=None, help="the server's source revision")
     parser.add_argument("--describe-options", action="store_true")
     parser.add_argument("--timeout", type=float, default=120.0)
+    parser.add_argument("--stage1-phrasing", choices=STAGE1_PHRASINGS, default="native")
+    parser.add_argument("--only-stage1", action="store_true")
     args = parser.parse_args(list(argv) if argv is not None else None)
 
-    rows = [
-        json.loads(x) for x in Path(args.slice).read_text(encoding="utf-8").split("\n") if x.strip()
-    ]
+    rows = select_rows(
+        [
+            json.loads(x)
+            for x in Path(args.slice).read_text(encoding="utf-8").split("\n")
+            if x.strip()
+        ],
+        args.only_stage1,
+    )
     out = Path(args.out)
     started = time.perf_counter()
     with out.open("w", encoding="utf-8", newline="\n") as handle:
@@ -75,7 +85,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.url,
                 {
                     "state": row["state"],
-                    "questions": {"q": to_systemone_question(row, args.describe_options)},
+                    "questions": {
+                        "q": to_systemone_question(row, args.describe_options, args.stage1_phrasing)
+                    },
                 },
                 args.timeout,
             )["answers"]["q"]
@@ -90,6 +102,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "server": args.url,
         "protocol": "/v1/systemone (TypeSafe request format)",
         "choice_options_described": args.describe_options,
+        "stage1_phrasing": args.stage1_phrasing,
+        "only_stage1": args.only_stage1,
         "rows": len(rows),
         "seconds": round(time.perf_counter() - started, 1),
         "probabilities": "as served: the server's own calibration (Kev: one fitted temperature)",
