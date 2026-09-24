@@ -1040,7 +1040,7 @@ register_not_implemented(
 )
 register_not_implemented(
     "gguf",
-    "Merge LoRA to BF16 and quantize to Q8 / Q5_K_M / Q4_K_M",
+    "Merge LoRA to BF16 and quantize to Q5_K_M / Q4_K_M (Q8 is v0.2)",
     "needs scripts/merge_lora.py and scripts/convert_gguf.py",
 )
 

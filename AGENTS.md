@@ -126,7 +126,7 @@ Checklist before hand-off
       done (bundling speedup, marginal cost per question, fitted cost model, format
       overhead). The old "64-question < 2× 1-question" rule was retired by ADR 0003:
       KV broadcast amortises the state, not the questions.
-- [ ] `scripts/convert_gguf.py` produces Q8 / Q5_K_M / Q4_K_M from merged BF16
+- [ ] `scripts/convert_gguf.py` produces Q5_K_M / Q4_K_M (Q8 is v0.2, ADR 0006) from merged BF16
       using llama.cpp's converter, and the same command works on Linux.
 - [ ] KV-broadcast implementation is verified against the GDN hybrid cache
       (Mamba-style state + attention KV): broadcasting must copy **both**

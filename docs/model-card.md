@@ -32,7 +32,7 @@ and runs in llama.cpp unchanged.
 | **Base model** | `Qwen/Qwen3.8-27B`, reasoning disabled ([ADR 0002](adr/0002-base-model.md)) |
 | **Method** | Stage 1 QLoRA SFT on option-token cross-entropy, then Stage 2 post-hoc temperature scaling |
 | **Release artefact of record** | BF16 LoRA adapter |
-| **Also published** | merged BF16 weights, GGUF Q8 / Q5_K_M / Q4_K_M |
+| **Also published** | merged BF16 weights, GGUF Q5_K_M / Q4_K_M (Q8_0 deferred to v0.2) |
 | **Licence** | Apache-2.0 |
 | **Prompt format version** | `0.2` (see [format spec](format-spec.md)) |
 | **Trained on** | 1× RTX 3090, 24 GB, Windows |
@@ -182,12 +182,12 @@ touch the second.
 | quantization | accuracy | ECE (temp) | ECE (vector) | BSS (temp) | BSS (vector) | VRAM |
 |---|---|---|---|---|---|---|
 | BF16 | **not measured** | **not measured** | **not measured** | **not measured** | **not measured** | — |
-| Q8_0 | TBD | TBD | TBD | TBD | TBD | TBD |
+| Q8_0 | **not measured** | **not measured** | **not measured** | **not measured** | **not measured** | — |
 | Q5_K_M | TBD | TBD | TBD | TBD | TBD | TBD |
 | Q4_K_M | TBD | TBD | TBD | TBD | TBD | TBD |
 | nf4 (bitsandbytes) | TBD | TBD | TBD | TBD | TBD | TBD |
 
-BF16 is deferred to v0.2. nf4 is the deployment this card's other numbers use. The deployed
+BF16 and Q8_0 are deferred to v0.2 (Q8_0 is ~29 GB and does not fit in 24 GiB). nf4 is the deployment this card's other numbers use. The deployed
 calibration method is named in each run's `calibration.json`; accuracy differs between the two
 methods only under `vector`, which is the one that can change an answer.
 

@@ -47,8 +47,10 @@ v0.2, and both move for the same reason: they require hardware this project does
 |---|---|
 | **BF16 row of the quantization table** | A BF16 27B forward pass does not fit in 24 GiB. Producing this row means renting an H100, which costs money and needs an explicit "go". |
 | **S3 GRPO calibration RL** | Already marked "Linux GPU only" in `CLAUDE.md`'s locked decisions. It was never a 3090 item. |
+| **Q8_0 row** (amended 2026-09-24) | A Q8_0 27B GGUF is ~29 GB and does not fit in 24 GiB; on the 3090 it would run with CPU offload, several times slower, and a partly offloaded row is not the deployment anyone would pick on this card. It joins BF16 on the H100. |
 
-**v0.1 therefore ships the Q8 / Q5_K_M / Q4_K_M quantization table only**, and the model card
+**v0.1 therefore ships the Q5_K_M / Q4_K_M quantization table only** (Q8 removed by the
+2026-09-24 amendment below), each row with its own per-(primitive, bucket) S2 (ADR 0008), and the model card
 says so in those words: **BF16 was not measured**, and **calibration is post-hoc temperature
 scaling, not learned**. Neither is a caveat buried in a footnote; both are stated where the
 numbers are.
@@ -84,3 +86,17 @@ criticised now, which is worth more than waiting for a rented GPU.
 - **When** v0.1 ships. That waits on Phase 1 Step 3 (S1 QLoRA) and the evaluation that follows.
 - **Whether** we rent an H100 at all. v0.2 is a scope, not a commitment.
 - The version number after a hypothetical v0.2. Not worth deciding now.
+
+## Amendment 2026-09-24 — Q5_K_M and Q4_K_M only; the merge path; byte identity (owner decision)
+
+- **v0.1's quantization table is Q5_K_M and Q4_K_M**, each with its own per-(primitive, bucket)
+  S2 fitted on `val` at that quantization (ADR 0008). **Q8_0 moves to v0.2** with BF16.
+- **Merge path.** First choice: a shard-by-shard CPU merge of the LoRA into the BF16 base with
+  bounded memory, then convert and quantize. If that does not fit in this machine's 63 GB of
+  RAM, the fallback is llama.cpp's LoRA-adapter route: the base quantized on its own, the
+  adapter as a GGUF LoRA applied at runtime. That artefact is **numerically distinct from
+  merge-then-quantize** (the adapter is not quantized with the base weights), and the model card
+  says so in those words if it is what ships.
+- **What ships is byte-identical to what was calibrated and evaluated.** Each released GGUF (and
+  adapter GGUF, on the fallback route) is recorded by SHA-256 in the run that fitted its S2 and
+  the run that evaluated it; a file whose hash is not in both is not released.

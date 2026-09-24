@@ -211,7 +211,7 @@ bench       # latency vs #questions, current engine
 serve       # uvicorn s1decide.server:app
 test        # pytest -m "not gpu"
 test-gpu    # pytest -m gpu
-gguf        # merge LoRA → BF16 → GGUF Q8/Q5_K_M/Q4_K_M into artifacts/ (llama.cpp convert + quantize)
+gguf        # merge LoRA → BF16 → GGUF Q5_K_M/Q4_K_M into artifacts/ (Q8: v0.2) (llama.cpp convert + quantize)
 push        # HEAD → origin/wip, wait for `ci` green on that commit (GitHub API), then fast-forward main
 ```
 
@@ -283,7 +283,8 @@ states plainly what was not measured.
 - [ ] Zero-shot baseline (no LoRA) + S1 LoRA + S2 calibration evaluated on
       held-out families and ≥ 2 fully OOD sets; ECE, Brier, acc, AUROC per
       option-count bucket; reliability diagrams committed.
-- [ ] Quantization table **Q8 / Q5_K_M / Q4_K_M**, all on the 3090, each row reporting
+- [ ] Quantization table **Q5_K_M / Q4_K_M** (Q8 moved to v0.2, ADR 0006 amendment
+      2026-09-24), all on the 3090, each row reporting
       accuracy plus **ECE and BSS under both calibration methods** — `temperature` (per
       option-count bucket) and `vector` (temperature plus per-position bias, per exact option
       count). Both are fitted on `val` at that row's own quantization; `calibration.json`
@@ -306,6 +307,7 @@ states plainly what was not measured.
 ### Deferred to v0.2 (rented H100 — needs an explicit "go", costs money)
 
 - [ ] **BF16 row** of the quantization table, closing the hole v0.1 ships with.
+- [ ] **Q8_0 row** — ~29 GB, does not fit in 24 GiB without CPU offload (ADR 0006 amendment).
 - [ ] **S3 GRPO calibration RL** with a proper scoring rule reward (already
       "Linux GPU only" in the locked decisions above; it was never a 3090 item).
 
