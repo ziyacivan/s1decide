@@ -1,7 +1,8 @@
 # s1decide
 
-**Pre-alpha. There is no trained model yet.** The data pipeline, the inference engine, the
-evaluation harness and the benchmarks are built and tested; Stage-1 training has not run. Every
+**Pre-alpha.** Stage 1 has been trained once, on one RTX 3090, and is measured so far only
+in-distribution; the comparison with other models on fair ground (OOD sets, unseen families and
+languages) is in progress, and no weights are published yet. Every
 number and every figure on this page is generated from a JSON file under `results/` and checked
 against it by a test — none is typed or drawn by hand, here or anywhere else in the repository.
 
@@ -60,8 +61,8 @@ something wrong.
 | Evaluation harness — calibration, skill, risk-coverage, two negative controls | working |
 | Latency benchmark against the definition of done | working, all four targets met |
 | Zero-shot baseline on the 27B | measured and committed |
-| **Stage-1 QLoRA training** | **not started** |
-| Stage-2 calibration — temperature and vector scaling | implemented, not yet fitted on a trained model |
+| **Stage-1 QLoRA training** | **trained once on an RTX 3090 (`s1-3090`); in-distribution only so far** |
+| Stage-2 calibration — temperature and vector scaling | fitted on S1 per option count; per-primitive fitting (ADR 0008) next |
 | GGUF export, `/decide` server | not started |
 
 ## Measured so far
@@ -135,6 +136,18 @@ The corpus is stage-1 heavy by construction and the trainer does not see it that
 
 *Raw rows vs the weighted draw the trainer takes, by primitive and stage. Generated from `data/processed/manifest.json` · CPU.*
 <!--/figure:training-mix-->
+
+### S1 on one RTX 3090
+
+A rank-8 QLoRA on the 4-bit 27B, 30,000 family-balanced rows, evaluated on a fixed validation
+slice at every 5,000 rows. **In-distribution**: the slice is held-out states from the families
+the model trains on; comparisons with other models on fair ground are still to come.
+
+<!--figure:training-curve-->
+![Two panels over the S1 training run, seven evaluations from 0 to 30,000 rows. Left, KL divergence to the target per primitive falls for every primitive; right, accuracy rises for every primitive, most for teacher-labelled Score and Noul.](docs/figures/training-curve.png)
+
+*S1 on one RTX 3090: per-primitive KL (left) and accuracy (right) on the fixed val slice at every checkpoint. In-distribution. Generated from `s1-3090` · rtx3090_windows · nf4 QLoRA, rank 8.*
+<!--/figure:training-curve-->
 
 ## Running it
 

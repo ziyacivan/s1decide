@@ -90,6 +90,29 @@ FIGURES: tuple[FigureSpec, ...] = (
         ),
         caption="Raw rows vs the weighted draw the trainer takes, by primitive and stage.",
     ),
+    FigureSpec(
+        name="training-curve",
+        source="results/s1-3090/evals.jsonl",
+        alt=(
+            "Two panels over the S1 training run, seven evaluations from 0 to 30,000 rows. "
+            "Left, KL divergence to the target per primitive falls for every primitive; right, "
+            "accuracy rises for every primitive, most for teacher-labelled Score and Noul."
+        ),
+        caption=(
+            "S1 on one RTX 3090: per-primitive KL (left) and accuracy (right) on the fixed val "
+            "slice at every checkpoint. In-distribution."
+        ),
+    ),
+)
+
+#: Reporting groups in the training curve, in fixed categorical order (the dataviz reference
+#: palette's slots 1-5), each with its own marker so identity never rests on colour alone.
+CURVE_GROUPS: tuple[tuple[str, str, str, str], ...] = (
+    ("choice", "Choice", "#2a78d6", "o"),
+    ("noul", "Noul", "#eb6834", "s"),
+    ("noul/stage1", "Noul · stage 1", "#1baf7a", "^"),
+    ("score", "Score · rule-labelled", "#eda100", "D"),
+    ("score/teacher", "Score · teacher-labelled", "#e87ba4", "v"),
 )
 
 
@@ -362,10 +385,42 @@ def figure_captions(root: Path) -> dict[str, str]:
         "reliability": f"`{sources['zeroshot_run']}` · {gpu} · {zeroshot['meta']['quantization']}",
         "risk-coverage": f"`{sources['zeroshot_run']}` · {gpu} · {zeroshot['meta']['quantization']}",
         "training-mix": "`data/processed/manifest.json` · CPU",
+        "training-curve": (
+            f"`s1-3090` · {_read(root, 'results/s1-3090/train_summary.json')['config']['hardware']} "
+            "· nf4 QLoRA, rank 8"
+        ),
     }
     return {
         spec.name: f"{spec.caption} Generated from {provenance[spec.name]}." for spec in FIGURES
     }
+
+
+def draw_training_curve(evals: list[dict[str, Any]], path: Path) -> Path:
+    """Per-primitive KL and accuracy across a run's checkpoint evaluations.
+
+    Two panels with an axis each — two measures of different scale never share one axis.
+    """
+    plt = _require_matplotlib()
+    rows = [e["rows"] / 1000 for e in evals]
+    fig, (left, right) = plt.subplots(1, 2, figsize=(10.4, 4.2), constrained_layout=True)
+    for group, label, colour, marker in CURVE_GROUPS:
+        if group not in evals[0]["metrics"]:
+            continue
+        style = {"color": colour, "marker": marker, "lw": 2.0, "ms": 8, "label": label}
+        left.plot(rows, [e["metrics"][group]["kl"] for e in evals], **style)
+        right.plot(rows, [e["metrics"][group]["accuracy"] for e in evals], **style)
+    left.set_title("KL(target ‖ prediction) — lower is better", loc="left", fontsize=11)
+    right.set_title("Accuracy — higher is better", loc="left", fontsize=11)
+    for ax in (left, right):
+        ax.set_xlabel("training rows (thousands)")
+        ax.set_xticks(rows)
+        _style(ax)
+    left.set_ylim(bottom=0)
+    right.set_ylim(top=1.0)
+    right.legend(frameon=False, fontsize=9, loc="lower right")
+    fig.savefig(path, dpi=DPI)
+    plt.close(fig)
+    return path
 
 
 def build_all(root: Path | None = None) -> list[Path]:
@@ -387,12 +442,18 @@ def build_all(root: Path | None = None) -> list[Path]:
     latency = _read(root, f"results/{sources['latency_run']}/latency.json")
     zeroshot = _read(root, f"results/{sources['zeroshot_run']}/metrics.json")
     manifest = _read(root, "data/processed/manifest.json")
+    evals = [
+        json.loads(line)
+        for line in (root / "results/s1-3090/evals.jsonl").read_text(encoding="utf-8").split("\n")
+        if line.strip()
+    ]
 
     written = [
         draw_latency(latency, out / "latency.png"),
         draw_reliability(zeroshot, out / "reliability.png"),
         draw_risk_coverage(zeroshot, out / "risk-coverage.png"),
         draw_training_mix(manifest, out / "training-mix.png"),
+        draw_training_curve(evals, out / "training-curve.png"),
     ]
     (out / "sources.json").write_text(
         json.dumps({spec.name: spec.source.format(**sources) for spec in FIGURES}, indent=2) + "\n",
