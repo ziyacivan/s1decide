@@ -3,7 +3,7 @@
 <!-- GENERATED from data/processed/manifest.json by data/build/report.py.
      Rebuild with: uv run task data -->
 
-**450,240 rows**, seed `20260917`. Licence reasoning and the eval-only rules are in [dataset-card.md](dataset-card.md); this file is the counts.
+**452,240 rows**, seed `20260917`. Licence reasoning and the eval-only rules are in [dataset-card.md](dataset-card.md); this file is the counts.
 
 ## Splits
 
@@ -12,7 +12,7 @@
 | `train` | 90,594 | S1 training |
 | `val` | 118,235 | calibration fitting and model selection |
 | `test` | 115,054 | Tier-1 in-distribution report |
-| `eval` | 126,357 | Tier-1 held-out families and OOD sets |
+| `eval` | 128,357 | Tier-1 held-out families and OOD sets |
 
 ## Families
 
@@ -22,6 +22,7 @@ A family in `eval` only is either a **held-out family** (in-distribution, never 
 |---|---|---|---|---|---|---|---|
 | anli | `cc-by-nc-4.0` | ood | choice | — | — | — | 1,000 |
 | banking77 | `cc-by-4.0` | train | choice | 25,320 | 32,682 | 32,448 | — |
+| boolq | `cc-by-sa-3.0` | ood | noul | — | — | — | 1,000 |
 | clinc_oos | `cc-by-3.0` | train | choice | 25,720 | 59,736 | 59,584 | — |
 | commonsense_qa | `mit` | heldout | choice | — | — | — | 1,476 |
 | go_emotions | `apache-2.0` | train | noul | 6,340 | 749 | 911 | — |
@@ -36,6 +37,7 @@ A family in `eval` only is either a **held-out family** (in-distribution, never 
 | pubmedqa | `mit` | heldout | noul | — | — | — | 890 |
 | sciq | `cc-by-nc-3.0` | ood | choice | — | — | — | 991 |
 | score_teacher | `per-row, inherited from the state's source` | train | score | 4,804 | 468 | 491 | — |
+| snli | `cc-by-sa-4.0` | ood | noul | — | — | — | 1,000 |
 
 ## Sources
 
@@ -55,6 +57,8 @@ A family in `eval` only is either a **held-out family** (in-distribution, never 
 | pubmedqa | `qiaojin/PubMedQA` | same | 890 | 890 | Held-out family: biomedical yes/no over an abstract. 'maybe' rows are dropped. |
 | anli | `facebook/anli` | same | 1,000 | 1,000 | OOD. Non-commercial, so the licence gate makes training on it impossible. |
 | sciq | `allenai/sciq` | same | 991 | 991 | OOD. Non-commercial, as above. |
+| boolq | `google/boolq` | same | 1,000 | 1,000 | OOD Noul: a Wikipedia passage and a yes/no question about it. Share-alike, so eval-only (ADR 0005). |
+| snli | `stanfordnlp/snli` | same | 1,000 | 1,000 | OOD Noul: does the hypothesis follow from the premise. Entailment is yes; neutral and contradiction are no (neither follows); unlabelled rows are dropped. Share-alike, so eval-only (ADR 0005). |
 | ordinal_control | `s1decide/ordinal_control` | same | 900 | 900 | Rule-labelled ordinal control set, generated here (ADR 0005 rule c). No model in the loop, so its labels are exact. |
 | score_teacher | `score_teacher` | same | 4,804 | 4,804 | Two open-weight teachers labelling a five-level rubric, kept where they agreed exactly or within one level. Exact agreement is a hard target; one level apart is a soft target split equally across the two levels. See docs/research/teacher-agreement-2026-09-22.md. |
 | score_teacher_eval | `score_teacher` | same | 959 | 959 | Teacher run 2: the same two teachers, rubric, cap and agreement rule, over states drawn from the val and test partitions. The state-hash split places them there; the build fails if one lands in train. |
@@ -114,8 +118,10 @@ Stage-1 questions keep the positive plus **6 negatives** in `train` only, chosen
 | `clinc/clinc_oos` | `CC-BY-3.0` | train | 146,156 |
 | `facebook/anli` | `CC-BY-NC-4.0` | eval-only | 1,000 |
 | `google-research-datasets/go_emotions` | `Apache-2.0` | train | 8,974 |
+| `google/boolq` | `CC-BY-SA-3.0` | refused | 1,000 |
 | `qiaojin/PubMedQA` | `MIT` | train | 890 |
 | `s1decide/ordinal_control` | `Apache-2.0` | train | 1,375 |
+| `stanfordnlp/snli` | `CC-BY-SA-4.0` | refused | 1,000 |
 | `tau/commonsense_qa` | `MIT` | train | 1,476 |
 
 Every row in `train` and `val` carries a licence from the ADR 0004 allowlist; the build fails otherwise, before anything is written.

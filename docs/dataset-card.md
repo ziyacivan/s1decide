@@ -76,6 +76,13 @@ licence is resolved to an SPDX identifier and classified `train` / `eval-only` /
 against the ADR 0004 allowlist *before any row is fetched*. Some of these will not survive the
 audit, and finding that out before the GPU-hours is the point.
 
+**Added 2026-09-24: BoolQ (`google/boolq`, validation, CC-BY-SA-3.0) and SNLI
+(`stanfordnlp/snli`, test, CC-BY-SA-4.0) as OOD `Noul` sets, evaluation only.** ADR 0005 decided
+share-alike is eval-only. The licence gate's verdict column in `dataset-build.md` reads
+`refused` for them: that verdict is about *training* — the gate would stop a build that put them
+in a train or val split — and they only ever reach `eval`. Adding them left `train`, `val` and
+`test` byte-identical.
+
 No teacher model has been used for synthetic labels yet; when one is, it will be an open-weight
 model, and its licence and the prompt hash are recorded here.
 

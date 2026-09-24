@@ -6,8 +6,10 @@ it may reach:
 
 * ``train`` — split into train / val / test by state hash.
 * ``heldout`` — a whole family unseen in training, evaluated as Tier 1.
-* ``ood`` — fully out of distribution, evaluated as Tier 1. Both OOD sets are non-commercial,
-  so the licence gate makes training on them impossible by construction rather than by care.
+* ``ood`` — fully out of distribution, evaluated as Tier 1. The OOD sets are non-commercial
+  (ANLI, SciQ) or share-alike (BoolQ, SNLI; eval-only under ADR 0005), so the licence gate makes
+  training on them impossible by construction rather than by care. MASSIVE fr/ja are CC-BY and
+  OOD by language only.
 
 Loading note: ``datasets`` 4.x removed script-based datasets, which breaks
 ``PolyAI/banking77`` and ``AmazonScience/massive`` at their canonical ids.
@@ -293,6 +295,33 @@ SOURCES: tuple[Source, ...] = (
         max_rows=1000,
         note="OOD. Non-commercial, as above.",
     ),
+    # Genuine-`Noul` OOD sets (owner decision 2026-09-24). Both are share-alike, which ADR 0005
+    # decided is eval-only; the gate still reports them `refused` *for training* and would stop
+    # a build that put them in a training split. They sit last in the registry so adding them
+    # cannot perturb anything the train/val/test build draws before them.
+    Source(
+        family="boolq",
+        repo="google/boolq",
+        license="cc-by-sa-3.0",
+        primitive="noul",
+        role="ood",
+        split="validation",
+        max_rows=1000,
+        note="OOD Noul: a Wikipedia passage and a yes/no question about it. Share-alike, so "
+        "eval-only (ADR 0005).",
+    ),
+    Source(
+        family="snli",
+        repo="stanfordnlp/snli",
+        license="cc-by-sa-4.0",
+        primitive="noul",
+        role="ood",
+        split="test",
+        max_rows=1000,
+        note="OOD Noul: does the hypothesis follow from the premise. Entailment is yes; neutral "
+        "and contradiction are no (neither follows); unlabelled rows are dropped. Share-alike, "
+        "so eval-only (ADR 0005).",
+    ),
 )
 
 
@@ -477,7 +506,35 @@ def _sciq(dataset: Any) -> Iterator[dict[str, Any]]:
         }
 
 
+def _boolq(dataset: Any) -> Iterator[dict[str, Any]]:
+    for row in dataset:
+        question = str(row["question"]).strip().rstrip("?")
+        question = question[:1].upper() + question[1:]
+        yield {
+            "state": str(row["passage"]).strip(),
+            "instructions": f"The answer to this question is yes: {question}?",
+            "options": ("no", "yes"),
+            "answer_idx": 1 if bool(row["answer"]) else 0,
+        }
+
+
+def _snli(dataset: Any) -> Iterator[dict[str, Any]]:
+    names = _class_names(dataset, "label") or ["entailment", "neutral", "contradiction"]
+    for row in dataset:
+        label = int(row["label"])
+        if label < 0:
+            continue  # no gold label: the annotators did not agree
+        yield {
+            "state": f"Premise: {str(row['premise']).strip()}",
+            "instructions": f"This follows from the premise: {str(row['hypothesis']).strip()}",
+            "options": ("no", "yes"),
+            "answer_idx": 1 if names[label] == "entailment" else 0,
+        }
+
+
 _NORMALISERS: dict[str, Callable[[Any], Iterator[dict[str, Any]]]] = {
+    "boolq": _boolq,
+    "snli": _snli,
     "banking77": _banking77,
     "clinc_oos": _clinc,
     "massive": _massive,

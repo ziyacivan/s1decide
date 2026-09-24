@@ -1,11 +1,11 @@
 {
   "seed": 20260917,
-  "rows": 450240,
+  "rows": 452240,
   "splits": {
     "val": 118235,
     "train": 90594,
     "test": 115054,
-    "eval": 126357
+    "eval": 128357
   },
   "by_family": {
     "anli": {
@@ -15,6 +15,9 @@
       "val": 32682,
       "train": 25320,
       "test": 32448
+    },
+    "boolq": {
+      "eval": 1000
     },
     "clinc_oos": {
       "train": 25720,
@@ -75,6 +78,9 @@
       "train": 4804,
       "val": 468,
       "test": 491
+    },
+    "snli": {
+      "eval": 1000
     }
   },
   "by_primitive": {
@@ -83,7 +89,7 @@
         "total": 5467,
         "stage1": 0,
         "genuine": 5467,
-        "genuine_share": 0.043266301035953685,
+        "genuine_share": 0.04259214534462476,
         "genuine_by_family": {
           "anli": 1000,
           "commonsense_qa": 1476,
@@ -93,12 +99,14 @@
         }
       },
       "noul": {
-        "total": 120890,
+        "total": 122890,
         "stage1": 120000,
-        "genuine": 890,
-        "genuine_share": 0.0070435353799156355,
+        "genuine": 2890,
+        "genuine_share": 0.02251532834204601,
         "genuine_by_family": {
-          "pubmedqa": 890
+          "boolq": 1000,
+          "pubmedqa": 890,
+          "snli": 1000
         }
       }
     },
@@ -568,6 +576,26 @@
       "rows_kept": 991,
       "note": "OOD. Non-commercial, as above."
     },
+    "boolq": {
+      "repo": "google/boolq",
+      "canonical_repo": "google/boolq",
+      "license": "cc-by-sa-3.0",
+      "role": "ood",
+      "primitive": "noul",
+      "rows_loaded": 1000,
+      "rows_kept": 1000,
+      "note": "OOD Noul: a Wikipedia passage and a yes/no question about it. Share-alike, so eval-only (ADR 0005)."
+    },
+    "snli": {
+      "repo": "stanfordnlp/snli",
+      "canonical_repo": "stanfordnlp/snli",
+      "license": "cc-by-sa-4.0",
+      "role": "ood",
+      "primitive": "noul",
+      "rows_loaded": 1000,
+      "rows_kept": 1000,
+      "note": "OOD Noul: does the hypothesis follow from the premise. Entailment is yes; neutral and contradiction are no (neither follows); unlabelled rows are dropped. Share-alike, so eval-only (ADR 0005)."
+    },
     "ordinal_control": {
       "repo": "s1decide/ordinal_control",
       "canonical_repo": "s1decide/ordinal_control",
@@ -672,6 +700,14 @@
         "val": 834
       }
     },
+    "google/boolq": {
+      "license": "CC-BY-SA-3.0",
+      "verdict": "refused",
+      "rows": 1000,
+      "splits": {
+        "eval": 1000
+      }
+    },
     "qiaojin/PubMedQA": {
       "license": "MIT",
       "verdict": "train",
@@ -688,6 +724,14 @@
         "train": 1201,
         "test": 82,
         "val": 92
+      }
+    },
+    "stanfordnlp/snli": {
+      "license": "CC-BY-SA-4.0",
+      "verdict": "refused",
+      "rows": 1000,
+      "splits": {
+        "eval": 1000
       }
     },
     "tau/commonsense_qa": {
