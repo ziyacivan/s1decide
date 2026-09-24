@@ -38,6 +38,8 @@ def to_systemone_question(
         stage1_phrasing: ``native`` (our text) or ``plain`` (a labelled plain proposition).
     """
     question = to_laya_question(row, stage1_phrasing)
+    if row.get("systemone_question") is not None:
+        return question  # already in the suite's own form
     if question["type"] == "choice" and not describe_options:
         question["criteria"] = {option: None for option in row["options"]}
     return question

@@ -87,6 +87,10 @@ def to_laya_question(row: Mapping[str, Any], stage1_phrasing: str = "native") ->
     """
     if stage1_phrasing not in STAGE1_PHRASINGS:
         raise ValueError(f"unknown stage-1 phrasing {stage1_phrasing!r}; known: {STAGE1_PHRASINGS}")
+    if row.get("systemone_question") is not None:
+        # A row that came from a `/v1/systemone` suite (the TypeSafe head-to-head) is asked in
+        # its own original form, criteria descriptions included.
+        return dict(row["systemone_question"])
     options = list(row["options"])
     if row.get("stage") == 1 and stage1_phrasing == "plain":
         return {"type": "noul", "instructions": plain_proposition(row["instructions"])}
@@ -120,7 +124,9 @@ def from_laya_answer(row: Mapping[str, Any], answer: Mapping[str, Any]) -> list[
     if row["qtype"] == "score":
         values = [probs.get(str(i)) for i in range(len(options))]
     else:
-        values = [probs.get(option) for option in options]
+        # `option_keys`: the criteria ids of a `/v1/systemone` suite row, whose option text
+        # carries the description as well.
+        values = [probs.get(key) for key in row.get("option_keys") or options]
     if any(v is None for v in values):
         raise ValueError(f"{row['id']}: answer lacks options: {sorted(probs)} vs {options}")
     total = sum(values)

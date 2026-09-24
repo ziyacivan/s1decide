@@ -26,6 +26,7 @@ reported beside the chosen one.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import math
 import shutil
@@ -79,6 +80,7 @@ def _score(
     s1_run: Path,
     eval_batch_size: int = 4,
     slices: Path = LAYA_SLICES,
+    max_seq_len: int | None = None,
 ) -> None:
     import torch
     from peft import set_peft_model_state_dict
@@ -92,6 +94,10 @@ def _score(
 
     root = repo_root()
     config = load_config(config_path)
+    if max_seq_len is not None:
+        # Evaluation only: a longer context than training, recorded in the meta. S1 never saw
+        # an example over its training cap, so rows beyond it measure length extrapolation too.
+        config = dataclasses.replace(config, max_seq_len=max_seq_len)
     tokenizer = AutoTokenizer.from_pretrained(config.model, local_files_only=True)
     model, loader = _load_model(config)
     # With no adapter the freshly initialised LoRA is a no-op (its B matrices are zero): the
@@ -116,6 +122,7 @@ def _score(
         "kernels": kernel_report(),
         "calibration": "none (raw logits)",
         "eval_batch_size": eval_batch_size,
+        "max_seq_len": config.max_seq_len,
     }
     for split in splits:
         for suffix in (".jsonl", ".json"):
@@ -228,6 +235,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         default=str(LAYA_SLICES),
         help="directory holding slice-<split>.jsonl (the fair-ground slice: --splits eval)",
     )
+    s.add_argument(
+        "--max-seq-len",
+        type=int,
+        default=None,
+        help="evaluation-time context cap, overriding the config's training cap",
+    )
     c = sub.add_parser("calibrate")
     c.add_argument("--raw", required=True)
     c.add_argument("--out", required=True)
@@ -248,6 +261,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             Path(args.s1_run),
             args.eval_batch_size,
             Path(args.slices),
+            args.max_seq_len,
         )
     else:
         _calibrate(Path(args.raw), Path(args.out), args.method, args.exclude_families)
