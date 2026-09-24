@@ -110,3 +110,46 @@ and fixed splits. That is the gap `s1decide` fills; our own model is one row in 
 9. SemIf MLX benchmarks: https://github.com/VinciGit00/semif-qwen3.5-4b-mlx-4bit
 10. allternit-platform PR #692 (SemIf head): https://github.com/Gizziio/allternit-platform/pull/692
 11. DEV, "Open-Source Jev Alternatives: Run Typed, Calibrated LLM Decisions Locally" (20 Sep 2026): https://dev.to/rupesh_poojary_ce8e5e7994/open-source-jev-alternatives-run-typed-calibrated-llm-decisions-locally-4dfb
+
+## Addendum (same day): training overlap and TypeSafe's public evals
+
+Read 2026-09-24 for the fair-ground evaluation; the per-family marks are
+`eval/contamination.json`, which the report copies onto every row.
+
+**Kev** (repo @ `c9c1f85`, card @ `2629c06`). Released models use `decision-v7`: "10,000 examples
+from ten public datasets, 896 generated policy examples, and 1,680 examples from 60 generated
+rule structures" [7]. `evals/v7/decision-v7/manifest.json` lists `trainable_sources` agnews,
+amazon, banking77, boolq, dbpedia14, imdb, mnli, sst5, trec, yelp, and `eval_only_sources` mmlu,
+emotion, tweet_offensive, qnli, paws, sciq. `kev/data.py` L157–158 trains BoolQ from `train`
+(dev/test from `validation`) and MNLI from `train` (eval from `validation_matched`); L285: "MMLU
+and SciQ stay eval-only … SNLI (MNLI sibling) [is] excluded entirely." The 9B card: "No Jev
+outputs were used for training."
+
+**Laya** (HF @ `55cf4c4`, GitHub NandhaKishorM/laya @ `23a1752`). No `datasets:` metadata; the
+full mix is not published. The GitHub README marks AG News and **BoolQ "in training mix"**, DAIR
+Emotion and SST-5 held out; `bench_apps.py` marks banking77 `in_training=False`. The
+`typed-decisions` checkpoint is fine-tuned on `LocalLLaMA/typed-decisions` train — a synthetic
+benchmark whose card says it "is not affiliated with TypeSafe", labelled by an unnamed ~4B
+teacher. **It is not TypeSafe's public evals** despite sharing the four workflow names.
+
+**TypeSafe public workflow evals** — https://evals.typesafe.ai. Four workflows (invoice 150
+cases, security 240, agent-trace 117, customer service 204), **but only 5 cases per workflow are
+published (20 total)**, as `<workflow>-cases.js` data files carrying per-case reference
+distributions and three models' answers (including TypeSafe's own, `typesafe:v13_snowy_elephant`).
+**No licence or terms are stated** on the page or in the files. Reference-label caveat, verbatim:
+"Instead of debating the correctness of the harness and labels, we assume that the code is
+correct, and measure against the current smartest large models. For this eval, the reference
+labels are generated via an average of the responses of GPT-6 Astra and Claude Fable 5.1, both
+at high thinking, answering every question in the harness. All other models are evaluated using
+the provider's default reasoning settings." Jev's published headline is *end-to-end case
+accuracy* over all cases (67.8% overall; security 61.7%, agent-trace 71.6%, invoice 61.8%,
+customer service 76.0%), not per question. **The live files have changed** since SemIf froze
+them: Kev's copy (`evals/external/typesafe-v1/development.jsonl`, 102 questions over the 20
+cases, 66 `Noul` + 36 `Choice`, no `Score`) pins snapshot hashes the live site no longer
+matches. Kev reports agreement / TVD on it: live Jev 0.891 / 0.125, the published TypeSafe
+answers 0.883 / 0.127, Kev-9B 0.809 / 0.226 on 89 answered rows (13 exceed its context) [7].
+
+**Other published Jev numbers on public sets** (third-party, not TypeSafe): Kev-9B card, Kev /
+Jev: QNLI 0.93 / 0.93, SciQ 0.96 / 0.99, MMLU 0.74 / 0.90; github.com/OmarMujahid/jev-decision-bench
+(jev-1.13.0, ~200 items per task): BoolQ AUROC 0.97, MNLI 0.84, ANLI R3 0.66, CommonsenseQA
+0.87. None found for SNLI, PubMedQA, MASSIVE fr/ja.

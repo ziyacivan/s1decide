@@ -1,0 +1,58 @@
+{
+  "_about": "Training overlap per model and fair-ground family, from each model's own published sources, read 2026-09-24. status: clean (source not in training), trained (source in training; our rows may or may not be the same split), sibling (a closely related source of the same task was trained on), unknown (training mix not published). Pretraining data of every base model (Qwen3.8, Qwen3.5, ModernBERT) is unpublished and is not assessed here; it applies to every row alike.",
+  "s1-3090": {
+    "_source": "data/build/sources.py: every fair-ground family has role heldout or ood and reaches only the eval split; the licence gate and the leakage guard enforce it",
+    "commonsense_qa": {"status": "clean", "evidence": "role heldout; never in train/val"},
+    "pubmedqa": {"status": "clean", "evidence": "role heldout; never in train/val"},
+    "anli": {"status": "clean", "evidence": "role ood; CC-BY-NC, the licence gate forbids training"},
+    "sciq": {"status": "clean", "evidence": "role ood; CC-BY-NC, the licence gate forbids training"},
+    "boolq": {"status": "clean", "evidence": "role ood; share-alike, eval-only (ADR 0005)"},
+    "snli": {"status": "clean", "evidence": "role ood; share-alike, eval-only (ADR 0005)"},
+    "massive_fr": {"status": "clean", "evidence": "fr-FR never trained; MASSIVE en/de/tr trained on disjoint slices of the parallel corpus, so the intents are seen and the language is not"},
+    "massive_ja": {"status": "clean", "evidence": "ja-JP never trained; as massive_fr"}
+  },
+  "zeroshot-qwen38-27b": {
+    "_source": "no fine-tuning; only base-model pretraining, which is unpublished",
+    "commonsense_qa": {"status": "unknown", "evidence": "pretraining data unpublished"},
+    "pubmedqa": {"status": "unknown", "evidence": "pretraining data unpublished"},
+    "anli": {"status": "unknown", "evidence": "pretraining data unpublished"},
+    "sciq": {"status": "unknown", "evidence": "pretraining data unpublished"},
+    "boolq": {"status": "unknown", "evidence": "pretraining data unpublished"},
+    "snli": {"status": "unknown", "evidence": "pretraining data unpublished"},
+    "massive_fr": {"status": "unknown", "evidence": "pretraining data unpublished"},
+    "massive_ja": {"status": "unknown", "evidence": "pretraining data unpublished"}
+  },
+  "kev-9b": {
+    "_source": "github.com/jaredpalmer/kev @ c9c1f85: README (decision-v7), evals/v7/decision-v7/manifest.json (trainable_sources, eval_only_sources), kev/data.py L157-158 and L285; HF jaredpalmer/kev-9b @ 2629c06 card",
+    "commonsense_qa": {"status": "clean", "evidence": "not in decision-v7 trainable_sources (kev/data.py names it trainable, v7 does not use it)"},
+    "pubmedqa": {"status": "clean", "evidence": "not in any Kev source list"},
+    "anli": {"status": "clean", "evidence": "not in code; MNLI trained (see snli)"},
+    "sciq": {"status": "clean", "evidence": "manifest eval_only_sources; kev/data.py L285 'MMLU and SciQ stay eval-only'"},
+    "boolq": {"status": "trained", "evidence": "manifest trainable_sources; kev/data.py L157 trains on BoolQ train and draws dev/test from validation — our rows are BoolQ validation, i.e. Kev's own held-out split of a trained source (in distribution for Kev)"},
+    "snli": {"status": "sibling", "evidence": "kev/data.py L285: SNLI 'excluded entirely'; MNLI, the same task, trained (L158)"},
+    "massive_fr": {"status": "clean", "evidence": "MASSIVE only mentioned in PLAN.md"},
+    "massive_ja": {"status": "clean", "evidence": "MASSIVE only mentioned in PLAN.md"}
+  },
+  "laya": {
+    "_source": "HF convaiinnovations/laya @ 55cf4c4 (no datasets metadata); github.com/NandhaKishorM/laya @ 23a1752 README 'English tasks' table and research/scripts/bench_apps.py",
+    "commonsense_qa": {"status": "unknown", "evidence": "full training mix not published"},
+    "pubmedqa": {"status": "unknown", "evidence": "full training mix not published"},
+    "anli": {"status": "unknown", "evidence": "full training mix not published"},
+    "sciq": {"status": "unknown", "evidence": "full training mix not published"},
+    "boolq": {"status": "trained", "evidence": "GitHub README: 'BoolQ … in training mix'; split not stated"},
+    "snli": {"status": "unknown", "evidence": "full training mix not published"},
+    "massive_fr": {"status": "unknown", "evidence": "evaluated on mteb/amazon_massive_intent (51 languages); training use not stated"},
+    "massive_ja": {"status": "unknown", "evidence": "as massive_fr"}
+  },
+  "laya-typed-decisions": {
+    "_source": "as laya, plus HF convaiinnovations/laya-typed-decisions @ 1a793eb: fine-tuned from laya on LocalLLaMA/typed-decisions train (synthetic, not TypeSafe's evals)",
+    "commonsense_qa": {"status": "unknown", "evidence": "inherits laya's unpublished mix"},
+    "pubmedqa": {"status": "unknown", "evidence": "inherits laya's unpublished mix"},
+    "anli": {"status": "unknown", "evidence": "inherits laya's unpublished mix"},
+    "sciq": {"status": "unknown", "evidence": "inherits laya's unpublished mix"},
+    "boolq": {"status": "trained", "evidence": "inherited from laya ('BoolQ … in training mix')"},
+    "snli": {"status": "unknown", "evidence": "inherits laya's unpublished mix"},
+    "massive_fr": {"status": "unknown", "evidence": "as laya"},
+    "massive_ja": {"status": "unknown", "evidence": "as laya"}
+  }
+}

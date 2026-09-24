@@ -57,3 +57,19 @@ def test_every_eval_family_is_described() -> None:
 
     eval_families = {s.family for s in SOURCES if s.role in {"heldout", "ood"}}
     assert eval_families == set(FAMILIES)
+
+
+def test_the_contamination_file_marks_every_family_for_every_model() -> None:
+    import json
+
+    from s1decide.tasks import repo_root
+
+    table = json.loads((repo_root() / "eval/contamination.json").read_text(encoding="utf-8"))
+    models = {k: v for k, v in table.items() if not k.startswith("_")}
+    assert models
+    for model, marks in models.items():
+        families = {k for k in marks if not k.startswith("_")}
+        assert families == set(FAMILIES), model
+        for family in families:
+            assert marks[family]["status"] in {"clean", "trained", "sibling", "unknown"}
+            assert marks[family]["evidence"].strip(), (model, family)
