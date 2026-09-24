@@ -1,0 +1,636 @@
+{
+  "model": {
+    "checkpoint": "typed-decisions",
+    "repo": "convaiinnovations/laya",
+    "revision": null,
+    "subfolder": "typed-decisions",
+    "laya_version": "0.3.11",
+    "torch": "2.14.0+cpu",
+    "device": "cpu",
+    "threads": 6,
+    "rows": 18557,
+    "stage1_phrasing": "native",
+    "only_stage1": false,
+    "seconds": 3684.2,
+    "load_warnings": [
+      "RuntimeWarning: laya: this checkpoint ships invalid temperatures or values outside [0.5, 5]; using choice:11+=0.10058280825614929 -> 0.5. Treat confidence from the affected entries as uncalibrated.",
+      "revision lookup failed: OfflineModeIsEnabled: Cannot reach https://huggingface.co/api/models/convaiinnovations/laya: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable."
+    ],
+    "probabilities": "as shipped: Laya's post-hoc temperature per question type and option count",
+    "state_passed_as": "the raw state string, as our model receives it"
+  },
+  "slice": {
+    "non_stage1_rows": 8357,
+    "stage1_questions": 600,
+    "stage1_questions_available": 2000,
+    "case_control": {
+      "mode": "case-control",
+      "negatives_per_question": 16,
+      "questions": 600,
+      "rows_kept": 10200,
+      "rows_dropped": 25800,
+      "max_weight": 3.6875,
+      "seed": 20260924
+    },
+    "rows": 18557,
+    "slice": {
+      "stage1_questions": 600,
+      "negatives": 16,
+      "seed": 20260924
+    },
+    "split": "eval",
+    "families": {
+      "commonsense_qa": "held-out family",
+      "pubmedqa": "held-out family",
+      "anli": "OOD (non-commercial)",
+      "sciq": "OOD (non-commercial)",
+      "boolq": "OOD (share-alike)",
+      "snli": "OOD (share-alike)",
+      "massive_fr": "unseen language, near",
+      "massive_ja": "unseen language, far"
+    }
+  },
+  "controls": {
+    "training_prior": "training marginal per primitive and option count",
+    "uniform_training_prior_for": [
+      "choice/3",
+      "choice/5"
+    ],
+    "own_marginal": "each family's own weighted label marginal, per group"
+  },
+  "contamination_source": "eval\\contamination.json",
+  "families": {
+    "anli": {
+      "kind": "OOD (non-commercial)",
+      "contamination": {
+        "status": "unknown",
+        "evidence": "inherits laya's unpublished mix"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.65,
+            "kl": 0.8411542339407563,
+            "ece": 0.08877527290660273,
+            "brier": 0.48937807488701107,
+            "bss": 0.2659328876694833,
+            "predicted_marginal": [
+              0.352,
+              0.301,
+              0.347
+            ],
+            "target_marginal": [
+              0.36,
+              0.29,
+              0.35
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.36,
+            "kl": 1.0986122886681096,
+            "ece": 0.04733333333333337,
+            "brier": 0.6666666666666666,
+            "bss": 0.0,
+            "predicted_marginal": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.36,
+              0.29,
+              0.35
+            ]
+          },
+          "own_marginal": [
+            0.36,
+            0.29,
+            0.35
+          ],
+          "bss_vs_own_marginal": 0.2627627675700345
+        }
+      }
+    },
+    "boolq": {
+      "kind": "OOD (share-alike)",
+      "contamination": {
+        "status": "trained",
+        "evidence": "inherited from laya ('BoolQ \u2026 in training mix')"
+      },
+      "groups": {
+        "noul": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.767,
+            "kl": 0.522450378789256,
+            "ece": 0.08001349999999997,
+            "brier": 0.34271092298,
+            "bss": 0.4941280977136078,
+            "predicted_marginal": [
+              0.35,
+              0.65
+            ],
+            "target_marginal": [
+              0.375,
+              0.625
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.375,
+            "kl": 0.8832248056019129,
+            "ece": 0.3230447490425316,
+            "brier": 0.6774658197679045,
+            "bss": 0.0,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.375,
+              0.625
+            ]
+          },
+          "own_marginal": [
+            0.375,
+            0.625
+          ],
+          "bss_vs_own_marginal": 0.26888336430933335
+        }
+      }
+    },
+    "commonsense_qa": {
+      "kind": "held-out family",
+      "contamination": {
+        "status": "unknown",
+        "evidence": "inherits laya's unpublished mix"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 1476,
+            "weight": 1476.0,
+            "accuracy": 0.4634146341463415,
+            "kl": 1.3312138946533423,
+            "ece": 0.0501304692653236,
+            "brier": 0.6777570807247433,
+            "bss": 0.15280364909407118,
+            "predicted_marginal": [
+              0.21341463414634146,
+              0.1856368563685637,
+              0.21680216802168023,
+              0.1937669376693767,
+              0.19037940379403795
+            ],
+            "target_marginal": [
+              0.20257452574525744,
+              0.2032520325203252,
+              0.19173441734417343,
+              0.21205962059620595,
+              0.19037940379403795
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1476,
+            "weight": 1476.0,
+            "accuracy": 0.20257452574525744,
+            "kl": 1.6094379124340998,
+            "ece": 0.03211382113821139,
+            "brier": 0.8000000000000003,
+            "bss": 0.0,
+            "predicted_marginal": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.20257452574525744,
+              0.2032520325203252,
+              0.19173441734417343,
+              0.21205962059620595,
+              0.19037940379403795
+            ]
+          },
+          "own_marginal": [
+            0.20257452574525744,
+            0.2032520325203252,
+            0.19173441734417343,
+            0.21205962059620595,
+            0.19037940379403795
+          ],
+          "bss_vs_own_marginal": 0.15246091056312527
+        }
+      }
+    },
+    "massive_fr": {
+      "kind": "unseen language, near",
+      "contamination": {
+        "status": "unknown",
+        "evidence": "as laya"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.64,
+            "kl": 1.122411446962893,
+            "ece": 0.09624440697870455,
+            "brier": 0.4898384674803043,
+            "bss": 0.4403532990130772,
+            "predicted_marginal": [
+              0.162,
+              0.143,
+              0.109,
+              0.117,
+              0.125,
+              0.109,
+              0.109,
+              0.126
+            ],
+            "target_marginal": [
+              0.126,
+              0.122,
+              0.108,
+              0.13,
+              0.139,
+              0.134,
+              0.13,
+              0.111
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.13,
+            "kl": 2.080504366101126,
+            "ece": 0.02363317832810641,
+            "brier": 0.875263745174387,
+            "bss": -2.220446049250313e-16,
+            "predicted_marginal": [
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.126,
+              0.122,
+              0.108,
+              0.13,
+              0.139,
+              0.134,
+              0.13,
+              0.111
+            ]
+          },
+          "own_marginal": [
+            0.126,
+            0.122,
+            0.108,
+            0.13,
+            0.139,
+            0.134,
+            0.13,
+            0.111
+          ],
+          "bss_vs_own_marginal": 0.43965820750430207
+        },
+        "noul/stage1": {
+          "model": {
+            "rows": 5202,
+            "weight": 18360.0,
+            "accuracy": 0.9483523965141613,
+            "kl": 0.3217433263343134,
+            "ece": 0.20312922181372545,
+            "brier": 0.16846715628594772,
+            "bss": -1.606807576214139,
+            "predicted_marginal": [
+              0.9530364923747277,
+              0.04696350762527233
+            ],
+            "target_marginal": [
+              0.9833333333333333,
+              0.016666666666666666
+            ]
+          },
+          "training_prior_control": {
+            "rows": 5202,
+            "weight": 18360.0,
+            "accuracy": 0.9833333333333333,
+            "kl": 0.1840133376477258,
+            "ece": 0.12619047619047627,
+            "brier": 0.06462585034013604,
+            "bss": 0.0,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.9833333333333333,
+              0.016666666666666666
+            ]
+          },
+          "own_marginal": [
+            0.9833333333333333,
+            0.016666666666666666
+          ],
+          "bss_vs_own_marginal": -4.139675954486541
+        }
+      }
+    },
+    "massive_ja": {
+      "kind": "unseen language, far",
+      "contamination": {
+        "status": "unknown",
+        "evidence": "as laya"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.608,
+            "kl": 1.2045326079303031,
+            "ece": 0.06960074530884396,
+            "brier": 0.5155912212466671,
+            "bss": 0.41104076670604217,
+            "predicted_marginal": [
+              0.167,
+              0.15,
+              0.121,
+              0.132,
+              0.106,
+              0.091,
+              0.112,
+              0.121
+            ],
+            "target_marginal": [
+              0.112,
+              0.119,
+              0.132,
+              0.119,
+              0.125,
+              0.122,
+              0.148,
+              0.123
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.119,
+            "kl": 2.0811624222283,
+            "ece": 0.031366821671893585,
+            "brier": 0.8754276902376508,
+            "bss": -2.220446049250313e-16,
+            "predicted_marginal": [
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.112,
+              0.119,
+              0.132,
+              0.119,
+              0.125,
+              0.122,
+              0.148,
+              0.123
+            ]
+          },
+          "own_marginal": [
+            0.112,
+            0.119,
+            0.132,
+            0.119,
+            0.125,
+            0.122,
+            0.148,
+            0.123
+          ],
+          "bss_vs_own_marginal": 0.4101920669177239
+        },
+        "noul/stage1": {
+          "model": {
+            "rows": 4998,
+            "weight": 17640.0,
+            "accuracy": 0.9384247448979591,
+            "kl": 0.3232853846648217,
+            "ece": 0.19100570507369613,
+            "brier": 0.17234472438081064,
+            "bss": -1.6668078404188593,
+            "predicted_marginal": [
+              0.9408056972789116,
+              0.059194302721088436
+            ],
+            "target_marginal": [
+              0.9833333333333333,
+              0.016666666666666666
+            ]
+          },
+          "training_prior_control": {
+            "rows": 4998,
+            "weight": 17640.0,
+            "accuracy": 0.9833333333333333,
+            "kl": 0.1840133376477258,
+            "ece": 0.12619047619047635,
+            "brier": 0.06462585034013604,
+            "bss": 2.220446049250313e-16,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.9833333333333333,
+              0.016666666666666666
+            ]
+          },
+          "own_marginal": [
+            0.9833333333333333,
+            0.016666666666666666
+          ],
+          "bss_vs_own_marginal": -4.257974642126427
+        }
+      }
+    },
+    "pubmedqa": {
+      "kind": "held-out family",
+      "contamination": {
+        "status": "unknown",
+        "evidence": "inherits laya's unpublished mix"
+      },
+      "groups": {
+        "noul": {
+          "model": {
+            "rows": 890,
+            "weight": 890.0,
+            "accuracy": 0.6719101123595506,
+            "kl": 0.6284342217394728,
+            "ece": 0.06337775280898877,
+            "brier": 0.43696301977528085,
+            "bss": 0.3513817967122076,
+            "predicted_marginal": [
+              0.1752808988764045,
+              0.8247191011235955
+            ],
+            "target_marginal": [
+              0.3797752808988764,
+              0.6202247191011236
+            ]
+          },
+          "training_prior_control": {
+            "rows": 890,
+            "weight": 890.0,
+            "accuracy": 0.3797752808988764,
+            "kl": 0.8792230992913708,
+            "ece": 0.31826946814365514,
+            "brier": 0.6736829425390023,
+            "bss": 1.1102230246251565e-16,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.3797752808988764,
+              0.6202247191011236
+            ]
+          },
+          "own_marginal": [
+            0.3797752808988764,
+            0.6202247191011236
+          ],
+          "bss_vs_own_marginal": 0.07244659558571354
+        }
+      }
+    },
+    "sciq": {
+      "kind": "OOD (non-commercial)",
+      "contamination": {
+        "status": "unknown",
+        "evidence": "inherits laya's unpublished mix"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 991,
+            "weight": 991.0,
+            "accuracy": 0.9112008072653885,
+            "kl": 0.5105724051850361,
+            "ece": 0.25941522207895645,
+            "brier": 0.2348385039729957,
+            "bss": 0.6868384972085312,
+            "predicted_marginal": [
+              0.2472250252270434,
+              0.24318869828456105,
+              0.2704339051463169,
+              0.2391523713420787
+            ],
+            "target_marginal": [
+              0.2613521695257316,
+              0.24217961654894046,
+              0.260343087790111,
+              0.23612512613521694
+            ]
+          },
+          "training_prior_control": {
+            "rows": 991,
+            "weight": 991.0,
+            "accuracy": 0.24217961654894046,
+            "kl": 1.3860747453771238,
+            "ece": 0.03500111639402996,
+            "brier": 0.7498958265293941,
+            "bss": 0.0,
+            "predicted_marginal": [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.2613521695257316,
+              0.24217961654894046,
+              0.260343087790111,
+              0.23612512613521694
+            ]
+          },
+          "own_marginal": [
+            0.2613521695257316,
+            0.24217961654894046,
+            0.260343087790111,
+            0.23612512613521694
+          ],
+          "bss_vs_own_marginal": 0.6866774904625808
+        }
+      }
+    },
+    "snli": {
+      "kind": "OOD (share-alike)",
+      "contamination": {
+        "status": "unknown",
+        "evidence": "inherits laya's unpublished mix"
+      },
+      "groups": {
+        "noul": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.824,
+            "kl": 0.4410084985002,
+            "ece": 0.12431619999999997,
+            "brier": 0.2807940538,
+            "bss": 0.3826850465792241,
+            "predicted_marginal": [
+              0.578,
+              0.422
+            ],
+            "target_marginal": [
+              0.656,
+              0.344
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.656,
+            "kl": 0.6477455747305156,
+            "ece": 0.04590284216891738,
+            "brier": 0.45486352184409884,
+            "bss": 1.1102230246251565e-16,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.656,
+              0.344
+            ]
+          },
+          "own_marginal": [
+            0.656,
+            0.344
+          ],
+          "bss_vs_own_marginal": 0.3778492497695688
+        }
+      }
+    }
+  }
+}

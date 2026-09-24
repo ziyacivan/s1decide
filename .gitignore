@@ -44,6 +44,6 @@ Thumbs.db
 docs/announce/
 
 # External-model evaluation slices carry full states; predictions and metrics are committed.
-results/*/slice-*.jsonl
+results/**/slice-*.jsonl
 # Training checkpoints hold adapter weights and optimiser state (GB); the run's evals and summary are committed.
 results/*/checkpoints/

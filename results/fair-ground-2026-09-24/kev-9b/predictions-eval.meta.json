@@ -1,0 +1,15 @@
+{
+  "model_id": "jaredpalmer/kev-9b",
+  "source_commit": "c9c1f855505336ac32092a5f68305d397f7fcc3e",
+  "server": "http://127.0.0.1:8009",
+  "protocol": "/v1/systemone (TypeSafe request format)",
+  "choice_options_described": false,
+  "stage1_phrasing": "native",
+  "only_stage1": false,
+  "rows": 18557,
+  "answered": 18557,
+  "rejected": [],
+  "seconds": 1440.2,
+  "probabilities": "as served: the server's own calibration (Kev: one fitted temperature)",
+  "state_passed_as": "the raw state string, as our model receives it"
+}

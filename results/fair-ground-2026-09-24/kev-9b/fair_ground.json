@@ -1,0 +1,631 @@
+{
+  "model": {
+    "model_id": "jaredpalmer/kev-9b",
+    "source_commit": "c9c1f855505336ac32092a5f68305d397f7fcc3e",
+    "server": "http://127.0.0.1:8009",
+    "protocol": "/v1/systemone (TypeSafe request format)",
+    "choice_options_described": false,
+    "stage1_phrasing": "native",
+    "only_stage1": false,
+    "rows": 18557,
+    "answered": 18557,
+    "rejected": [],
+    "seconds": 1440.2,
+    "probabilities": "as served: the server's own calibration (Kev: one fitted temperature)",
+    "state_passed_as": "the raw state string, as our model receives it"
+  },
+  "slice": {
+    "non_stage1_rows": 8357,
+    "stage1_questions": 600,
+    "stage1_questions_available": 2000,
+    "case_control": {
+      "mode": "case-control",
+      "negatives_per_question": 16,
+      "questions": 600,
+      "rows_kept": 10200,
+      "rows_dropped": 25800,
+      "max_weight": 3.6875,
+      "seed": 20260924
+    },
+    "rows": 18557,
+    "slice": {
+      "stage1_questions": 600,
+      "negatives": 16,
+      "seed": 20260924
+    },
+    "split": "eval",
+    "families": {
+      "commonsense_qa": "held-out family",
+      "pubmedqa": "held-out family",
+      "anli": "OOD (non-commercial)",
+      "sciq": "OOD (non-commercial)",
+      "boolq": "OOD (share-alike)",
+      "snli": "OOD (share-alike)",
+      "massive_fr": "unseen language, near",
+      "massive_ja": "unseen language, far"
+    }
+  },
+  "controls": {
+    "training_prior": "training marginal per primitive and option count",
+    "uniform_training_prior_for": [
+      "choice/3",
+      "choice/5"
+    ],
+    "own_marginal": "each family's own weighted label marginal, per group"
+  },
+  "contamination_source": "eval\\contamination.json",
+  "families": {
+    "anli": {
+      "kind": "OOD (non-commercial)",
+      "contamination": {
+        "status": "clean",
+        "evidence": "not in code; MNLI trained (see snli)"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.668,
+            "kl": 0.9838459300079035,
+            "ece": 0.18297268696906982,
+            "brier": 0.49806996424867594,
+            "bss": 0.25289505362698605,
+            "predicted_marginal": [
+              0.338,
+              0.313,
+              0.349
+            ],
+            "target_marginal": [
+              0.36,
+              0.29,
+              0.35
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.36,
+            "kl": 1.0986122886681096,
+            "ece": 0.04733333333333337,
+            "brier": 0.6666666666666666,
+            "bss": 0.0,
+            "predicted_marginal": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.36,
+              0.29,
+              0.35
+            ]
+          },
+          "own_marginal": [
+            0.36,
+            0.29,
+            0.35
+          ],
+          "bss_vs_own_marginal": 0.2496686287305273
+        }
+      }
+    },
+    "boolq": {
+      "kind": "OOD (share-alike)",
+      "contamination": {
+        "status": "trained",
+        "evidence": "manifest trainable_sources; kev/data.py L157 trains on BoolQ train and draws dev/test from validation \u2014 our rows are BoolQ validation, i.e. Kev's own held-out split of a trained source (in distribution for Kev)"
+      },
+      "groups": {
+        "noul": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.9,
+            "kl": 0.25441597018407314,
+            "ece": 0.02989440000000001,
+            "brier": 0.14982583576000003,
+            "bss": 0.7788436975147626,
+            "predicted_marginal": [
+              0.333,
+              0.667
+            ],
+            "target_marginal": [
+              0.375,
+              0.625
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.375,
+            "kl": 0.8832248056019129,
+            "ece": 0.3230447490425316,
+            "brier": 0.6774658197679045,
+            "bss": 0.0,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.375,
+              0.625
+            ]
+          },
+          "own_marginal": [
+            0.375,
+            0.625
+          ],
+          "bss_vs_own_marginal": 0.6803715503786666
+        }
+      }
+    },
+    "commonsense_qa": {
+      "kind": "held-out family",
+      "contamination": {
+        "status": "clean",
+        "evidence": "not in decision-v7 trainable_sources (kev/data.py names it trainable, v7 does not use it)"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 1476,
+            "weight": 1476.0,
+            "accuracy": 0.7757452574525745,
+            "kl": 0.6314411771829329,
+            "ece": 0.07862701704547122,
+            "brier": 0.3227483959262176,
+            "bss": 0.5965645050922281,
+            "predicted_marginal": [
+              0.22967479674796748,
+              0.2073170731707317,
+              0.19715447154471544,
+              0.19986449864498645,
+              0.1659891598915989
+            ],
+            "target_marginal": [
+              0.20257452574525744,
+              0.2032520325203252,
+              0.19173441734417343,
+              0.21205962059620595,
+              0.19037940379403795
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1476,
+            "weight": 1476.0,
+            "accuracy": 0.20257452574525744,
+            "kl": 1.6094379124340998,
+            "ece": 0.03211382113821139,
+            "brier": 0.8000000000000003,
+            "bss": 0.0,
+            "predicted_marginal": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.20257452574525744,
+              0.2032520325203252,
+              0.19173441734417343,
+              0.21205962059620595,
+              0.19037940379403795
+            ]
+          },
+          "own_marginal": [
+            0.20257452574525744,
+            0.2032520325203252,
+            0.19173441734417343,
+            0.21205962059620595,
+            0.19037940379403795
+          ],
+          "bss_vs_own_marginal": 0.5964012927640491
+        }
+      }
+    },
+    "massive_fr": {
+      "kind": "unseen language, near",
+      "contamination": {
+        "status": "clean",
+        "evidence": "MASSIVE only mentioned in PLAN.md"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.897,
+            "kl": 0.3707130967498215,
+            "ece": 0.08473133606182169,
+            "brier": 0.16345400555793593,
+            "bss": 0.8132517124591176,
+            "predicted_marginal": [
+              0.144,
+              0.117,
+              0.118,
+              0.139,
+              0.131,
+              0.127,
+              0.119,
+              0.105
+            ],
+            "target_marginal": [
+              0.126,
+              0.122,
+              0.108,
+              0.13,
+              0.139,
+              0.134,
+              0.13,
+              0.111
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.13,
+            "kl": 2.080504366101126,
+            "ece": 0.02363317832810641,
+            "brier": 0.875263745174387,
+            "bss": -2.220446049250313e-16,
+            "predicted_marginal": [
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.126,
+              0.122,
+              0.108,
+              0.13,
+              0.139,
+              0.134,
+              0.13,
+              0.111
+            ]
+          },
+          "own_marginal": [
+            0.126,
+            0.122,
+            0.108,
+            0.13,
+            0.139,
+            0.134,
+            0.13,
+            0.111
+          ],
+          "bss_vs_own_marginal": 0.8130197676469371
+        },
+        "noul/stage1": {
+          "model": {
+            "rows": 5202,
+            "weight": 18360.0,
+            "accuracy": 0.8079520697167756,
+            "kl": 0.4958793736501182,
+            "ece": 0.10768086873638344,
+            "brier": 0.30865149796650326,
+            "bss": -3.7759758106395775,
+            "predicted_marginal": [
+              0.7961873638344227,
+              0.20381263616557735
+            ],
+            "target_marginal": [
+              0.9833333333333333,
+              0.016666666666666666
+            ]
+          },
+          "training_prior_control": {
+            "rows": 5202,
+            "weight": 18360.0,
+            "accuracy": 0.9833333333333333,
+            "kl": 0.1840133376477258,
+            "ece": 0.12619047619047627,
+            "brier": 0.06462585034013604,
+            "bss": 0.0,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.9833333333333333,
+              0.016666666666666666
+            ]
+          },
+          "own_marginal": [
+            0.9833333333333333,
+            0.016666666666666666
+          ],
+          "bss_vs_own_marginal": -8.416486378639084
+        }
+      }
+    },
+    "massive_ja": {
+      "kind": "unseen language, far",
+      "contamination": {
+        "status": "clean",
+        "evidence": "MASSIVE only mentioned in PLAN.md"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.915,
+            "kl": 0.32170291303335624,
+            "ece": 0.08912473669993326,
+            "brier": 0.1410984617574279,
+            "bss": 0.8388233964599359,
+            "predicted_marginal": [
+              0.121,
+              0.118,
+              0.138,
+              0.122,
+              0.119,
+              0.118,
+              0.145,
+              0.119
+            ],
+            "target_marginal": [
+              0.112,
+              0.119,
+              0.132,
+              0.119,
+              0.125,
+              0.122,
+              0.148,
+              0.123
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.119,
+            "kl": 2.0811624222283,
+            "ece": 0.031366821671893585,
+            "brier": 0.8754276902376508,
+            "bss": -2.220446049250313e-16,
+            "predicted_marginal": [
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.112,
+              0.119,
+              0.132,
+              0.119,
+              0.125,
+              0.122,
+              0.148,
+              0.123
+            ]
+          },
+          "own_marginal": [
+            0.112,
+            0.119,
+            0.132,
+            0.119,
+            0.125,
+            0.122,
+            0.148,
+            0.123
+          ],
+          "bss_vs_own_marginal": 0.8385911383653624
+        },
+        "noul/stage1": {
+          "model": {
+            "rows": 4998,
+            "weight": 17640.0,
+            "accuracy": 0.777593537414966,
+            "kl": 0.523253958089855,
+            "ece": 0.06290315901360544,
+            "brier": 0.3348059770561225,
+            "bss": -4.180681960763158,
+            "predicted_marginal": [
+              0.7659155328798186,
+              0.2340844671201814
+            ],
+            "target_marginal": [
+              0.9833333333333333,
+              0.016666666666666666
+            ]
+          },
+          "training_prior_control": {
+            "rows": 4998,
+            "weight": 17640.0,
+            "accuracy": 0.9833333333333333,
+            "kl": 0.1840133376477258,
+            "ece": 0.12619047619047635,
+            "brier": 0.06462585034013604,
+            "bss": 2.220446049250313e-16,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.9833333333333333,
+              0.016666666666666666
+            ]
+          },
+          "own_marginal": [
+            0.9833333333333333,
+            0.016666666666666666
+          ],
+          "bss_vs_own_marginal": -9.214419639000347
+        }
+      }
+    },
+    "pubmedqa": {
+      "kind": "held-out family",
+      "contamination": {
+        "status": "clean",
+        "evidence": "not in any Kev source list"
+      },
+      "groups": {
+        "noul": {
+          "model": {
+            "rows": 890,
+            "weight": 890.0,
+            "accuracy": 0.8662921348314607,
+            "kl": 0.30460212831775796,
+            "ece": 0.03816191011235955,
+            "brier": 0.18821888725842698,
+            "bss": 0.7206120633705518,
+            "predicted_marginal": [
+              0.33146067415730335,
+              0.6685393258426966
+            ],
+            "target_marginal": [
+              0.3797752808988764,
+              0.6202247191011236
+            ]
+          },
+          "training_prior_control": {
+            "rows": 890,
+            "weight": 890.0,
+            "accuracy": 0.3797752808988764,
+            "kl": 0.8792230992913708,
+            "ece": 0.31826946814365514,
+            "brier": 0.6736829425390023,
+            "bss": 1.1102230246251565e-16,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.3797752808988764,
+              0.6202247191011236
+            ]
+          },
+          "own_marginal": [
+            0.3797752808988764,
+            0.6202247191011236
+          ],
+          "bss_vs_own_marginal": 0.6004625980903225
+        }
+      }
+    },
+    "sciq": {
+      "kind": "OOD (non-commercial)",
+      "contamination": {
+        "status": "clean",
+        "evidence": "manifest eval_only_sources; kev/data.py L285 'MMLU and SciQ stay eval-only'"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 991,
+            "weight": 991.0,
+            "accuracy": 0.9848637739656912,
+            "kl": 0.06824638218538669,
+            "ece": 0.026130208263785405,
+            "brier": 0.028538394895622817,
+            "bss": 0.9619435208384852,
+            "predicted_marginal": [
+              0.26437941473259335,
+              0.24318869828456105,
+              0.25731584258324924,
+              0.23511604439959638
+            ],
+            "target_marginal": [
+              0.2613521695257316,
+              0.24217961654894046,
+              0.260343087790111,
+              0.23612512613521694
+            ]
+          },
+          "training_prior_control": {
+            "rows": 991,
+            "weight": 991.0,
+            "accuracy": 0.24217961654894046,
+            "kl": 1.3860747453771238,
+            "ece": 0.03500111639402996,
+            "brier": 0.7498958265293941,
+            "bss": 0.0,
+            "predicted_marginal": [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.2613521695257316,
+              0.24217961654894046,
+              0.260343087790111,
+              0.23612512613521694
+            ]
+          },
+          "own_marginal": [
+            0.2613521695257316,
+            0.24217961654894046,
+            0.260343087790111,
+            0.23612512613521694
+          ],
+          "bss_vs_own_marginal": 0.9619239547365936
+        }
+      }
+    },
+    "snli": {
+      "kind": "OOD (share-alike)",
+      "contamination": {
+        "status": "sibling",
+        "evidence": "kev/data.py L285: SNLI 'excluded entirely'; MNLI, the same task, trained (L158)"
+      },
+      "groups": {
+        "noul": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.942,
+            "kl": 0.18174755060565567,
+            "ece": 0.04371659999999998,
+            "brier": 0.09658246656,
+            "bss": 0.7876671530650837,
+            "predicted_marginal": [
+              0.62,
+              0.38
+            ],
+            "target_marginal": [
+              0.656,
+              0.344
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.656,
+            "kl": 0.6477455747305156,
+            "ece": 0.04590284216891738,
+            "brier": 0.45486352184409884,
+            "bss": 1.1102230246251565e-16,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.656,
+              0.344
+            ]
+          },
+          "own_marginal": [
+            0.656,
+            0.344
+          ],
+          "bss_vs_own_marginal": 0.7860038230289279
+        }
+      }
+    }
+  }
+}

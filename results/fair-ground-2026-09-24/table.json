@@ -1,0 +1,612 @@
+{
+  "models": [
+    "zeroshot-qwen38-27b",
+    "s1-3090",
+    "s1-3090-s2",
+    "kev-9b",
+    "laya",
+    "laya-typed-decisions"
+  ],
+  "families": {
+    "anli": {
+      "kind": "OOD (non-commercial)",
+      "groups": {
+        "choice": {
+          "zeroshot-qwen38-27b": {
+            "rows": 1000,
+            "accuracy": 0.74,
+            "bss_vs_training_prior": 0.4581140366864812,
+            "bss_vs_own_marginal": 0.45577386430298394,
+            "ece": 0.11144270769170875,
+            "kl": 0.6672720604719031,
+            "contamination": "unknown"
+          },
+          "s1-3090": {
+            "rows": 1000,
+            "accuracy": 0.801,
+            "bss_vs_training_prior": 0.5623617902192926,
+            "bss_vs_own_marginal": 0.5604718190411696,
+            "ece": 0.09397822632413563,
+            "kl": 0.5490073261695854,
+            "contamination": "clean"
+          },
+          "s1-3090-s2": {
+            "rows": 1000,
+            "accuracy": 0.801,
+            "bss_vs_training_prior": 0.5901888814601604,
+            "bss_vs_own_marginal": 0.5884190835192933,
+            "ece": 0.04033177168337263,
+            "kl": 0.48291498782713266,
+            "contamination": "clean"
+          },
+          "kev-9b": {
+            "rows": 1000,
+            "accuracy": 0.668,
+            "bss_vs_training_prior": 0.25289505362698605,
+            "bss_vs_own_marginal": 0.2496686287305273,
+            "ece": 0.18297268696906982,
+            "kl": 0.9838459300079035,
+            "contamination": "clean"
+          },
+          "laya": {
+            "rows": 1000,
+            "accuracy": 0.656,
+            "bss_vs_training_prior": 0.2265656924969226,
+            "bss_vs_own_marginal": 0.22322556241530844,
+            "ece": 0.18929458976171792,
+            "kl": 0.9368692822188345,
+            "contamination": "unknown"
+          },
+          "laya-typed-decisions": {
+            "rows": 1000,
+            "accuracy": 0.65,
+            "bss_vs_training_prior": 0.2659328876694833,
+            "bss_vs_own_marginal": 0.2627627675700345,
+            "ece": 0.08877527290660273,
+            "kl": 0.8411542339407563,
+            "contamination": "unknown"
+          }
+        }
+      }
+    },
+    "boolq": {
+      "kind": "OOD (share-alike)",
+      "groups": {
+        "noul": {
+          "zeroshot-qwen38-27b": {
+            "rows": 1000,
+            "accuracy": 0.849,
+            "bss_vs_training_prior": 0.6584745538432444,
+            "bss_vs_own_marginal": 0.5064067917820037,
+            "ece": 0.06811144315603543,
+            "kl": 0.4248664034122271,
+            "contamination": "unknown"
+          },
+          "s1-3090": {
+            "rows": 1000,
+            "accuracy": 0.878,
+            "bss_vs_training_prior": 0.7414798963781167,
+            "bss_vs_own_marginal": 0.6263711276230768,
+            "ece": 0.03987429955945537,
+            "kl": 0.3009707585070796,
+            "contamination": "clean"
+          },
+          "s1-3090-s2": {
+            "rows": 1000,
+            "accuracy": 0.879,
+            "bss_vs_training_prior": 0.7332732551676131,
+            "bss_vs_own_marginal": 0.6145103939372849,
+            "ece": 0.02765771807055755,
+            "kl": 0.30544865916337516,
+            "contamination": "clean"
+          },
+          "kev-9b": {
+            "rows": 1000,
+            "accuracy": 0.9,
+            "bss_vs_training_prior": 0.7788436975147626,
+            "bss_vs_own_marginal": 0.6803715503786666,
+            "ece": 0.02989440000000001,
+            "kl": 0.25441597018407314,
+            "contamination": "trained"
+          },
+          "laya": {
+            "rows": 1000,
+            "accuracy": 0.765,
+            "bss_vs_training_prior": 0.49687751657085755,
+            "bss_vs_own_marginal": 0.2728569905493591,
+            "ece": 0.079692799999978,
+            "kl": 0.5913773040438455,
+            "contamination": "trained"
+          },
+          "laya-typed-decisions": {
+            "rows": 1000,
+            "accuracy": 0.767,
+            "bss_vs_training_prior": 0.4941280977136078,
+            "bss_vs_own_marginal": 0.26888336430933335,
+            "ece": 0.08001349999999997,
+            "kl": 0.522450378789256,
+            "contamination": "trained"
+          }
+        }
+      }
+    },
+    "commonsense_qa": {
+      "kind": "held-out family",
+      "groups": {
+        "choice": {
+          "zeroshot-qwen38-27b": {
+            "rows": 1476,
+            "accuracy": 0.8204607046070461,
+            "bss_vs_training_prior": 0.6600835536843749,
+            "bss_vs_own_marginal": 0.6599460383807148,
+            "ece": 0.06151143576561564,
+            "kl": 0.5613278993034895,
+            "contamination": "unknown"
+          },
+          "s1-3090": {
+            "rows": 1476,
+            "accuracy": 0.8319783197831978,
+            "bss_vs_training_prior": 0.684323446137253,
+            "bss_vs_own_marginal": 0.6841957372322167,
+            "ece": 0.06922003599945067,
+            "kl": 0.5089992048132469,
+            "contamination": "clean"
+          },
+          "s1-3090-s2": {
+            "rows": 1476,
+            "accuracy": 0.8319783197831978,
+            "bss_vs_training_prior": 0.6946162198576028,
+            "bss_vs_own_marginal": 0.6944926749579243,
+            "ece": 0.01957487858653507,
+            "kl": 0.4683401655684863,
+            "contamination": "clean"
+          },
+          "kev-9b": {
+            "rows": 1476,
+            "accuracy": 0.7757452574525745,
+            "bss_vs_training_prior": 0.5965645050922281,
+            "bss_vs_own_marginal": 0.5964012927640491,
+            "ece": 0.07862701704547122,
+            "kl": 0.6314411771829329,
+            "contamination": "clean"
+          },
+          "laya": {
+            "rows": 1476,
+            "accuracy": 0.4695121951219512,
+            "bss_vs_training_prior": 0.10660451453579411,
+            "bss_vs_own_marginal": 0.10624308585882414,
+            "ece": 0.1399406069266526,
+            "kl": 1.4359897877810364,
+            "contamination": "unknown"
+          },
+          "laya-typed-decisions": {
+            "rows": 1476,
+            "accuracy": 0.4634146341463415,
+            "bss_vs_training_prior": 0.15280364909407118,
+            "bss_vs_own_marginal": 0.15246091056312527,
+            "ece": 0.0501304692653236,
+            "kl": 1.3312138946533423,
+            "contamination": "unknown"
+          }
+        }
+      }
+    },
+    "massive_fr": {
+      "kind": "unseen language, near",
+      "groups": {
+        "choice": {
+          "zeroshot-qwen38-27b": {
+            "rows": 1000,
+            "accuracy": 0.942,
+            "bss_vs_training_prior": 0.9050942952820684,
+            "bss_vs_own_marginal": 0.9049764206490769,
+            "ece": 0.017332035692666854,
+            "kl": 0.19060808903736198,
+            "contamination": "unknown"
+          },
+          "s1-3090": {
+            "rows": 1000,
+            "accuracy": 0.966,
+            "bss_vs_training_prior": 0.9434695337951398,
+            "bss_vs_own_marginal": 0.943399321915079,
+            "ece": 0.015383472198592131,
+            "kl": 0.10987412346430193,
+            "contamination": "clean"
+          },
+          "s1-3090-s2": {
+            "rows": 1000,
+            "accuracy": 0.966,
+            "bss_vs_training_prior": 0.9434695337951398,
+            "bss_vs_own_marginal": 0.943399321915079,
+            "ece": 0.015383472198592131,
+            "kl": 0.10987412346430193,
+            "contamination": "clean"
+          },
+          "kev-9b": {
+            "rows": 1000,
+            "accuracy": 0.897,
+            "bss_vs_training_prior": 0.8132517124591176,
+            "bss_vs_own_marginal": 0.8130197676469371,
+            "ece": 0.08473133606182169,
+            "kl": 0.3707130967498215,
+            "contamination": "clean"
+          },
+          "laya": {
+            "rows": 1000,
+            "accuracy": 0.652,
+            "bss_vs_training_prior": 0.4437633449327194,
+            "bss_vs_own_marginal": 0.44307248876377403,
+            "ece": 0.10265645720086011,
+            "kl": 1.1800048360607416,
+            "contamination": "unknown"
+          },
+          "laya-typed-decisions": {
+            "rows": 1000,
+            "accuracy": 0.64,
+            "bss_vs_training_prior": 0.4403532990130772,
+            "bss_vs_own_marginal": 0.43965820750430207,
+            "ece": 0.09624440697870455,
+            "kl": 1.122411446962893,
+            "contamination": "unknown"
+          }
+        },
+        "noul/stage1": {
+          "zeroshot-qwen38-27b": {
+            "rows": 5202,
+            "accuracy": 0.9622889433551198,
+            "bss_vs_training_prior": -0.0172730715282845,
+            "bss_vs_own_marginal": -1.005692323663515,
+            "ece": 0.017095326869642755,
+            "kl": 0.13262374607244473,
+            "contamination": "unknown"
+          },
+          "s1-3090": {
+            "rows": 5202,
+            "accuracy": 0.9892701525054466,
+            "bss_vs_training_prior": 0.7383840554436518,
+            "bss_vs_own_marginal": 0.48418855621889145,
+            "ece": 0.0012155439147293768,
+            "kl": 0.030627109961806304,
+            "contamination": "clean"
+          },
+          "s1-3090-s2": {
+            "rows": 5202,
+            "accuracy": 0.9947235838779956,
+            "bss_vs_training_prior": 0.8635650253825583,
+            "bss_vs_own_marginal": 0.7309998770946324,
+            "ece": 0.00023816400072283913,
+            "kl": 0.016885299067810593,
+            "contamination": "clean"
+          },
+          "kev-9b": {
+            "rows": 5202,
+            "accuracy": 0.8079520697167756,
+            "bss_vs_training_prior": -3.7759758106395775,
+            "bss_vs_own_marginal": -8.416486378639084,
+            "ece": 0.10768086873638344,
+            "kl": 0.4958793736501182,
+            "contamination": "clean"
+          },
+          "laya": {
+            "rows": 5202,
+            "accuracy": 0.9483115468409586,
+            "bss_vs_training_prior": -0.44916449227279,
+            "bss_vs_own_marginal": -1.857225045297441,
+            "ece": 0.0751269389978081,
+            "kl": 0.19239879489807785,
+            "contamination": "unknown"
+          },
+          "laya-typed-decisions": {
+            "rows": 5202,
+            "accuracy": 0.9483523965141613,
+            "bss_vs_training_prior": -1.606807576214139,
+            "bss_vs_own_marginal": -4.139675954486541,
+            "ece": 0.20312922181372545,
+            "kl": 0.3217433263343134,
+            "contamination": "unknown"
+          }
+        }
+      }
+    },
+    "massive_ja": {
+      "kind": "unseen language, far",
+      "groups": {
+        "choice": {
+          "zeroshot-qwen38-27b": {
+            "rows": 1000,
+            "accuracy": 0.956,
+            "bss_vs_training_prior": 0.9267527565883059,
+            "bss_vs_own_marginal": 0.926647206124939,
+            "ece": 0.006098064366191172,
+            "kl": 0.14209177969311027,
+            "contamination": "unknown"
+          },
+          "s1-3090": {
+            "rows": 1000,
+            "accuracy": 0.983,
+            "bss_vs_training_prior": 0.970236469655072,
+            "bss_vs_own_marginal": 0.97019357992608,
+            "ece": 0.002946481224645216,
+            "kl": 0.055822518698264836,
+            "contamination": "clean"
+          },
+          "s1-3090-s2": {
+            "rows": 1000,
+            "accuracy": 0.983,
+            "bss_vs_training_prior": 0.970236469655072,
+            "bss_vs_own_marginal": 0.97019357992608,
+            "ece": 0.002946481224645216,
+            "kl": 0.055822518698264836,
+            "contamination": "clean"
+          },
+          "kev-9b": {
+            "rows": 1000,
+            "accuracy": 0.915,
+            "bss_vs_training_prior": 0.8388233964599359,
+            "bss_vs_own_marginal": 0.8385911383653624,
+            "ece": 0.08912473669993326,
+            "kl": 0.32170291303335624,
+            "contamination": "clean"
+          },
+          "laya": {
+            "rows": 1000,
+            "accuracy": 0.602,
+            "bss_vs_training_prior": 0.38065784440576644,
+            "bss_vs_own_marginal": 0.37976536233462266,
+            "ece": 0.12403928217562114,
+            "kl": 1.3522751528264552,
+            "contamination": "unknown"
+          },
+          "laya-typed-decisions": {
+            "rows": 1000,
+            "accuracy": 0.608,
+            "bss_vs_training_prior": 0.41104076670604217,
+            "bss_vs_own_marginal": 0.4101920669177239,
+            "ece": 0.06960074530884396,
+            "kl": 1.2045326079303031,
+            "contamination": "unknown"
+          }
+        },
+        "noul/stage1": {
+          "zeroshot-qwen38-27b": {
+            "rows": 4998,
+            "accuracy": 0.9631590136054422,
+            "bss_vs_training_prior": 0.011529068783523333,
+            "bss_vs_own_marginal": -0.9489049837197918,
+            "ece": 0.01317827549962897,
+            "kl": 0.12030504754018241,
+            "contamination": "unknown"
+          },
+          "s1-3090": {
+            "rows": 4998,
+            "accuracy": 0.9913017290249433,
+            "bss_vs_training_prior": 0.7683120598557546,
+            "bss_vs_own_marginal": 0.5431956904800418,
+            "ece": 0.0029015413667234963,
+            "kl": 0.027306419666566512,
+            "contamination": "clean"
+          },
+          "s1-3090-s2": {
+            "rows": 4998,
+            "accuracy": 0.9949617346938775,
+            "bss_vs_training_prior": 0.887020106356299,
+            "bss_vs_own_marginal": 0.7772447617540312,
+            "ece": 0.00014991592206607484,
+            "kl": 0.01386255279852571,
+            "contamination": "clean"
+          },
+          "kev-9b": {
+            "rows": 4998,
+            "accuracy": 0.777593537414966,
+            "bss_vs_training_prior": -4.180681960763158,
+            "bss_vs_own_marginal": -9.214419639000347,
+            "ece": 0.06290315901360544,
+            "kl": 0.523253958089855,
+            "contamination": "clean"
+          },
+          "laya": {
+            "rows": 4998,
+            "accuracy": 0.9378543083900227,
+            "bss_vs_training_prior": -0.49604190629494904,
+            "bss_vs_own_marginal": -1.9496502476240787,
+            "ece": 0.05493658836449136,
+            "kl": 0.1916288525276765,
+            "contamination": "unknown"
+          },
+          "laya-typed-decisions": {
+            "rows": 4998,
+            "accuracy": 0.9384247448979591,
+            "bss_vs_training_prior": -1.6668078404188593,
+            "bss_vs_own_marginal": -4.257974642126427,
+            "ece": 0.19100570507369613,
+            "kl": 0.3232853846648217,
+            "contamination": "unknown"
+          }
+        }
+      }
+    },
+    "pubmedqa": {
+      "kind": "held-out family",
+      "groups": {
+        "noul": {
+          "zeroshot-qwen38-27b": {
+            "rows": 890,
+            "accuracy": 0.7539325842696629,
+            "bss_vs_training_prior": 0.41623560112295166,
+            "bss_vs_own_marginal": 0.16519047290133826,
+            "ece": 0.16558685679344923,
+            "kl": 0.7518155095520355,
+            "contamination": "unknown"
+          },
+          "s1-3090": {
+            "rows": 890,
+            "accuracy": 0.8651685393258427,
+            "bss_vs_training_prior": 0.7239164467401347,
+            "bss_vs_own_marginal": 0.605188015953112,
+            "ece": 0.02771935484557459,
+            "kl": 0.29691202558795793,
+            "contamination": "clean"
+          },
+          "s1-3090-s2": {
+            "rows": 890,
+            "accuracy": 0.8662921348314607,
+            "bss_vs_training_prior": 0.7138237273112731,
+            "bss_vs_own_marginal": 0.5907549701048982,
+            "ece": 0.02848195743931284,
+            "kl": 0.31118398102769484,
+            "contamination": "clean"
+          },
+          "kev-9b": {
+            "rows": 890,
+            "accuracy": 0.8662921348314607,
+            "bss_vs_training_prior": 0.7206120633705518,
+            "bss_vs_own_marginal": 0.6004625980903225,
+            "ece": 0.03816191011235955,
+            "kl": 0.30460212831775796,
+            "contamination": "clean"
+          },
+          "laya": {
+            "rows": 890,
+            "accuracy": 0.6494382022471911,
+            "bss_vs_training_prior": 0.29194709462837676,
+            "bss_vs_own_marginal": -0.01254771998970905,
+            "ece": 0.1019417977528079,
+            "kl": 0.685454698986078,
+            "contamination": "unknown"
+          },
+          "laya-typed-decisions": {
+            "rows": 890,
+            "accuracy": 0.6719101123595506,
+            "bss_vs_training_prior": 0.3513817967122076,
+            "bss_vs_own_marginal": 0.07244659558571354,
+            "ece": 0.06337775280898877,
+            "kl": 0.6284342217394728,
+            "contamination": "unknown"
+          }
+        }
+      }
+    },
+    "sciq": {
+      "kind": "OOD (non-commercial)",
+      "groups": {
+        "choice": {
+          "zeroshot-qwen38-27b": {
+            "rows": 991,
+            "accuracy": 0.9889001009081736,
+            "bss_vs_training_prior": 0.9763420092330624,
+            "bss_vs_own_marginal": 0.9763298458730224,
+            "ece": 0.00330973232123632,
+            "kl": 0.04322314972941503,
+            "contamination": "unknown"
+          },
+          "s1-3090": {
+            "rows": 991,
+            "accuracy": 0.9919273461150353,
+            "bss_vs_training_prior": 0.9792767248412992,
+            "bss_vs_own_marginal": 0.9792660703161772,
+            "ece": 0.001904018346447801,
+            "kl": 0.03555947143679126,
+            "contamination": "clean"
+          },
+          "s1-3090-s2": {
+            "rows": 991,
+            "accuracy": 0.9919273461150353,
+            "bss_vs_training_prior": 0.9791017598044178,
+            "bss_vs_own_marginal": 0.97909101532395,
+            "ece": 0.007039643524249756,
+            "kl": 0.035895538299555496,
+            "contamination": "clean"
+          },
+          "kev-9b": {
+            "rows": 991,
+            "accuracy": 0.9848637739656912,
+            "bss_vs_training_prior": 0.9619435208384852,
+            "bss_vs_own_marginal": 0.9619239547365936,
+            "ece": 0.026130208263785405,
+            "kl": 0.06824638218538669,
+            "contamination": "clean"
+          },
+          "laya": {
+            "rows": 991,
+            "accuracy": 0.9182643794147326,
+            "bss_vs_training_prior": 0.8051439422720585,
+            "bss_vs_own_marginal": 0.805043760290864,
+            "ece": 0.08991877564911918,
+            "kl": 0.30239992705841057,
+            "contamination": "unknown"
+          },
+          "laya-typed-decisions": {
+            "rows": 991,
+            "accuracy": 0.9112008072653885,
+            "bss_vs_training_prior": 0.6868384972085312,
+            "bss_vs_own_marginal": 0.6866774904625808,
+            "ece": 0.25941522207895645,
+            "kl": 0.5105724051850361,
+            "contamination": "unknown"
+          }
+        }
+      }
+    },
+    "snli": {
+      "kind": "OOD (share-alike)",
+      "groups": {
+        "noul": {
+          "zeroshot-qwen38-27b": {
+            "rows": 1000,
+            "accuracy": 0.941,
+            "bss_vs_training_prior": 0.7788999064873081,
+            "bss_vs_own_marginal": 0.7771678973712186,
+            "ece": 0.022745116075953895,
+            "kl": 0.1832069499475275,
+            "contamination": "unknown"
+          },
+          "s1-3090": {
+            "rows": 1000,
+            "accuracy": 0.963,
+            "bss_vs_training_prior": 0.8708207008000983,
+            "bss_vs_own_marginal": 0.8698087621786819,
+            "ece": 0.022771498405953276,
+            "kl": 0.10592538720538895,
+            "contamination": "clean"
+          },
+          "s1-3090-s2": {
+            "rows": 1000,
+            "accuracy": 0.963,
+            "bss_vs_training_prior": 0.8620029861541832,
+            "bss_vs_own_marginal": 0.860921973106306,
+            "ece": 0.03722408281101727,
+            "kl": 0.11999028382842808,
+            "contamination": "clean"
+          },
+          "kev-9b": {
+            "rows": 1000,
+            "accuracy": 0.942,
+            "bss_vs_training_prior": 0.7876671530650837,
+            "bss_vs_own_marginal": 0.7860038230289279,
+            "ece": 0.04371659999999998,
+            "kl": 0.18174755060565567,
+            "contamination": "sibling"
+          },
+          "laya": {
+            "rows": 1000,
+            "accuracy": 0.785,
+            "bss_vs_training_prior": 0.34266692491010753,
+            "bss_vs_own_marginal": 0.3375176422468802,
+            "ece": 0.03891559999995705,
+            "kl": 0.4623340507308759,
+            "contamination": "unknown"
+          },
+          "laya-typed-decisions": {
+            "rows": 1000,
+            "accuracy": 0.824,
+            "bss_vs_training_prior": 0.3826850465792241,
+            "bss_vs_own_marginal": 0.3778492497695688,
+            "ece": 0.12431619999999997,
+            "kl": 0.4410084985002,
+            "contamination": "unknown"
+          }
+        }
+      }
+    }
+  }
+}

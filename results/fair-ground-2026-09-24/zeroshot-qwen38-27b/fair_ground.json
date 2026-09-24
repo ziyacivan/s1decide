@@ -1,0 +1,689 @@
+{
+  "model": {
+    "model": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+    "adapter": null,
+    "config": "train\\configs\\sft_3090_s1.yaml",
+    "loader": {
+      "prequantized": true,
+      "targets": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+      ],
+      "unsloth_import_error": null,
+      "dtype_fix": {
+        "linear4bit": 352,
+        "quant_states": 0,
+        "params_cast": 498
+      },
+      "path": "unsloth",
+      "quantized": true,
+      "layout": {
+        "expected": 256,
+        "adapted": 256,
+        "attention_layers": 16,
+        "mlp_layers": 64
+      }
+    },
+    "quantization": "nf4-bf16",
+    "kernels": {
+      "packages": {
+        "fla": true,
+        "causal_conv1d": false,
+        "triton": true,
+        "triton_kernels": false,
+        "kernels": false
+      },
+      "versions": {
+        "torch": "2.10.0+cu130",
+        "transformers": "5.5.0",
+        "peft": "0.18.1",
+        "trl": "0.23.1",
+        "bitsandbytes": "0.50.2",
+        "unsloth": "2026.9.2",
+        "unsloth_zoo": "2026.9.1",
+        "triton": null,
+        "triton-windows": "3.6.0.post26",
+        "kernels": null,
+        "flash-linear-attention": null,
+        "accelerate": "1.14.0"
+      },
+      "gated_deltanet": {
+        "chunk_gated_delta_rule": "accelerated",
+        "fused_recurrent_gated_delta_rule": "accelerated",
+        "causal_conv1d_fn": "torch",
+        "causal_conv1d_update": "torch"
+      },
+      "fast_path_all": false,
+      "attention": "sdpa",
+      "notes": [
+        "2 of 4 gated-deltanet kernels are accelerated, but transformers reports is_fast_path_available=False because it is an all() over the four; the 'falling back to torch' warning in the log understates what is active",
+        "causal-conv1d has no Windows wheel and fails to build; its two functions use the torch path (a 4-wide depthwise convolution, the cheap part)",
+        "the `kernels` package is absent: MXFP4 checkpoints dequantize to bf16 and a 20B MoE will not fit on a 24 GB card; `kernels` is not in uv.lock"
+      ]
+    },
+    "calibration": "none (raw logits)",
+    "eval_batch_size": 4,
+    "max_seq_len": 2048,
+    "split": "eval",
+    "rows": 18557
+  },
+  "slice": {
+    "non_stage1_rows": 8357,
+    "stage1_questions": 600,
+    "stage1_questions_available": 2000,
+    "case_control": {
+      "mode": "case-control",
+      "negatives_per_question": 16,
+      "questions": 600,
+      "rows_kept": 10200,
+      "rows_dropped": 25800,
+      "max_weight": 3.6875,
+      "seed": 20260924
+    },
+    "rows": 18557,
+    "slice": {
+      "stage1_questions": 600,
+      "negatives": 16,
+      "seed": 20260924
+    },
+    "split": "eval",
+    "families": {
+      "commonsense_qa": "held-out family",
+      "pubmedqa": "held-out family",
+      "anli": "OOD (non-commercial)",
+      "sciq": "OOD (non-commercial)",
+      "boolq": "OOD (share-alike)",
+      "snli": "OOD (share-alike)",
+      "massive_fr": "unseen language, near",
+      "massive_ja": "unseen language, far"
+    }
+  },
+  "controls": {
+    "training_prior": "training marginal per primitive and option count",
+    "uniform_training_prior_for": [
+      "choice/3",
+      "choice/5"
+    ],
+    "own_marginal": "each family's own weighted label marginal, per group"
+  },
+  "contamination_source": "eval\\contamination.json",
+  "families": {
+    "anli": {
+      "kind": "OOD (non-commercial)",
+      "contamination": {
+        "status": "unknown",
+        "evidence": "pretraining data unpublished"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.74,
+            "kl": 0.6672720604719031,
+            "ece": 0.11144270769170875,
+            "brier": 0.3612573088756792,
+            "bss": 0.4581140366864812,
+            "predicted_marginal": [
+              0.427,
+              0.242,
+              0.331
+            ],
+            "target_marginal": [
+              0.36,
+              0.29,
+              0.35
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.36,
+            "kl": 1.0986122886681096,
+            "ece": 0.04733333333333337,
+            "brier": 0.6666666666666666,
+            "bss": 0.0,
+            "predicted_marginal": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.36,
+              0.29,
+              0.35
+            ]
+          },
+          "own_marginal": [
+            0.36,
+            0.29,
+            0.35
+          ],
+          "bss_vs_own_marginal": 0.45577386430298394
+        }
+      }
+    },
+    "boolq": {
+      "kind": "OOD (share-alike)",
+      "contamination": {
+        "status": "unknown",
+        "evidence": "pretraining data unpublished"
+      },
+      "groups": {
+        "noul": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.849,
+            "kl": 0.4248664034122271,
+            "ece": 0.06811144315603543,
+            "brier": 0.2313718163521858,
+            "bss": 0.6584745538432444,
+            "predicted_marginal": [
+              0.274,
+              0.726
+            ],
+            "target_marginal": [
+              0.375,
+              0.625
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.375,
+            "kl": 0.8832248056019129,
+            "ece": 0.3230447490425316,
+            "brier": 0.6774658197679045,
+            "bss": 0.0,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.375,
+              0.625
+            ]
+          },
+          "own_marginal": [
+            0.375,
+            0.625
+          ],
+          "bss_vs_own_marginal": 0.5064067917820037
+        }
+      }
+    },
+    "commonsense_qa": {
+      "kind": "held-out family",
+      "contamination": {
+        "status": "unknown",
+        "evidence": "pretraining data unpublished"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 1476,
+            "weight": 1476.0,
+            "accuracy": 0.8204607046070461,
+            "kl": 0.5613278993034895,
+            "ece": 0.06151143576561564,
+            "brier": 0.2719331570525002,
+            "bss": 0.6600835536843749,
+            "predicted_marginal": [
+              0.22425474254742547,
+              0.19241192411924118,
+              0.20596205962059622,
+              0.20528455284552846,
+              0.17208672086720866
+            ],
+            "target_marginal": [
+              0.20257452574525744,
+              0.2032520325203252,
+              0.19173441734417343,
+              0.21205962059620595,
+              0.19037940379403795
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1476,
+            "weight": 1476.0,
+            "accuracy": 0.20257452574525744,
+            "kl": 1.6094379124340998,
+            "ece": 0.03211382113821139,
+            "brier": 0.8000000000000003,
+            "bss": 0.0,
+            "predicted_marginal": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.20257452574525744,
+              0.2032520325203252,
+              0.19173441734417343,
+              0.21205962059620595,
+              0.19037940379403795
+            ]
+          },
+          "own_marginal": [
+            0.20257452574525744,
+            0.2032520325203252,
+            0.19173441734417343,
+            0.21205962059620595,
+            0.19037940379403795
+          ],
+          "bss_vs_own_marginal": 0.6599460383807148
+        }
+      }
+    },
+    "massive_fr": {
+      "kind": "unseen language, near",
+      "contamination": {
+        "status": "unknown",
+        "evidence": "pretraining data unpublished"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.942,
+            "kl": 0.19060808903736198,
+            "ece": 0.017332035692666854,
+            "brier": 0.08306752254983127,
+            "bss": 0.9050942952820684,
+            "predicted_marginal": [
+              0.131,
+              0.115,
+              0.114,
+              0.141,
+              0.128,
+              0.132,
+              0.127,
+              0.112
+            ],
+            "target_marginal": [
+              0.126,
+              0.122,
+              0.108,
+              0.13,
+              0.139,
+              0.134,
+              0.13,
+              0.111
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.13,
+            "kl": 2.080504366101126,
+            "ece": 0.02363317832810641,
+            "brier": 0.875263745174387,
+            "bss": -2.220446049250313e-16,
+            "predicted_marginal": [
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.126,
+              0.122,
+              0.108,
+              0.13,
+              0.139,
+              0.134,
+              0.13,
+              0.111
+            ]
+          },
+          "own_marginal": [
+            0.126,
+            0.122,
+            0.108,
+            0.13,
+            0.139,
+            0.134,
+            0.13,
+            0.111
+          ],
+          "bss_vs_own_marginal": 0.9049764206490769
+        },
+        "noul/stage1": {
+          "model": {
+            "rows": 5202,
+            "weight": 18360.0,
+            "accuracy": 0.9622889433551198,
+            "kl": 0.13262374607244473,
+            "ece": 0.017095326869642755,
+            "brier": 0.06574213727563742,
+            "bss": -0.0172730715282845,
+            "predicted_marginal": [
+              0.9495438453159042,
+              0.05045615468409586
+            ],
+            "target_marginal": [
+              0.9833333333333333,
+              0.016666666666666666
+            ]
+          },
+          "training_prior_control": {
+            "rows": 5202,
+            "weight": 18360.0,
+            "accuracy": 0.9833333333333333,
+            "kl": 0.1840133376477258,
+            "ece": 0.12619047619047627,
+            "brier": 0.06462585034013604,
+            "bss": 0.0,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.9833333333333333,
+              0.016666666666666666
+            ]
+          },
+          "own_marginal": [
+            0.9833333333333333,
+            0.016666666666666666
+          ],
+          "bss_vs_own_marginal": -1.005692323663515
+        }
+      }
+    },
+    "massive_ja": {
+      "kind": "unseen language, far",
+      "contamination": {
+        "status": "unknown",
+        "evidence": "pretraining data unpublished"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.956,
+            "kl": 0.14209177969311027,
+            "ece": 0.006098064366191172,
+            "brier": 0.06412266511617429,
+            "bss": 0.9267527565883059,
+            "predicted_marginal": [
+              0.111,
+              0.118,
+              0.131,
+              0.125,
+              0.123,
+              0.124,
+              0.146,
+              0.122
+            ],
+            "target_marginal": [
+              0.112,
+              0.119,
+              0.132,
+              0.119,
+              0.125,
+              0.122,
+              0.148,
+              0.123
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.119,
+            "kl": 2.0811624222283,
+            "ece": 0.031366821671893585,
+            "brier": 0.8754276902376508,
+            "bss": -2.220446049250313e-16,
+            "predicted_marginal": [
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.112,
+              0.119,
+              0.132,
+              0.119,
+              0.125,
+              0.122,
+              0.148,
+              0.123
+            ]
+          },
+          "own_marginal": [
+            0.112,
+            0.119,
+            0.132,
+            0.119,
+            0.125,
+            0.122,
+            0.148,
+            0.123
+          ],
+          "bss_vs_own_marginal": 0.926647206124939
+        },
+        "noul/stage1": {
+          "model": {
+            "rows": 4998,
+            "weight": 17640.0,
+            "accuracy": 0.9631590136054422,
+            "kl": 0.12030504754018241,
+            "ece": 0.01317827549962897,
+            "brier": 0.06388077446637094,
+            "bss": 0.011529068783523333,
+            "predicted_marginal": [
+              0.9491000566893424,
+              0.05089994331065759
+            ],
+            "target_marginal": [
+              0.9833333333333333,
+              0.016666666666666666
+            ]
+          },
+          "training_prior_control": {
+            "rows": 4998,
+            "weight": 17640.0,
+            "accuracy": 0.9833333333333333,
+            "kl": 0.1840133376477258,
+            "ece": 0.12619047619047635,
+            "brier": 0.06462585034013604,
+            "bss": 2.220446049250313e-16,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.9833333333333333,
+              0.016666666666666666
+            ]
+          },
+          "own_marginal": [
+            0.9833333333333333,
+            0.016666666666666666
+          ],
+          "bss_vs_own_marginal": -0.9489049837197918
+        }
+      }
+    },
+    "pubmedqa": {
+      "kind": "held-out family",
+      "contamination": {
+        "status": "unknown",
+        "evidence": "pretraining data unpublished"
+      },
+      "groups": {
+        "noul": {
+          "model": {
+            "rows": 890,
+            "weight": 890.0,
+            "accuracy": 0.7539325842696629,
+            "kl": 0.7518155095520355,
+            "ece": 0.16558685679344923,
+            "brier": 0.39327211798500183,
+            "bss": 0.41623560112295166,
+            "predicted_marginal": [
+              0.13820224719101123,
+              0.8617977528089887
+            ],
+            "target_marginal": [
+              0.3797752808988764,
+              0.6202247191011236
+            ]
+          },
+          "training_prior_control": {
+            "rows": 890,
+            "weight": 890.0,
+            "accuracy": 0.3797752808988764,
+            "kl": 0.8792230992913708,
+            "ece": 0.31826946814365514,
+            "brier": 0.6736829425390023,
+            "bss": 1.1102230246251565e-16,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.3797752808988764,
+              0.6202247191011236
+            ]
+          },
+          "own_marginal": [
+            0.3797752808988764,
+            0.6202247191011236
+          ],
+          "bss_vs_own_marginal": 0.16519047290133826
+        }
+      }
+    },
+    "sciq": {
+      "kind": "OOD (non-commercial)",
+      "contamination": {
+        "status": "unknown",
+        "evidence": "pretraining data unpublished"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 991,
+            "weight": 991.0,
+            "accuracy": 0.9889001009081736,
+            "kl": 0.04322314972941503,
+            "ece": 0.00330973232123632,
+            "brier": 0.017741028540197493,
+            "bss": 0.9763420092330624,
+            "predicted_marginal": [
+              0.26538849646821394,
+              0.24217961654894046,
+              0.25630676084762866,
+              0.23612512613521694
+            ],
+            "target_marginal": [
+              0.2613521695257316,
+              0.24217961654894046,
+              0.260343087790111,
+              0.23612512613521694
+            ]
+          },
+          "training_prior_control": {
+            "rows": 991,
+            "weight": 991.0,
+            "accuracy": 0.24217961654894046,
+            "kl": 1.3860747453771238,
+            "ece": 0.03500111639402996,
+            "brier": 0.7498958265293941,
+            "bss": 0.0,
+            "predicted_marginal": [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.2613521695257316,
+              0.24217961654894046,
+              0.260343087790111,
+              0.23612512613521694
+            ]
+          },
+          "own_marginal": [
+            0.2613521695257316,
+            0.24217961654894046,
+            0.260343087790111,
+            0.23612512613521694
+          ],
+          "bss_vs_own_marginal": 0.9763298458730224
+        }
+      }
+    },
+    "snli": {
+      "kind": "OOD (share-alike)",
+      "contamination": {
+        "status": "unknown",
+        "evidence": "pretraining data unpublished"
+      },
+      "groups": {
+        "noul": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.941,
+            "kl": 0.1832069499475275,
+            "ece": 0.022745116075953895,
+            "brier": 0.10057036721524261,
+            "bss": 0.7788999064873081,
+            "predicted_marginal": [
+              0.603,
+              0.397
+            ],
+            "target_marginal": [
+              0.656,
+              0.344
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.656,
+            "kl": 0.6477455747305156,
+            "ece": 0.04590284216891738,
+            "brier": 0.45486352184409884,
+            "bss": 1.1102230246251565e-16,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.656,
+              0.344
+            ]
+          },
+          "own_marginal": [
+            0.656,
+            0.344
+          ],
+          "bss_vs_own_marginal": 0.7771678973712186
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "non_stage1_rows": 8357,
+  "stage1_questions": 600,
+  "stage1_questions_available": 2000,
+  "case_control": {
+    "mode": "case-control",
+    "negatives_per_question": 16,
+    "questions": 600,
+    "rows_kept": 10200,
+    "rows_dropped": 25800,
+    "max_weight": 3.6875,
+    "seed": 20260924
+  },
+  "rows": 18557,
+  "slice": {
+    "stage1_questions": 600,
+    "negatives": 16,
+    "seed": 20260924
+  },
+  "split": "eval",
+  "families": {
+    "commonsense_qa": "held-out family",
+    "pubmedqa": "held-out family",
+    "anli": "OOD (non-commercial)",
+    "sciq": "OOD (non-commercial)",
+    "boolq": "OOD (share-alike)",
+    "snli": "OOD (share-alike)",
+    "massive_fr": "unseen language, near",
+    "massive_ja": "unseen language, far"
+  }
+}

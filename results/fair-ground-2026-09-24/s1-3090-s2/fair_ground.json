@@ -1,0 +1,689 @@
+{
+  "model": {
+    "model": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+    "adapter": "results\\s1-3090\\adapter",
+    "config": "train\\configs\\sft_3090_s1.yaml",
+    "loader": {
+      "prequantized": true,
+      "targets": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+      ],
+      "unsloth_import_error": null,
+      "dtype_fix": {
+        "linear4bit": 352,
+        "quant_states": 0,
+        "params_cast": 498
+      },
+      "path": "unsloth",
+      "quantized": true,
+      "layout": {
+        "expected": 256,
+        "adapted": 256,
+        "attention_layers": 16,
+        "mlp_layers": 64
+      }
+    },
+    "quantization": "nf4-bf16",
+    "kernels": {
+      "packages": {
+        "fla": true,
+        "causal_conv1d": false,
+        "triton": true,
+        "triton_kernels": false,
+        "kernels": false
+      },
+      "versions": {
+        "torch": "2.10.0+cu130",
+        "transformers": "5.5.0",
+        "peft": "0.18.1",
+        "trl": "0.23.1",
+        "bitsandbytes": "0.50.2",
+        "unsloth": "2026.9.2",
+        "unsloth_zoo": "2026.9.1",
+        "triton": null,
+        "triton-windows": "3.6.0.post26",
+        "kernels": null,
+        "flash-linear-attention": null,
+        "accelerate": "1.14.0"
+      },
+      "gated_deltanet": {
+        "chunk_gated_delta_rule": "accelerated",
+        "fused_recurrent_gated_delta_rule": "accelerated",
+        "causal_conv1d_fn": "torch",
+        "causal_conv1d_update": "torch"
+      },
+      "fast_path_all": false,
+      "attention": "sdpa",
+      "notes": [
+        "2 of 4 gated-deltanet kernels are accelerated, but transformers reports is_fast_path_available=False because it is an all() over the four; the 'falling back to torch' warning in the log understates what is active",
+        "causal-conv1d has no Windows wheel and fails to build; its two functions use the torch path (a 4-wide depthwise convolution, the cheap part)",
+        "the `kernels` package is absent: MXFP4 checkpoints dequantize to bf16 and a 20B MoE will not fit on a 24 GB card; `kernels` is not in uv.lock"
+      ]
+    },
+    "calibration": "S2 per cell (ADR 0008) from results\\s1-3090-slices-s2cells\\calibration.json, fitted on the comparison val slice",
+    "eval_batch_size": 4,
+    "max_seq_len": 2048,
+    "split": "eval",
+    "rows": 18557
+  },
+  "slice": {
+    "non_stage1_rows": 8357,
+    "stage1_questions": 600,
+    "stage1_questions_available": 2000,
+    "case_control": {
+      "mode": "case-control",
+      "negatives_per_question": 16,
+      "questions": 600,
+      "rows_kept": 10200,
+      "rows_dropped": 25800,
+      "max_weight": 3.6875,
+      "seed": 20260924
+    },
+    "rows": 18557,
+    "slice": {
+      "stage1_questions": 600,
+      "negatives": 16,
+      "seed": 20260924
+    },
+    "split": "eval",
+    "families": {
+      "commonsense_qa": "held-out family",
+      "pubmedqa": "held-out family",
+      "anli": "OOD (non-commercial)",
+      "sciq": "OOD (non-commercial)",
+      "boolq": "OOD (share-alike)",
+      "snli": "OOD (share-alike)",
+      "massive_fr": "unseen language, near",
+      "massive_ja": "unseen language, far"
+    }
+  },
+  "controls": {
+    "training_prior": "training marginal per primitive and option count",
+    "uniform_training_prior_for": [
+      "choice/3",
+      "choice/5"
+    ],
+    "own_marginal": "each family's own weighted label marginal, per group"
+  },
+  "contamination_source": "eval\\contamination.json",
+  "families": {
+    "anli": {
+      "kind": "OOD (non-commercial)",
+      "contamination": {
+        "status": "clean",
+        "evidence": "role ood; CC-BY-NC, the licence gate forbids training"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.801,
+            "kl": 0.48291498782713266,
+            "ece": 0.04033177168337263,
+            "brier": 0.27320741235989304,
+            "bss": 0.5901888814601604,
+            "predicted_marginal": [
+              0.378,
+              0.276,
+              0.346
+            ],
+            "target_marginal": [
+              0.36,
+              0.29,
+              0.35
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.36,
+            "kl": 1.0986122886681096,
+            "ece": 0.04733333333333337,
+            "brier": 0.6666666666666666,
+            "bss": 0.0,
+            "predicted_marginal": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.36,
+              0.29,
+              0.35
+            ]
+          },
+          "own_marginal": [
+            0.36,
+            0.29,
+            0.35
+          ],
+          "bss_vs_own_marginal": 0.5884190835192933
+        }
+      }
+    },
+    "boolq": {
+      "kind": "OOD (share-alike)",
+      "contamination": {
+        "status": "clean",
+        "evidence": "role ood; share-alike, eval-only (ADR 0005)"
+      },
+      "groups": {
+        "noul": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.879,
+            "kl": 0.30544865916337516,
+            "ece": 0.02765771807055755,
+            "brier": 0.1806982528418977,
+            "bss": 0.7332732551676131,
+            "predicted_marginal": [
+              0.44,
+              0.56
+            ],
+            "target_marginal": [
+              0.375,
+              0.625
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.375,
+            "kl": 0.8832248056019129,
+            "ece": 0.3230447490425316,
+            "brier": 0.6774658197679045,
+            "bss": 0.0,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.375,
+              0.625
+            ]
+          },
+          "own_marginal": [
+            0.375,
+            0.625
+          ],
+          "bss_vs_own_marginal": 0.6145103939372849
+        }
+      }
+    },
+    "commonsense_qa": {
+      "kind": "held-out family",
+      "contamination": {
+        "status": "clean",
+        "evidence": "role heldout; never in train/val"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 1476,
+            "weight": 1476.0,
+            "accuracy": 0.8319783197831978,
+            "kl": 0.4683401655684863,
+            "ece": 0.01957487858653507,
+            "brier": 0.24430702411391783,
+            "bss": 0.6946162198576028,
+            "predicted_marginal": [
+              0.2222222222222222,
+              0.2018970189701897,
+              0.20663956639566394,
+              0.21002710027100271,
+              0.15921409214092141
+            ],
+            "target_marginal": [
+              0.20257452574525744,
+              0.2032520325203252,
+              0.19173441734417343,
+              0.21205962059620595,
+              0.19037940379403795
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1476,
+            "weight": 1476.0,
+            "accuracy": 0.20257452574525744,
+            "kl": 1.6094379124340998,
+            "ece": 0.03211382113821139,
+            "brier": 0.8000000000000003,
+            "bss": 0.0,
+            "predicted_marginal": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.20257452574525744,
+              0.2032520325203252,
+              0.19173441734417343,
+              0.21205962059620595,
+              0.19037940379403795
+            ]
+          },
+          "own_marginal": [
+            0.20257452574525744,
+            0.2032520325203252,
+            0.19173441734417343,
+            0.21205962059620595,
+            0.19037940379403795
+          ],
+          "bss_vs_own_marginal": 0.6944926749579243
+        }
+      }
+    },
+    "massive_fr": {
+      "kind": "unseen language, near",
+      "contamination": {
+        "status": "clean",
+        "evidence": "fr-FR never trained; MASSIVE en/de/tr trained on disjoint slices of the parallel corpus, so the intents are seen and the language is not"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.966,
+            "kl": 0.10987412346430193,
+            "ece": 0.015383472198592131,
+            "brier": 0.04947906756692008,
+            "bss": 0.9434695337951398,
+            "predicted_marginal": [
+              0.133,
+              0.12,
+              0.111,
+              0.134,
+              0.133,
+              0.128,
+              0.129,
+              0.112
+            ],
+            "target_marginal": [
+              0.126,
+              0.122,
+              0.108,
+              0.13,
+              0.139,
+              0.134,
+              0.13,
+              0.111
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.13,
+            "kl": 2.080504366101126,
+            "ece": 0.02363317832810641,
+            "brier": 0.875263745174387,
+            "bss": -2.220446049250313e-16,
+            "predicted_marginal": [
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.126,
+              0.122,
+              0.108,
+              0.13,
+              0.139,
+              0.134,
+              0.13,
+              0.111
+            ]
+          },
+          "own_marginal": [
+            0.126,
+            0.122,
+            0.108,
+            0.13,
+            0.139,
+            0.134,
+            0.13,
+            0.111
+          ],
+          "bss_vs_own_marginal": 0.943399321915079
+        },
+        "noul/stage1": {
+          "model": {
+            "rows": 5202,
+            "weight": 18360.0,
+            "accuracy": 0.9947235838779956,
+            "kl": 0.016885299067810593,
+            "ece": 0.00023816400072283913,
+            "brier": 0.008817226250787045,
+            "bss": 0.8635650253825583,
+            "predicted_marginal": [
+              0.9845928649237473,
+              0.015407135076252724
+            ],
+            "target_marginal": [
+              0.9833333333333333,
+              0.016666666666666666
+            ]
+          },
+          "training_prior_control": {
+            "rows": 5202,
+            "weight": 18360.0,
+            "accuracy": 0.9833333333333333,
+            "kl": 0.1840133376477258,
+            "ece": 0.12619047619047627,
+            "brier": 0.06462585034013604,
+            "bss": 0.0,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.9833333333333333,
+              0.016666666666666666
+            ]
+          },
+          "own_marginal": [
+            0.9833333333333333,
+            0.016666666666666666
+          ],
+          "bss_vs_own_marginal": 0.7309998770946324
+        }
+      }
+    },
+    "massive_ja": {
+      "kind": "unseen language, far",
+      "contamination": {
+        "status": "clean",
+        "evidence": "ja-JP never trained; as massive_fr"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.983,
+            "kl": 0.055822518698264836,
+            "ece": 0.002946481224645216,
+            "brier": 0.026055818623178476,
+            "bss": 0.970236469655072,
+            "predicted_marginal": [
+              0.111,
+              0.118,
+              0.134,
+              0.121,
+              0.123,
+              0.121,
+              0.15,
+              0.122
+            ],
+            "target_marginal": [
+              0.112,
+              0.119,
+              0.132,
+              0.119,
+              0.125,
+              0.122,
+              0.148,
+              0.123
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.119,
+            "kl": 2.0811624222283,
+            "ece": 0.031366821671893585,
+            "brier": 0.8754276902376508,
+            "bss": -2.220446049250313e-16,
+            "predicted_marginal": [
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.112,
+              0.119,
+              0.132,
+              0.119,
+              0.125,
+              0.122,
+              0.148,
+              0.123
+            ]
+          },
+          "own_marginal": [
+            0.112,
+            0.119,
+            0.132,
+            0.119,
+            0.125,
+            0.122,
+            0.148,
+            0.123
+          ],
+          "bss_vs_own_marginal": 0.97019357992608
+        },
+        "noul/stage1": {
+          "model": {
+            "rows": 4998,
+            "weight": 17640.0,
+            "accuracy": 0.9949617346938775,
+            "kl": 0.01386255279852571,
+            "ece": 0.00014991592206607484,
+            "brier": 0.007301421698062311,
+            "bss": 0.887020106356299,
+            "predicted_marginal": [
+              0.9841907596371882,
+              0.01580924036281179
+            ],
+            "target_marginal": [
+              0.9833333333333333,
+              0.016666666666666666
+            ]
+          },
+          "training_prior_control": {
+            "rows": 4998,
+            "weight": 17640.0,
+            "accuracy": 0.9833333333333333,
+            "kl": 0.1840133376477258,
+            "ece": 0.12619047619047635,
+            "brier": 0.06462585034013604,
+            "bss": 2.220446049250313e-16,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.9833333333333333,
+              0.016666666666666666
+            ]
+          },
+          "own_marginal": [
+            0.9833333333333333,
+            0.016666666666666666
+          ],
+          "bss_vs_own_marginal": 0.7772447617540312
+        }
+      }
+    },
+    "pubmedqa": {
+      "kind": "held-out family",
+      "contamination": {
+        "status": "clean",
+        "evidence": "role heldout; never in train/val"
+      },
+      "groups": {
+        "noul": {
+          "model": {
+            "rows": 890,
+            "weight": 890.0,
+            "accuracy": 0.8662921348314607,
+            "kl": 0.31118398102769484,
+            "ece": 0.02848195743931284,
+            "brier": 0.19279207346978547,
+            "bss": 0.7138237273112731,
+            "predicted_marginal": [
+              0.41235955056179774,
+              0.5876404494382023
+            ],
+            "target_marginal": [
+              0.3797752808988764,
+              0.6202247191011236
+            ]
+          },
+          "training_prior_control": {
+            "rows": 890,
+            "weight": 890.0,
+            "accuracy": 0.3797752808988764,
+            "kl": 0.8792230992913708,
+            "ece": 0.31826946814365514,
+            "brier": 0.6736829425390023,
+            "bss": 1.1102230246251565e-16,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.3797752808988764,
+              0.6202247191011236
+            ]
+          },
+          "own_marginal": [
+            0.3797752808988764,
+            0.6202247191011236
+          ],
+          "bss_vs_own_marginal": 0.5907549701048982
+        }
+      }
+    },
+    "sciq": {
+      "kind": "OOD (non-commercial)",
+      "contamination": {
+        "status": "clean",
+        "evidence": "role ood; CC-BY-NC, the licence gate forbids training"
+      },
+      "groups": {
+        "choice": {
+          "model": {
+            "rows": 991,
+            "weight": 991.0,
+            "accuracy": 0.9919273461150353,
+            "kl": 0.035895538299555496,
+            "ece": 0.007039643524249756,
+            "brier": 0.015671503104475917,
+            "bss": 0.9791017598044178,
+            "predicted_marginal": [
+              0.26337033299697277,
+              0.24117053481331988,
+              0.25731584258324924,
+              0.23814328960645811
+            ],
+            "target_marginal": [
+              0.2613521695257316,
+              0.24217961654894046,
+              0.260343087790111,
+              0.23612512613521694
+            ]
+          },
+          "training_prior_control": {
+            "rows": 991,
+            "weight": 991.0,
+            "accuracy": 0.24217961654894046,
+            "kl": 1.3860747453771238,
+            "ece": 0.03500111639402996,
+            "brier": 0.7498958265293941,
+            "bss": 0.0,
+            "predicted_marginal": [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.2613521695257316,
+              0.24217961654894046,
+              0.260343087790111,
+              0.23612512613521694
+            ]
+          },
+          "own_marginal": [
+            0.2613521695257316,
+            0.24217961654894046,
+            0.260343087790111,
+            0.23612512613521694
+          ],
+          "bss_vs_own_marginal": 0.97909101532395
+        }
+      }
+    },
+    "snli": {
+      "kind": "OOD (share-alike)",
+      "contamination": {
+        "status": "clean",
+        "evidence": "role ood; share-alike, eval-only (ADR 0005)"
+      },
+      "groups": {
+        "noul": {
+          "model": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.963,
+            "kl": 0.11999028382842808,
+            "ece": 0.03722408281101727,
+            "brier": 0.0627698077218771,
+            "bss": 0.8620029861541832,
+            "predicted_marginal": [
+              0.657,
+              0.343
+            ],
+            "target_marginal": [
+              0.656,
+              0.344
+            ]
+          },
+          "training_prior_control": {
+            "rows": 1000,
+            "weight": 1000.0,
+            "accuracy": 0.656,
+            "kl": 0.6477455747305156,
+            "ece": 0.04590284216891738,
+            "brier": 0.45486352184409884,
+            "bss": 1.1102230246251565e-16,
+            "predicted_marginal": [
+              1.0,
+              0.0
+            ],
+            "target_marginal": [
+              0.656,
+              0.344
+            ]
+          },
+          "own_marginal": [
+            0.656,
+            0.344
+          ],
+          "bss_vs_own_marginal": 0.860921973106306
+        }
+      }
+    }
+  }
+}
