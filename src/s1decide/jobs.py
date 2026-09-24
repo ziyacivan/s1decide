@@ -86,7 +86,8 @@ def boot_time() -> float | None:
         import psutil
 
         return float(psutil.boot_time())
-    except Exception:
+    except Exception as exc:  # reported: a missing boot time disables reboot detection
+        print(f"jobs: cannot read boot time ({type(exc).__name__}: {exc})", file=sys.stderr)
         return None
 
 

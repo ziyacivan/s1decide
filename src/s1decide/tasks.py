@@ -922,6 +922,14 @@ def task_push(argv: list[str]) -> int:
     return push_through_gate(repo_root(), timeout=args.timeout, interval=interval)
 
 
+@register("watch", "Watch a detached run; exit with one line on DONE/FAILED/STOPPED or trouble")
+def task_watch(argv: list[str]) -> int:
+    """See `s1decide.watch`."""
+    from s1decide.watch import main as watch_main
+
+    return watch_main(argv)
+
+
 @register("lint", "Run ruff check and ruff format --check")
 def task_lint(argv: list[str]) -> int:
     """Lint and check formatting without modifying files."""
