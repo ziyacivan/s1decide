@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import time
+import urllib.error
 import urllib.request
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -69,6 +70,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--timeout", type=float, default=120.0)
     parser.add_argument("--stage1-phrasing", choices=STAGE1_PHRASINGS, default="native")
     parser.add_argument("--only-stage1", action="store_true")
+    parser.add_argument(
+        "--allow-rejected",
+        action="store_true",
+        help="record a row the server refuses with a 4xx (e.g. over its context) as unanswered "
+        "instead of stopping; each is listed in the meta with its status and message",
+    )
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     rows = select_rows(
@@ -81,18 +88,24 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     out = Path(args.out)
     started = time.perf_counter()
+    rejected: list[dict[str, Any]] = []
     with out.open("w", encoding="utf-8", newline="\n") as handle:
         for i, row in enumerate(rows):
-            answer = _post(
-                args.url,
-                {
-                    "state": row["state"],
-                    "questions": {
-                        "q": to_systemone_question(row, args.describe_options, args.stage1_phrasing)
-                    },
+            payload = {
+                "state": row["state"],
+                "questions": {
+                    "q": to_systemone_question(row, args.describe_options, args.stage1_phrasing)
                 },
-                args.timeout,
-            )["answers"]["q"]
+            }
+            try:
+                answer = _post(args.url, payload, args.timeout)["answers"]["q"]
+            except urllib.error.HTTPError as exc:
+                if not (args.allow_rejected and 400 <= exc.code < 500):
+                    raise
+                message = exc.read().decode("utf-8", errors="replace")[:300]
+                rejected.append({"id": row["id"], "status": exc.code, "message": message})
+                print(f"  rejected {row['id']}: HTTPError {exc.code} {message[:120]}", flush=True)
+                continue
             probs = from_laya_answer(row, answer)
             handle.write(json.dumps({"id": row["id"], "probabilities": probs}) + "\n")
             if (i + 1) % 500 == 0:
@@ -107,6 +120,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "stage1_phrasing": args.stage1_phrasing,
         "only_stage1": args.only_stage1,
         "rows": len(rows),
+        "answered": len(rows) - len(rejected),
+        "rejected": rejected,
         "seconds": round(time.perf_counter() - started, 1),
         "probabilities": "as served: the server's own calibration (Kev: one fitted temperature)",
         "state_passed_as": "the raw state string, as our model receives it",

@@ -93,6 +93,53 @@ def test_the_http_predictor_writes_our_option_order(tmp_path, monkeypatch) -> No
     assert json.loads(out.with_suffix(".meta.json").read_text())["model_id"] == "m"
 
 
+def _rejecting_server(tmp_path, monkeypatch, code: int):
+    import io
+    import json
+    import urllib.error
+
+    import eval.external_http as http
+
+    slice_path = tmp_path / "slice-typesafe.jsonl"
+    rows = [
+        {**row("noul", ["no", "yes"]), "id": "short", "state": "s"},
+        {**row("noul", ["no", "yes"]), "id": "long", "state": "x" * 50},
+    ]
+    slice_path.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+
+    def fake_post(url, payload, timeout):
+        if len(payload["state"]) > 10:
+            raise urllib.error.HTTPError(url, code, "no", {}, io.BytesIO(b"state too long"))
+        return {"answers": {"q": {"type": "noul", "noul": 0.9}}}
+
+    monkeypatch.setattr(http, "_post", fake_post)
+    return http, slice_path, tmp_path / "predictions-typesafe.jsonl"
+
+
+def test_a_rejected_row_is_recorded_as_unanswered_when_allowed(tmp_path, monkeypatch) -> None:
+    import json
+
+    http, slice_path, out = _rejecting_server(tmp_path, monkeypatch, 422)
+    args = ["--url", "u", "--slice", str(slice_path), "--out", str(out), "--model-id", "m"]
+    http.main([*args, "--allow-rejected"])
+    assert [json.loads(x)["id"] for x in out.read_text().splitlines()] == ["short"]
+    meta = json.loads(out.with_suffix(".meta.json").read_text())
+    assert meta["answered"] == 1
+    assert meta["rejected"] == [{"id": "long", "status": 422, "message": "state too long"}]
+
+
+@pytest.mark.parametrize("code,allow", [(422, False), (500, True)])
+def test_a_rejection_stops_the_run_unless_allowed_and_client_side(
+    tmp_path, monkeypatch, code: int, allow: bool
+) -> None:
+    import urllib.error
+
+    http, slice_path, out = _rejecting_server(tmp_path, monkeypatch, code)
+    args = ["--url", "u", "--slice", str(slice_path), "--out", str(out), "--model-id", "m"]
+    with pytest.raises(urllib.error.HTTPError):
+        http.main([*args, "--allow-rejected"] if allow else args)
+
+
 # --- stage-1 phrasing ------------------------------------------------------------
 
 
