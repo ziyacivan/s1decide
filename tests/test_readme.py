@@ -74,10 +74,17 @@ def test_the_latency_block_matches_a_committed_bench_run(readme: str) -> None:
     )
 
 
-def test_the_readme_says_there_is_no_trained_model_yet(readme: str) -> None:
-    """The single most important claim on the page, and the easiest to forget to remove."""
-    assert "no trained model yet" in readme.lower()
-    assert "pre-alpha" in readme.lower()
+def test_the_readme_does_not_overclaim_the_trained_model(readme: str) -> None:
+    """The most important claims on the page, and the easiest to let drift.
+
+    Until 2026-09-24 this asserted "no trained model yet". S1 exists now, measured only on
+    in-distribution slices and not published, and the page must say both until a release —
+    at which point this test is changed on purpose, as it was here.
+    """
+    text = readme.lower()
+    assert "pre-alpha" in text
+    assert "in-distribution" in text
+    assert "no weights are published yet" in text
 
 
 def test_the_readme_does_not_overclaim_flat_latency(readme: str) -> None:
