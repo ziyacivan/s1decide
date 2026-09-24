@@ -133,7 +133,7 @@ class TrainConfig:
     eval_mode: str = "case-control"
     eval_stage1_questions: int = 300
     eval_negatives: int = 16
-    eval_batch_size: int = 8
+    eval_batch_size: int = 4
     resume_from: str | None = None
     extra: dict[str, Any] = field(default_factory=dict)
 
