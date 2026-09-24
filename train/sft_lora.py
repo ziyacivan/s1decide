@@ -278,6 +278,7 @@ def build_examples(
                 "answer_idx": int(row["answer_idx"]),
                 "eval_weight": float(row.get("eval_weight", 1.0)),
                 "row_index": row.get("row_index"),
+                "id": row.get("id"),
             }
         )
     random.Random(config.seed).shuffle(examples)
