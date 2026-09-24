@@ -230,8 +230,78 @@ def _report(directory: Path, contamination: Path | None, model_key: str | None) 
     return out
 
 
+def _write_jsonl(path: Path, items: Sequence[dict[str, Any]]) -> None:
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
+        for item in items:
+            handle.write(json.dumps(item) + "\n")
+
+
+def _calibrate(raw: Path, calibration: Path, out: Path) -> Path:
+    """Apply a committed S2 calibration set to a model's raw fair-ground logits.
+
+    The calibration is the one fitted on the comparison slices' `val` (ADR 0008) — never on the
+    fair-ground rows themselves, which would be fitting on the test.
+    """
+    import shutil
+
+    from eval.adapter_slice import calibration_group
+    from s1decide.calibrate import CalibrationSet
+
+    cells = CalibrationSet.load(calibration)
+    rows = _read(raw / "slice-eval.jsonl")
+    logits = {p["id"]: p["logits"] for p in _read(raw / "predictions-eval.jsonl")}
+    out.mkdir(parents=True, exist_ok=True)
+    for suffix in (".jsonl", ".json"):
+        shutil.copy(raw / f"slice-eval{suffix}", out / f"slice-eval{suffix}")
+    _write_jsonl(
+        out / "predictions-eval.jsonl",
+        [
+            {
+                "id": row["id"],
+                "probabilities": [
+                    float(x)
+                    for x in cells.get("nf4-bf16", calibration_group(row)).apply(logits[row["id"]])
+                ],
+            }
+            for row in rows
+        ],
+    )
+    meta = json.loads((raw / "predictions-eval.meta.json").read_text(encoding="utf-8"))
+    meta["calibration"] = (
+        f"S2 per cell (ADR 0008) from {calibration}, fitted on the comparison val slice"
+    )
+    (out / "predictions-eval.meta.json").write_text(
+        json.dumps(meta, indent=2, default=str) + "\n", encoding="utf-8", newline="\n"
+    )
+    print(f"wrote {out}")
+    return out
+
+
+def _table(root: Path, models: Sequence[str]) -> Path:
+    """One JSON across models: per family and reporting group, the headline numbers."""
+    table: dict[str, Any] = {"models": list(models), "families": {}}
+    for name in models:
+        report = json.loads((root / name / "fair_ground.json").read_text(encoding="utf-8"))
+        for family, entry in report["families"].items():
+            fam = table["families"].setdefault(family, {"kind": entry["kind"], "groups": {}})
+            for group, g in entry["groups"].items():
+                fam["groups"].setdefault(group, {})[name] = {
+                    "rows": g["model"]["rows"],
+                    "accuracy": g["model"]["accuracy"],
+                    "bss_vs_training_prior": g["model"]["bss"],
+                    "bss_vs_own_marginal": g.get("bss_vs_own_marginal"),
+                    "ece": g["model"]["ece"],
+                    "kl": g["model"]["kl"],
+                    "contamination": entry["contamination"].get("status"),
+                }
+    out = root / "table.json"
+    out.write_text(json.dumps(table, indent=2) + "\n", encoding="utf-8", newline="\n")
+    print(f"wrote {out}")
+    return out
+
+
 def main(argv: Sequence[str] | None = None) -> int:
-    """``export`` or ``report``; see the module docstring."""
+    """``export`` / ``report`` / ``calibrate`` / ``table``; see the module docstring."""
     parser = argparse.ArgumentParser(prog="eval.fair_ground")
     sub = parser.add_subparsers(dest="cmd", required=True)
     e = sub.add_parser("export")
@@ -240,9 +310,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     r.add_argument("--dir", required=True)
     r.add_argument("--contamination", default=None)
     r.add_argument("--model", default=None, help="the model's key in the contamination file")
+    c = sub.add_parser("calibrate")
+    c.add_argument("--raw", required=True)
+    c.add_argument("--calibration", required=True)
+    c.add_argument("--out", required=True)
+    t = sub.add_parser("table")
+    t.add_argument("--root", required=True)
+    t.add_argument("--models", nargs="+", required=True)
     args = parser.parse_args(list(argv) if argv is not None else None)
     if args.cmd == "export":
         _export(Path(args.out))
+    elif args.cmd == "calibrate":
+        _calibrate(Path(args.raw), Path(args.calibration), Path(args.out))
+    elif args.cmd == "table":
+        _table(Path(args.root), args.models)
     else:
         if (args.contamination is None) != (args.model is None):
             parser.error("--contamination and --model go together")

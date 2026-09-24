@@ -73,3 +73,30 @@ def test_the_contamination_file_marks_every_family_for_every_model() -> None:
         for family in families:
             assert marks[family]["status"] in {"clean", "trained", "sibling", "unknown"}
             assert marks[family]["evidence"].strip(), (model, family)
+
+
+def test_the_table_collects_every_model_per_family_and_group(tmp_path) -> None:
+    import json
+
+    from eval.fair_ground import _table
+
+    for name, acc in (("a", 0.9), ("b", 0.6)):
+        (tmp_path / name).mkdir()
+        group = {
+            "model": {"rows": 10, "accuracy": acc, "bss": 0.1, "ece": 0.02, "kl": 0.3},
+            "bss_vs_own_marginal": 0.05,
+        }
+        report = {
+            "families": {
+                "boolq": {
+                    "kind": "OOD",
+                    "contamination": {"status": "clean"},
+                    "groups": {"noul": group},
+                }
+            }
+        }
+        (tmp_path / name / "fair_ground.json").write_text(json.dumps(report), encoding="utf-8")
+    table = json.loads(_table(tmp_path, ["a", "b"]).read_text(encoding="utf-8"))
+    cell = table["families"]["boolq"]["groups"]["noul"]
+    assert cell["a"]["accuracy"] == 0.9 and cell["b"]["accuracy"] == 0.6
+    assert cell["b"]["contamination"] == "clean"
