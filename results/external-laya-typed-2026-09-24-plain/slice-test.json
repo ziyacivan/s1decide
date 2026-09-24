@@ -1,0 +1,21 @@
+{
+  "non_stage1_rows": 3250,
+  "stage1_questions": 300,
+  "stage1_questions_available": 1151,
+  "case_control": {
+    "mode": "case-control",
+    "negatives_per_question": 16,
+    "questions": 300,
+    "rows_kept": 5100,
+    "rows_dropped": 24115,
+    "max_weight": 9.375,
+    "seed": 20260923
+  },
+  "rows": 8350,
+  "slice": {
+    "stage1_questions": 300,
+    "negatives": 16,
+    "seed": 20260923
+  },
+  "split": "test"
+}

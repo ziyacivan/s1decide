@@ -1,0 +1,29 @@
+{
+  "model_id": "jaredpalmer/kev-9b",
+  "source_commit": "c9c1f855505336ac32092a5f68305d397f7fcc3e",
+  "server": "http://127.0.0.1:8009",
+  "protocol": "/v1/systemone (TypeSafe request format)",
+  "choice_options_described": false,
+  "rows": 8350,
+  "seconds": 472.2,
+  "probabilities": "as served: the server's own calibration (Kev: one fitted temperature)",
+  "state_passed_as": "the raw state string, as our model receives it",
+  "stage1_phrasing": "plain",
+  "stage1_predictions_from": "results\\external-kev-9b-2026-09-24-stage1plain",
+  "stage1_meta": {
+    "model_id": "jaredpalmer/kev-9b",
+    "source_commit": "c9c1f855505336ac32092a5f68305d397f7fcc3e",
+    "server": "http://127.0.0.1:8009",
+    "protocol": "/v1/systemone (TypeSafe request format)",
+    "choice_options_described": false,
+    "stage1_phrasing": "plain",
+    "only_stage1": true,
+    "rows": 5100,
+    "answered": 5100,
+    "rejected": [],
+    "seconds": 281.8,
+    "probabilities": "as served: the server's own calibration (Kev: one fitted temperature)",
+    "state_passed_as": "the raw state string, as our model receives it"
+  },
+  "non_stage1_predictions_from": "results\\external-kev-9b-2026-09-24"
+}
