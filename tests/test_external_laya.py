@@ -125,7 +125,9 @@ def test_a_rejected_row_is_recorded_as_unanswered_when_allowed(tmp_path, monkeyp
     assert [json.loads(x)["id"] for x in out.read_text().splitlines()] == ["short"]
     meta = json.loads(out.with_suffix(".meta.json").read_text())
     assert meta["answered"] == 1
-    assert meta["rejected"] == [{"id": "long", "status": 422, "message": "state too long"}]
+    assert meta["rejected"] == [
+        {"id": "long", "status": 422, "kind": "refused", "message": "state too long"}
+    ]
 
 
 @pytest.mark.parametrize("code,allow", [(422, False), (500, True)])
@@ -223,3 +225,14 @@ def test_merge_refuses_partial_stage1_coverage(tmp_path) -> None:
     (plain / "predictions-val.meta.json").write_text("{}", encoding="utf-8")
     with pytest.raises(ValueError, match="cover 1 of 2"):
         _merge(native, plain, tmp_path / "out", ["val"])
+
+
+def test_a_server_error_is_recorded_separately_only_when_allowed(tmp_path, monkeypatch) -> None:
+    import json
+
+    http, slice_path, out = _rejecting_server(tmp_path, monkeypatch, 500)
+    args = ["--url", "u", "--slice", str(slice_path), "--out", str(out), "--model-id", "m"]
+    http.main([*args, "--allow-server-errors"])
+    meta = json.loads(out.with_suffix(".meta.json").read_text())
+    assert meta["answered"] == 1
+    assert meta["rejected"][0]["kind"] == "server_error"

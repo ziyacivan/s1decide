@@ -1,0 +1,616 @@
+{
+  "subset": {
+    "source_sha256": "877ed7cd473e3973d29f0bb0ff2a597192955e477f2127794df358b6ba795879",
+    "rows": 102,
+    "cases": 20
+  },
+  "protocol": "SemIf/Kev: agreement = argmax match, TVD = half L1; rows averaged within case, cases with equal weight",
+  "reference_label_caveat": "Instead of debating the correctness of the harness and labels, we assume that the code is correct, and measure against the current smartest large models. For this eval, the reference labels are generated via an average of the responses of GPT-6 Astra and Claude Fable 5.1, both at high thinking, answering every question in the harness. All other models are evaluated using the provider's default reasoning settings.",
+  "common_answered_rows": 73,
+  "models": {
+    "zeroshot-qwen38-27b": {
+      "source": "results\\typesafe-h2h-2026-09-24\\zeroshot-qwen38-27b\\predictions-typesafe.jsonl",
+      "meta": {
+        "model": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+        "adapter": null,
+        "config": "train\\configs\\sft_3090_s1.yaml",
+        "loader": {
+          "prequantized": true,
+          "targets": [
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj"
+          ],
+          "unsloth_import_error": null,
+          "dtype_fix": {
+            "linear4bit": 352,
+            "quant_states": 0,
+            "params_cast": 498
+          },
+          "path": "unsloth",
+          "quantized": true,
+          "layout": {
+            "expected": 256,
+            "adapted": 256,
+            "attention_layers": 16,
+            "mlp_layers": 64
+          }
+        },
+        "quantization": "nf4-bf16",
+        "kernels": {
+          "packages": {
+            "fla": true,
+            "causal_conv1d": false,
+            "triton": true,
+            "triton_kernels": false,
+            "kernels": false
+          },
+          "versions": {
+            "torch": "2.10.0+cu130",
+            "transformers": "5.5.0",
+            "peft": "0.18.1",
+            "trl": "0.23.1",
+            "bitsandbytes": "0.50.2",
+            "unsloth": "2026.9.2",
+            "unsloth_zoo": "2026.9.1",
+            "triton": null,
+            "triton-windows": "3.6.0.post26",
+            "kernels": null,
+            "flash-linear-attention": null,
+            "accelerate": "1.14.0"
+          },
+          "gated_deltanet": {
+            "chunk_gated_delta_rule": "accelerated",
+            "fused_recurrent_gated_delta_rule": "accelerated",
+            "causal_conv1d_fn": "torch",
+            "causal_conv1d_update": "torch"
+          },
+          "fast_path_all": false,
+          "attention": "sdpa",
+          "notes": [
+            "2 of 4 gated-deltanet kernels are accelerated, but transformers reports is_fast_path_available=False because it is an all() over the four; the 'falling back to torch' warning in the log understates what is active",
+            "causal-conv1d has no Windows wheel and fails to build; its two functions use the torch path (a 4-wide depthwise convolution, the cheap part)",
+            "the `kernels` package is absent: MXFP4 checkpoints dequantize to bf16 and a 20B MoE will not fit on a 24 GB card; `kernels` is not in uv.lock"
+          ]
+        },
+        "calibration": "none (raw logits)",
+        "eval_batch_size": 1,
+        "max_seq_len": 12288,
+        "split": "typesafe",
+        "rows": 102
+      },
+      "answered": 102,
+      "evaluated": {
+        "rows": 102,
+        "cases": 20,
+        "agreement": 0.8569871794871794,
+        "tvd": 0.13943200444649445
+      },
+      "all_rows": {
+        "rows": 102,
+        "cases": 20,
+        "agreement": 0.8569871794871794,
+        "tvd": 0.13943200444649445
+      },
+      "by_primitive": {
+        "choice": {
+          "rows": 36,
+          "cases": 14,
+          "agreement": 0.8928571428571427,
+          "tvd": 0.11351449396189608
+        },
+        "noul": {
+          "rows": 66,
+          "cases": 20,
+          "agreement": 0.8579545454545453,
+          "tvd": 0.14664500822763504
+        }
+      },
+      "common_answered": {
+        "rows": 73,
+        "cases": 15,
+        "agreement": 0.8093162393162393,
+        "tvd": 0.18165016341252935
+      }
+    },
+    "s1-3090": {
+      "source": "results\\typesafe-h2h-2026-09-24\\s1-3090\\predictions-typesafe.jsonl",
+      "meta": {
+        "model": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+        "adapter": "results\\s1-3090\\adapter",
+        "config": "train\\configs\\sft_3090_s1.yaml",
+        "loader": {
+          "prequantized": true,
+          "targets": [
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj"
+          ],
+          "unsloth_import_error": null,
+          "dtype_fix": {
+            "linear4bit": 352,
+            "quant_states": 0,
+            "params_cast": 498
+          },
+          "path": "unsloth",
+          "quantized": true,
+          "layout": {
+            "expected": 256,
+            "adapted": 256,
+            "attention_layers": 16,
+            "mlp_layers": 64
+          }
+        },
+        "quantization": "nf4-bf16",
+        "kernels": {
+          "packages": {
+            "fla": true,
+            "causal_conv1d": false,
+            "triton": true,
+            "triton_kernels": false,
+            "kernels": false
+          },
+          "versions": {
+            "torch": "2.10.0+cu130",
+            "transformers": "5.5.0",
+            "peft": "0.18.1",
+            "trl": "0.23.1",
+            "bitsandbytes": "0.50.2",
+            "unsloth": "2026.9.2",
+            "unsloth_zoo": "2026.9.1",
+            "triton": null,
+            "triton-windows": "3.6.0.post26",
+            "kernels": null,
+            "flash-linear-attention": null,
+            "accelerate": "1.14.0"
+          },
+          "gated_deltanet": {
+            "chunk_gated_delta_rule": "accelerated",
+            "fused_recurrent_gated_delta_rule": "accelerated",
+            "causal_conv1d_fn": "torch",
+            "causal_conv1d_update": "torch"
+          },
+          "fast_path_all": false,
+          "attention": "sdpa",
+          "notes": [
+            "2 of 4 gated-deltanet kernels are accelerated, but transformers reports is_fast_path_available=False because it is an all() over the four; the 'falling back to torch' warning in the log understates what is active",
+            "causal-conv1d has no Windows wheel and fails to build; its two functions use the torch path (a 4-wide depthwise convolution, the cheap part)",
+            "the `kernels` package is absent: MXFP4 checkpoints dequantize to bf16 and a 20B MoE will not fit on a 24 GB card; `kernels` is not in uv.lock"
+          ]
+        },
+        "calibration": "none (raw logits)",
+        "eval_batch_size": 1,
+        "max_seq_len": 12288,
+        "split": "typesafe",
+        "rows": 102
+      },
+      "answered": 102,
+      "evaluated": {
+        "rows": 102,
+        "cases": 20,
+        "agreement": 0.8371153846153845,
+        "tvd": 0.1377249410746181
+      },
+      "all_rows": {
+        "rows": 102,
+        "cases": 20,
+        "agreement": 0.8371153846153845,
+        "tvd": 0.1377249410746181
+      },
+      "by_primitive": {
+        "choice": {
+          "rows": 36,
+          "cases": 14,
+          "agreement": 0.8214285714285713,
+          "tvd": 0.13034439858331043
+        },
+        "noul": {
+          "rows": 66,
+          "cases": 20,
+          "agreement": 0.8693181818181819,
+          "tvd": 0.13019857219247438
+        }
+      },
+      "common_answered": {
+        "rows": 73,
+        "cases": 15,
+        "agreement": 0.7828205128205128,
+        "tvd": 0.17670106269560346
+      }
+    },
+    "kev-9b": {
+      "source": "results\\typesafe-h2h-2026-09-24\\kev-9b\\predictions-typesafe.jsonl",
+      "meta": {
+        "model_id": "jaredpalmer/kev-9b",
+        "source_commit": "c9c1f855505336ac32092a5f68305d397f7fcc3e",
+        "server": "http://127.0.0.1:8009",
+        "protocol": "/v1/systemone (TypeSafe request format)",
+        "choice_options_described": false,
+        "stage1_phrasing": "native",
+        "only_stage1": false,
+        "rows": 102,
+        "answered": 73,
+        "rejected": [
+          {
+            "id": "typesafe/188ccf71d8f2f9880393a022",
+            "status": 500,
+            "kind": "server_error",
+            "message": "Internal Server Error"
+          },
+          {
+            "id": "typesafe/4dbbe3efc20585950b06baf8",
+            "status": 500,
+            "kind": "server_error",
+            "message": "Internal Server Error"
+          },
+          {
+            "id": "typesafe/52b55b49ba54a27614b3f73d",
+            "status": 500,
+            "kind": "server_error",
+            "message": "Internal Server Error"
+          },
+          {
+            "id": "typesafe/daf967dda34c67970d2257e7",
+            "status": 500,
+            "kind": "server_error",
+            "message": "Internal Server Error"
+          },
+          {
+            "id": "typesafe/f4ca8bfc4ba3c01142b0a309",
+            "status": 500,
+            "kind": "server_error",
+            "message": "Internal Server Error"
+          },
+          {
+            "id": "typesafe/fa651dcab96ebf53f902cb12",
+            "status": 500,
+            "kind": "server_error",
+            "message": "Internal Server Error"
+          },
+          {
+            "id": "typesafe/41862b1e8a29ba4188821e9d",
+            "status": 422,
+            "kind": "refused",
+            "message": "{\"detail\":\"branch too long: 281 tokens with a 8192-token state (row limit 8192)\"}"
+          },
+          {
+            "id": "typesafe/91912f1c0e651ae7e3802fb8",
+            "status": 422,
+            "kind": "refused",
+            "message": "{\"detail\":\"branch too long: 264 tokens with a 8192-token state (row limit 8192)\"}"
+          },
+          {
+            "id": "typesafe/964d9446299d903c6def3337",
+            "status": 422,
+            "kind": "refused",
+            "message": "{\"detail\":\"branch too long: 677 tokens with a 8192-token state (row limit 8192)\"}"
+          },
+          {
+            "id": "typesafe/ba5eded930214d934d09bd5e",
+            "status": 422,
+            "kind": "refused",
+            "message": "{\"detail\":\"branch too long: 606 tokens with a 8192-token state (row limit 8192)\"}"
+          },
+          {
+            "id": "typesafe/d3d74159d4714e74dbf35bf1",
+            "status": 422,
+            "kind": "refused",
+            "message": "{\"detail\":\"branch too long: 150 tokens with a 8192-token state (row limit 8192)\"}"
+          },
+          {
+            "id": "typesafe/ead6b253663b47bfb7723a91",
+            "status": 422,
+            "kind": "refused",
+            "message": "{\"detail\":\"branch too long: 1710 tokens with a 8192-token state (row limit 8192)\"}"
+          },
+          {
+            "id": "typesafe/19739e963c01114d0e80a9d9",
+            "status": 500,
+            "kind": "server_error",
+            "message": "Internal Server Error"
+          },
+          {
+            "id": "typesafe/5afb13535f84a1f9cc3b9c8f",
+            "status": 500,
+            "kind": "server_error",
+            "message": "Internal Server Error"
+          },
+          {
+            "id": "typesafe/9cecd05ebb8a5cc25e423239",
+            "status": 500,
+            "kind": "server_error",
+            "message": "Internal Server Error"
+          },
+          {
+            "id": "typesafe/a857bb8be892c90d21ee3d85",
+            "status": 500,
+            "kind": "server_error",
+            "message": "Internal Server Error"
+          },
+          {
+            "id": "typesafe/e69807128466dbc56a7bda22",
+            "status": 500,
+            "kind": "server_error",
+            "message": "Internal Server Error"
+          },
+          {
+            "id": "typesafe/1b263ba36e0457395f18969a",
+            "status": 500,
+            "kind": "server_error",
+            "message": "Internal Server Error"
+          },
+          {
+            "id": "typesafe/4837f53607a521c78ff9b14b",
+            "status": 500,
+            "kind": "server_error",
+            "message": "Internal Server Error"
+          },
+          {
+            "id": "typesafe/504fa3e9331aafba487b76c0",
+            "status": 500,
+            "kind": "server_error",
+            "message": "Internal Server Error"
+          },
+          {
+            "id": "typesafe/68f13ec40c5a86c911c29e1f",
+            "status": 500,
+            "kind": "server_error",
+            "message": "Internal Server Error"
+          },
+          {
+            "id": "typesafe/71a2393072e9e2b2ac08da0c",
+            "status": 500,
+            "kind": "server_error",
+            "message": "Internal Server Error"
+          },
+          {
+            "id": "typesafe/0852cab29a4de594ab0e40a5",
+            "status": 422,
+            "kind": "refused",
+            "message": "{\"detail\":\"branch too long: 1590 tokens with a 8192-token state (row limit 8192)\"}"
+          },
+          {
+            "id": "typesafe/287415a7a22e1fce9388a636",
+            "status": 422,
+            "kind": "refused",
+            "message": "{\"detail\":\"branch too long: 1273 tokens with a 8192-token state (row limit 8192)\"}"
+          },
+          {
+            "id": "typesafe/4829c4edb0e6417741ffc6d4",
+            "status": 422,
+            "kind": "refused",
+            "message": "{\"detail\":\"branch too long: 244 tokens with a 8192-token state (row limit 8192)\"}"
+          },
+          {
+            "id": "typesafe/4f1c8783235a838e7ebad206",
+            "status": 422,
+            "kind": "refused",
+            "message": "{\"detail\":\"branch too long: 1237 tokens with a 8192-token state (row limit 8192)\"}"
+          },
+          {
+            "id": "typesafe/767af54164feae1d84407b1e",
+            "status": 422,
+            "kind": "refused",
+            "message": "{\"detail\":\"branch too long: 539 tokens with a 8192-token state (row limit 8192)\"}"
+          },
+          {
+            "id": "typesafe/795bce421ace3e2a4be21fd9",
+            "status": 422,
+            "kind": "refused",
+            "message": "{\"detail\":\"branch too long: 296 tokens with a 8192-token state (row limit 8192)\"}"
+          },
+          {
+            "id": "typesafe/8bae9f91e7610bf1c6abdf20",
+            "status": 422,
+            "kind": "refused",
+            "message": "{\"detail\":\"branch too long: 275 tokens with a 8192-token state (row limit 8192)\"}"
+          }
+        ],
+        "seconds": 36.5,
+        "probabilities": "as served: the server's own calibration (Kev: one fitted temperature)",
+        "state_passed_as": "the raw state string, as our model receives it"
+      },
+      "answered": 73,
+      "evaluated": {
+        "rows": 73,
+        "cases": 15,
+        "agreement": 0.7428205128205129,
+        "tvd": 0.22677760127510138
+      },
+      "all_rows": {
+        "rows": 102,
+        "cases": 20,
+        "agreement": 0.5571153846153847,
+        "tvd": 0.42008320095632606
+      },
+      "by_primitive": {
+        "choice": {
+          "rows": 22,
+          "cases": 9,
+          "agreement": 0.7592592592592593,
+          "tvd": 0.2194751556928627
+        },
+        "noul": {
+          "rows": 51,
+          "cases": 15,
+          "agreement": 0.7851515151515152,
+          "tvd": 0.22104092929292926
+        }
+      },
+      "common_answered": {
+        "rows": 73,
+        "cases": 15,
+        "agreement": 0.7428205128205129,
+        "tvd": 0.22677760127510138
+      }
+    },
+    "laya": {
+      "source": "results\\typesafe-h2h-2026-09-24\\laya\\predictions-typesafe.jsonl",
+      "meta": {
+        "checkpoint": "laya",
+        "repo": "convaiinnovations/laya",
+        "revision": null,
+        "subfolder": null,
+        "laya_version": "0.3.11",
+        "torch": "2.14.0+cpu",
+        "device": "cpu",
+        "threads": 6,
+        "rows": 102,
+        "stage1_phrasing": "native",
+        "only_stage1": false,
+        "seconds": 88.4,
+        "load_warnings": [
+          "RuntimeWarning: laya: this checkpoint ships invalid temperatures or values outside [0.5, 5]; using choice:11+=0.10058280825614929 -> 0.5. Treat confidence from the affected entries as uncalibrated.",
+          "revision lookup failed: OfflineModeIsEnabled: Cannot reach https://huggingface.co/api/models/convaiinnovations/laya: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable."
+        ],
+        "probabilities": "as shipped: Laya's post-hoc temperature per question type and option count",
+        "state_passed_as": "the raw state string, as our model receives it"
+      },
+      "answered": 102,
+      "evaluated": {
+        "rows": 102,
+        "cases": 20,
+        "agreement": 0.3278021978021979,
+        "tvd": 0.5114903210585362
+      },
+      "all_rows": {
+        "rows": 102,
+        "cases": 20,
+        "agreement": 0.3278021978021979,
+        "tvd": 0.5114903210585362
+      },
+      "by_primitive": {
+        "choice": {
+          "rows": 36,
+          "cases": 14,
+          "agreement": 0.125,
+          "tvd": 0.6863304351237866
+        },
+        "noul": {
+          "rows": 66,
+          "cases": 20,
+          "agreement": 0.4415151515151514,
+          "tvd": 0.42932943181818184
+        }
+      },
+      "common_answered": {
+        "rows": 73,
+        "cases": 15,
+        "agreement": 0.338974358974359,
+        "tvd": 0.469222583212883
+      }
+    },
+    "laya-typed-decisions": {
+      "source": "results\\typesafe-h2h-2026-09-24\\laya-typed-decisions\\predictions-typesafe.jsonl",
+      "meta": {
+        "checkpoint": "typed-decisions",
+        "repo": "convaiinnovations/laya",
+        "revision": null,
+        "subfolder": "typed-decisions",
+        "laya_version": "0.3.11",
+        "torch": "2.14.0+cpu",
+        "device": "cpu",
+        "threads": 6,
+        "rows": 102,
+        "stage1_phrasing": "native",
+        "only_stage1": false,
+        "seconds": 169.0,
+        "load_warnings": [
+          "RuntimeWarning: laya: this checkpoint ships invalid temperatures or values outside [0.5, 5]; using choice:11+=0.10058280825614929 -> 0.5. Treat confidence from the affected entries as uncalibrated.",
+          "revision lookup failed: OfflineModeIsEnabled: Cannot reach https://huggingface.co/api/models/convaiinnovations/laya: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable."
+        ],
+        "probabilities": "as shipped: Laya's post-hoc temperature per question type and option count",
+        "state_passed_as": "the raw state string, as our model receives it"
+      },
+      "answered": 102,
+      "evaluated": {
+        "rows": 102,
+        "cases": 20,
+        "agreement": 0.4376373626373626,
+        "tvd": 0.5035013386141345
+      },
+      "all_rows": {
+        "rows": 102,
+        "cases": 20,
+        "agreement": 0.4376373626373626,
+        "tvd": 0.5035013386141345
+      },
+      "by_primitive": {
+        "choice": {
+          "rows": 36,
+          "cases": 14,
+          "agreement": 0.2857142857142857,
+          "tvd": 0.6637824059077885
+        },
+        "noul": {
+          "rows": 66,
+          "cases": 20,
+          "agreement": 0.5547727272727272,
+          "tvd": 0.4304652272727273
+        }
+      },
+      "common_answered": {
+        "rows": 73,
+        "cases": 15,
+        "agreement": 0.3581196581196581,
+        "tvd": 0.4706675812723189
+      }
+    },
+    "jev (TypeSafe's published answers, quoted from the file)": {
+      "source": "_meta.published.typesafe (model typesafe:v13_snowy_elephant)",
+      "answered": 102,
+      "evaluated": {
+        "rows": 102,
+        "cases": 20,
+        "agreement": 0.8831410256410257,
+        "tvd": 0.12682507173382174
+      },
+      "all_rows": {
+        "rows": 102,
+        "cases": 20,
+        "agreement": 0.8831410256410257,
+        "tvd": 0.12682507173382174
+      },
+      "by_primitive": {
+        "choice": {
+          "rows": 36,
+          "cases": 14,
+          "agreement": 0.8333333333333333,
+          "tvd": 0.12216666666666666
+        },
+        "noul": {
+          "rows": 66,
+          "cases": 20,
+          "agreement": 0.9225757575757576,
+          "tvd": 0.1215090909090909
+        }
+      },
+      "cross_check": {
+        "quoted": {
+          "agreement": 0.883,
+          "tvd": 0.127,
+          "source": "jaredpalmer/kev README @ c9c1f85"
+        },
+        "ours_rounded": {
+          "agreement": 0.883,
+          "tvd": 0.127
+        },
+        "matches": true
+      },
+      "common_answered": {
+        "rows": 73,
+        "cases": 15,
+        "agreement": 0.8441880341880343,
+        "tvd": 0.14762707977207976
+      }
+    }
+  }
+}

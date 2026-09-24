@@ -76,6 +76,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="record a row the server refuses with a 4xx (e.g. over its context) as unanswered "
         "instead of stopping; each is listed in the meta with its status and message",
     )
+    parser.add_argument(
+        "--allow-server-errors",
+        action="store_true",
+        help="also record a 5xx (e.g. the server running out of GPU memory on this card) as "
+        "unanswered, listed separately from refusals: a hardware limit, not the model's answer",
+    )
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     rows = select_rows(
@@ -100,10 +106,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             try:
                 answer = _post(args.url, payload, args.timeout)["answers"]["q"]
             except urllib.error.HTTPError as exc:
-                if not (args.allow_rejected and 400 <= exc.code < 500):
+                client = args.allow_rejected and 400 <= exc.code < 500
+                server = args.allow_server_errors and exc.code >= 500
+                if not (client or server):
                     raise
                 message = exc.read().decode("utf-8", errors="replace")[:300]
-                rejected.append({"id": row["id"], "status": exc.code, "message": message})
+                kind = "refused" if client else "server_error"
+                rejected.append(
+                    {"id": row["id"], "status": exc.code, "kind": kind, "message": message}
+                )
                 print(f"  rejected {row['id']}: HTTPError {exc.code} {message[:120]}", flush=True)
                 continue
             probs = from_laya_answer(row, answer)

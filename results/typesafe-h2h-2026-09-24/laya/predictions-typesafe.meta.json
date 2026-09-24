@@ -1,0 +1,20 @@
+{
+  "checkpoint": "laya",
+  "repo": "convaiinnovations/laya",
+  "revision": null,
+  "subfolder": null,
+  "laya_version": "0.3.11",
+  "torch": "2.14.0+cpu",
+  "device": "cpu",
+  "threads": 6,
+  "rows": 102,
+  "stage1_phrasing": "native",
+  "only_stage1": false,
+  "seconds": 88.4,
+  "load_warnings": [
+    "RuntimeWarning: laya: this checkpoint ships invalid temperatures or values outside [0.5, 5]; using choice:11+=0.10058280825614929 -> 0.5. Treat confidence from the affected entries as uncalibrated.",
+    "revision lookup failed: OfflineModeIsEnabled: Cannot reach https://huggingface.co/api/models/convaiinnovations/laya: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable."
+  ],
+  "probabilities": "as shipped: Laya's post-hoc temperature per question type and option count",
+  "state_passed_as": "the raw state string, as our model receives it"
+}

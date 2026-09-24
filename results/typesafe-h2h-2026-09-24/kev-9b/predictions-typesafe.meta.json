@@ -1,0 +1,190 @@
+{
+  "model_id": "jaredpalmer/kev-9b",
+  "source_commit": "c9c1f855505336ac32092a5f68305d397f7fcc3e",
+  "server": "http://127.0.0.1:8009",
+  "protocol": "/v1/systemone (TypeSafe request format)",
+  "choice_options_described": false,
+  "stage1_phrasing": "native",
+  "only_stage1": false,
+  "rows": 102,
+  "answered": 73,
+  "rejected": [
+    {
+      "id": "typesafe/188ccf71d8f2f9880393a022",
+      "status": 500,
+      "kind": "server_error",
+      "message": "Internal Server Error"
+    },
+    {
+      "id": "typesafe/4dbbe3efc20585950b06baf8",
+      "status": 500,
+      "kind": "server_error",
+      "message": "Internal Server Error"
+    },
+    {
+      "id": "typesafe/52b55b49ba54a27614b3f73d",
+      "status": 500,
+      "kind": "server_error",
+      "message": "Internal Server Error"
+    },
+    {
+      "id": "typesafe/daf967dda34c67970d2257e7",
+      "status": 500,
+      "kind": "server_error",
+      "message": "Internal Server Error"
+    },
+    {
+      "id": "typesafe/f4ca8bfc4ba3c01142b0a309",
+      "status": 500,
+      "kind": "server_error",
+      "message": "Internal Server Error"
+    },
+    {
+      "id": "typesafe/fa651dcab96ebf53f902cb12",
+      "status": 500,
+      "kind": "server_error",
+      "message": "Internal Server Error"
+    },
+    {
+      "id": "typesafe/41862b1e8a29ba4188821e9d",
+      "status": 422,
+      "kind": "refused",
+      "message": "{\"detail\":\"branch too long: 281 tokens with a 8192-token state (row limit 8192)\"}"
+    },
+    {
+      "id": "typesafe/91912f1c0e651ae7e3802fb8",
+      "status": 422,
+      "kind": "refused",
+      "message": "{\"detail\":\"branch too long: 264 tokens with a 8192-token state (row limit 8192)\"}"
+    },
+    {
+      "id": "typesafe/964d9446299d903c6def3337",
+      "status": 422,
+      "kind": "refused",
+      "message": "{\"detail\":\"branch too long: 677 tokens with a 8192-token state (row limit 8192)\"}"
+    },
+    {
+      "id": "typesafe/ba5eded930214d934d09bd5e",
+      "status": 422,
+      "kind": "refused",
+      "message": "{\"detail\":\"branch too long: 606 tokens with a 8192-token state (row limit 8192)\"}"
+    },
+    {
+      "id": "typesafe/d3d74159d4714e74dbf35bf1",
+      "status": 422,
+      "kind": "refused",
+      "message": "{\"detail\":\"branch too long: 150 tokens with a 8192-token state (row limit 8192)\"}"
+    },
+    {
+      "id": "typesafe/ead6b253663b47bfb7723a91",
+      "status": 422,
+      "kind": "refused",
+      "message": "{\"detail\":\"branch too long: 1710 tokens with a 8192-token state (row limit 8192)\"}"
+    },
+    {
+      "id": "typesafe/19739e963c01114d0e80a9d9",
+      "status": 500,
+      "kind": "server_error",
+      "message": "Internal Server Error"
+    },
+    {
+      "id": "typesafe/5afb13535f84a1f9cc3b9c8f",
+      "status": 500,
+      "kind": "server_error",
+      "message": "Internal Server Error"
+    },
+    {
+      "id": "typesafe/9cecd05ebb8a5cc25e423239",
+      "status": 500,
+      "kind": "server_error",
+      "message": "Internal Server Error"
+    },
+    {
+      "id": "typesafe/a857bb8be892c90d21ee3d85",
+      "status": 500,
+      "kind": "server_error",
+      "message": "Internal Server Error"
+    },
+    {
+      "id": "typesafe/e69807128466dbc56a7bda22",
+      "status": 500,
+      "kind": "server_error",
+      "message": "Internal Server Error"
+    },
+    {
+      "id": "typesafe/1b263ba36e0457395f18969a",
+      "status": 500,
+      "kind": "server_error",
+      "message": "Internal Server Error"
+    },
+    {
+      "id": "typesafe/4837f53607a521c78ff9b14b",
+      "status": 500,
+      "kind": "server_error",
+      "message": "Internal Server Error"
+    },
+    {
+      "id": "typesafe/504fa3e9331aafba487b76c0",
+      "status": 500,
+      "kind": "server_error",
+      "message": "Internal Server Error"
+    },
+    {
+      "id": "typesafe/68f13ec40c5a86c911c29e1f",
+      "status": 500,
+      "kind": "server_error",
+      "message": "Internal Server Error"
+    },
+    {
+      "id": "typesafe/71a2393072e9e2b2ac08da0c",
+      "status": 500,
+      "kind": "server_error",
+      "message": "Internal Server Error"
+    },
+    {
+      "id": "typesafe/0852cab29a4de594ab0e40a5",
+      "status": 422,
+      "kind": "refused",
+      "message": "{\"detail\":\"branch too long: 1590 tokens with a 8192-token state (row limit 8192)\"}"
+    },
+    {
+      "id": "typesafe/287415a7a22e1fce9388a636",
+      "status": 422,
+      "kind": "refused",
+      "message": "{\"detail\":\"branch too long: 1273 tokens with a 8192-token state (row limit 8192)\"}"
+    },
+    {
+      "id": "typesafe/4829c4edb0e6417741ffc6d4",
+      "status": 422,
+      "kind": "refused",
+      "message": "{\"detail\":\"branch too long: 244 tokens with a 8192-token state (row limit 8192)\"}"
+    },
+    {
+      "id": "typesafe/4f1c8783235a838e7ebad206",
+      "status": 422,
+      "kind": "refused",
+      "message": "{\"detail\":\"branch too long: 1237 tokens with a 8192-token state (row limit 8192)\"}"
+    },
+    {
+      "id": "typesafe/767af54164feae1d84407b1e",
+      "status": 422,
+      "kind": "refused",
+      "message": "{\"detail\":\"branch too long: 539 tokens with a 8192-token state (row limit 8192)\"}"
+    },
+    {
+      "id": "typesafe/795bce421ace3e2a4be21fd9",
+      "status": 422,
+      "kind": "refused",
+      "message": "{\"detail\":\"branch too long: 296 tokens with a 8192-token state (row limit 8192)\"}"
+    },
+    {
+      "id": "typesafe/8bae9f91e7610bf1c6abdf20",
+      "status": 422,
+      "kind": "refused",
+      "message": "{\"detail\":\"branch too long: 275 tokens with a 8192-token state (row limit 8192)\"}"
+    }
+  ],
+  "seconds": 36.5,
+  "probabilities": "as served: the server's own calibration (Kev: one fitted temperature)",
+  "state_passed_as": "the raw state string, as our model receives it"
+}

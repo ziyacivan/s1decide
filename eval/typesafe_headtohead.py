@@ -55,6 +55,14 @@ CAVEAT = (
     "models are evaluated using the provider's default reasoning settings."
 )
 
+#: Kev's README (github.com/jaredpalmer/kev @ c9c1f85), quoted: "the published TypeSafe answers
+#: score 0.883 / 0.127" on this file. A quotation for the cross-check, not a result of ours.
+KEV_QUOTED_PUBLISHED = {
+    "agreement": 0.883,
+    "tvd": 0.127,
+    "source": "jaredpalmer/kev README @ c9c1f85",
+}
+
 #: `Noul` keys in the suite, in our option order (``no``, ``yes``).
 NOUL_KEYS = ("false", "true")
 
@@ -190,6 +198,7 @@ def _report(source: Path, runs: Sequence[str], out: Path) -> Path:
     rows = [to_slice_row(r) for r in records]
     by_id = {r["id"]: r for r in rows}
     table: dict[str, Any] = {}
+    all_scores: dict[str, dict[str, tuple[float, float]]] = {}
     for spec in runs:
         name, _, directory = spec.partition("=")
         if not directory:
@@ -201,6 +210,7 @@ def _report(source: Path, runs: Sequence[str], out: Path) -> Path:
         scores = {
             p["id"]: score_row(p["probabilities"], by_id[p["id"]]["target"]) for p in predictions
         }
+        all_scores[name] = scores
         meta_path = Path(directory) / "predictions-typesafe.meta.json"
         table[name] = {
             "source": str(path),
@@ -215,10 +225,25 @@ def _report(source: Path, runs: Sequence[str], out: Path) -> Path:
         if answer is not None:
             p = [float(answer["p"].get(k, 0.0)) for k in row["option_keys"]]
             published[row["id"]] = score_row(p, row["target"])
-    table["jev (TypeSafe's published answers, quoted from the file)"] = {
+    jev = "jev (TypeSafe's published answers, quoted from the file)"
+    all_scores[jev] = published
+    table[jev] = {
         "source": "_meta.published.typesafe (model typesafe:v13_snowy_elephant)",
         **_summary(published, rows),
     }
+    # Scoring cross-check: Kev's README quotes these same published answers on this file.
+    ours = table[jev]["evaluated"]
+    table[jev]["cross_check"] = {
+        "quoted": KEV_QUOTED_PUBLISHED,
+        "ours_rounded": {"agreement": round(ours["agreement"], 3), "tvd": round(ours["tvd"], 3)},
+        "matches": round(ours["agreement"], 3) == KEV_QUOTED_PUBLISHED["agreement"]
+        and round(ours["tvd"], 3) == KEV_QUOTED_PUBLISHED["tvd"],
+    }
+    # The rows every model answered: no model is scored on a row another could not attempt
+    # (over its context, or out of memory on this card).
+    common = [r for r in rows if all(r["id"] in s for s in all_scores.values())]
+    for name, scores in all_scores.items():
+        table[name]["common_answered"] = case_means(scores, common) if common else None
     payload = {
         "subset": {
             "source_sha256": FROZEN_SHA256,
@@ -228,6 +253,7 @@ def _report(source: Path, runs: Sequence[str], out: Path) -> Path:
         "protocol": "SemIf/Kev: agreement = argmax match, TVD = half L1; rows averaged within "
         "case, cases with equal weight",
         "reference_label_caveat": CAVEAT,
+        "common_answered_rows": len(common),
         "models": table,
     }
     out.parent.mkdir(parents=True, exist_ok=True)

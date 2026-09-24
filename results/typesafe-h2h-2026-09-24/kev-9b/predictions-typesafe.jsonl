@@ -1,0 +1,73 @@
+{"id": "typesafe/61389f3aa7022bace3a60237", "probabilities": [0.09770000000000001, 0.9023]}
+{"id": "typesafe/a67b5f95466c108b3e2c4ac6", "probabilities": [0.16500000000000004, 0.835]}
+{"id": "typesafe/b645dd9128f8015d8e0aec45", "probabilities": [0.012199999999999989, 0.9878]}
+{"id": "typesafe/ca001f1e85645614ea45b218", "probabilities": [0.24150000000000005, 0.7585]}
+{"id": "typesafe/3dab936f0fdc837f5be9e310", "probabilities": [0.21009999999999995, 0.7899]}
+{"id": "typesafe/9a1b9d2bd5a1e7f9631a4401", "probabilities": [0.9109, 0.0891]}
+{"id": "typesafe/d5943297a4a36b3aefe79e7b", "probabilities": [0.6612661266126613, 0.0463046304630463, 0.0324032403240324, 0.05750575057505751, 0.20252025202520252]}
+{"id": "typesafe/df7820f5c74b7285195b8c0d", "probabilities": [0.030999999999999993, 0.004999999999999999, 0.21529999999999994, 0.19329999999999994, 0.006399999999999999, 0.5236999999999999, 0.006999999999999998, 0.018299999999999997]}
+{"id": "typesafe/d56bf53331807c793a6d4fc9", "probabilities": [0.015998400159984, 0.012798720127987202, 0.006399360063993601, 0.7274272572742726, 0.12028797120287972, 0.1170882911708829]}
+{"id": "typesafe/0aae4acb7f892ab763ceca81", "probabilities": [0.8089999999999999, 0.191]}
+{"id": "typesafe/b5d4813fff7303532a2ca64a", "probabilities": [0.9401, 0.0599]}
+{"id": "typesafe/b63e61b08fd0f8388a5e8257", "probabilities": [0.13080000000000003, 0.8692]}
+{"id": "typesafe/ca5e8294d4ee5adb8398afb7", "probabilities": [0.5245, 0.4755]}
+{"id": "typesafe/5bdda592590482092b0bd882", "probabilities": [0.022499999999999964, 0.9775]}
+{"id": "typesafe/ce015e8b4f0fae0c8342f231", "probabilities": [0.07750000000000001, 0.9225]}
+{"id": "typesafe/e59de940faa447fdc05e6c7e", "probabilities": [0.9055, 0.0945]}
+{"id": "typesafe/21c4abbb5e7cb6b4f12d3474", "probabilities": [0.4968, 0.5032]}
+{"id": "typesafe/430237cbe26e9af40888598a", "probabilities": [0.7258, 0.2742]}
+{"id": "typesafe/3a5f273468b2614da64aafd5", "probabilities": [0.05919408059194081, 0.03329667033296671, 0.046995300469953004, 0.4951504849515048, 0.36536346365363465]}
+{"id": "typesafe/5a981918c727f975ba880bdd", "probabilities": [0.2012, 0.7988]}
+{"id": "typesafe/49b7d88aae658efbcdfab62c", "probabilities": [0.05249999999999999, 0.9475]}
+{"id": "typesafe/889259ddc01dfb8cdfc6e3b9", "probabilities": [0.12029999999999996, 0.8797]}
+{"id": "typesafe/8f68505fad7f8bd70e6e43c5", "probabilities": [0.8473999999999999, 0.1526]}
+{"id": "typesafe/1ccf0a46a6d80e7b8076a83b", "probabilities": [0.7894, 0.2106]}
+{"id": "typesafe/39cd3b8ddd4abf17cff8bec3", "probabilities": [0.5399, 0.4601]}
+{"id": "typesafe/4cd12c18602cee6acf9d714d", "probabilities": [0.7271000000000001, 0.2729]}
+{"id": "typesafe/668df55ab31dd9fe9ebdaa84", "probabilities": [0.13790000000000002, 0.8621]}
+{"id": "typesafe/0bcfbba5435af97f4c7f7ded", "probabilities": [0.12001200120012001, 0.0749074907490749, 0.0997099709970997, 0.20142014201420141, 0.503950395039504]}
+{"id": "typesafe/303c3e4e2a6ca1c851d1a11c", "probabilities": [0.2151, 0.7849]}
+{"id": "typesafe/037299f9b35b129455ae2855", "probabilities": [0.8236, 0.1764]}
+{"id": "typesafe/62004085c751753bc8d62d67", "probabilities": [0.9642, 0.0358]}
+{"id": "typesafe/acae0a13f9c7e72851015c11", "probabilities": [0.2655, 0.0681, 0.0302, 0.3635, 0.2727]}
+{"id": "typesafe/f892cb9fd5fc7590f4b6525b", "probabilities": [0.0021, 0.0019, 0.0319, 0.0025, 0.0026, 0.9518, 0.0023, 0.0049]}
+{"id": "typesafe/1c3247fbed2ed8ec6e7a037e", "probabilities": [0.9743999999999998, 0.011699999999999999, 0.0076999999999999985, 0.006199999999999998]}
+{"id": "typesafe/00403710479b3c6d6f5cc12e", "probabilities": [0.7021999999999999, 0.2978]}
+{"id": "typesafe/273b0676d23c86d276651914", "probabilities": [0.8653, 0.1347]}
+{"id": "typesafe/371be0b5bafdcd596293a496", "probabilities": [0.9094, 0.0119, 0.0084, 0.016, 0.0543]}
+{"id": "typesafe/6b6f1cdebb551365aeea7b30", "probabilities": [0.0028997100289971, 0.0006999300069993001, 0.9646035396460354, 0.0094990500949905, 0.0017998200179982, 0.005499450054994501, 0.0052994700529947, 0.009699030096990302]}
+{"id": "typesafe/42a77bfee1a2fa1e4209799f", "probabilities": [0.9232, 0.0768]}
+{"id": "typesafe/4ea36f7ae0206b832f61e24e", "probabilities": [0.026699999999999946, 0.9733]}
+{"id": "typesafe/6ef39b3605a45ce8e8061979", "probabilities": [0.14290000000000003, 0.8571]}
+{"id": "typesafe/3f3efcf803f31c601e8c1ae0", "probabilities": [0.8395, 0.1605]}
+{"id": "typesafe/1e3686a263ad982b9640ef89", "probabilities": [0.9167000000000001, 0.06370000000000002, 0.019600000000000003]}
+{"id": "typesafe/f7fab0a3445485f2163f7956", "probabilities": [0.7198719871987198, 0.0351035103510351, 0.0233023302330233, 0.06450645064506451, 0.1572157215721572]}
+{"id": "typesafe/00e97a0168655e7e166a9f09", "probabilities": [0.4538, 0.5462]}
+{"id": "typesafe/326d35b43efa7599ae518c64", "probabilities": [0.6023000000000001, 0.3977]}
+{"id": "typesafe/e50c4258562e255b2416d0aa", "probabilities": [0.9920992099209921, 0.0036003600360036, 0.004300430043004301]}
+{"id": "typesafe/3eceb6942f244b8f55e4bd66", "probabilities": [0.7676000000000001, 0.2324]}
+{"id": "typesafe/7539d579352834abe78c34d1", "probabilities": [0.9279, 0.0721]}
+{"id": "typesafe/ad42472599548ecc8ad2ab43", "probabilities": [0.382, 0.0163, 0.0212, 0.4537, 0.1268]}
+{"id": "typesafe/89cbc1b1899fc005e271befb", "probabilities": [0.9238000000000001, 0.015500000000000002, 0.017500000000000005, 0.04320000000000001]}
+{"id": "typesafe/038af1200d540a0bf57998af", "probabilities": [0.73, 0.27]}
+{"id": "typesafe/071dd61c989b844c00d9a044", "probabilities": [0.5640000000000001, 0.436]}
+{"id": "typesafe/262a579d707cf168d232dfac", "probabilities": [0.7551, 0.2449]}
+{"id": "typesafe/3672409852c288939a70b014", "probabilities": [0.9091, 0.0909]}
+{"id": "typesafe/7833941fa09a39d5d476f659", "probabilities": [0.6097, 0.3903]}
+{"id": "typesafe/7c569aa2fd16bc4aa453f96a", "probabilities": [0.885, 0.0584, 0.025, 0.0316]}
+{"id": "typesafe/8aa75529afecc0bb35863121", "probabilities": [0.6892, 0.3108]}
+{"id": "typesafe/8d213d0e5832c622ccb3affd", "probabilities": [0.2158, 0.7842]}
+{"id": "typesafe/8ff5059f90a822b19bf06566", "probabilities": [0.6363, 0.3637]}
+{"id": "typesafe/a82b9f2a534055b6a5c1e979", "probabilities": [0.6707000000000001, 0.3293]}
+{"id": "typesafe/a8c2e4bd886776e7deb56e62", "probabilities": [0.24480000000000002, 0.7552]}
+{"id": "typesafe/cd01be19318c4f62a91eaf57", "probabilities": [0.7203, 0.1192, 0.1605]}
+{"id": "typesafe/e2e58201a90c11192f70edbf", "probabilities": [0.7423, 0.2577]}
+{"id": "typesafe/106f24d17ca754e9f97f906f", "probabilities": [0.32530000000000003, 0.6747]}
+{"id": "typesafe/358bd473f925cd0851544f05", "probabilities": [0.5263, 0.4737]}
+{"id": "typesafe/36d0a4df0d8697ca942472a1", "probabilities": [0.2643, 0.0871, 0.134, 0.3448, 0.1698]}
+{"id": "typesafe/5d03a2d9676697acb67c1194", "probabilities": [0.008600860086008601, 0.0013001300130013002, 0.06450645064506451, 0.901990199019902, 0.0031003100310031, 0.0054005400540054005, 0.004400440044004401, 0.0107010701070107]}
+{"id": "typesafe/692da1b417be96e6e96f0389", "probabilities": [0.8612, 0.1388]}
+{"id": "typesafe/c8c28c050bfd812fabf0b361", "probabilities": [0.913, 0.087]}
+{"id": "typesafe/59f2f955c1c757549fd8f0b5", "probabilities": [0.943105689431057, 0.024297570242975703, 0.0163983601639836, 0.0161983801619838]}
+{"id": "typesafe/2e04814d4276ede847155d52", "probabilities": [0.4707, 0.5293]}
+{"id": "typesafe/cc4fc1102bf73b60b42d317e", "probabilities": [0.6012, 0.3988]}

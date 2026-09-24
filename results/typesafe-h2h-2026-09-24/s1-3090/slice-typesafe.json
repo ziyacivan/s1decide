@@ -1,0 +1,12 @@
+{
+  "source": "jaredpalmer/kev @ c9c1f85, evals/external/typesafe-v1/development.jsonl",
+  "source_sha256": "877ed7cd473e3973d29f0bb0ff2a597192955e477f2127794df358b6ba795879",
+  "rows": 102,
+  "cases": 20,
+  "by_primitive": {
+    "choice": 36,
+    "noul": 66
+  },
+  "state_rendering": "json.dumps(state, sort_keys=True, ensure_ascii=False)",
+  "reference_label_caveat": "Instead of debating the correctness of the harness and labels, we assume that the code is correct, and measure against the current smartest large models. For this eval, the reference labels are generated via an average of the responses of GPT-6 Astra and Claude Fable 5.1, both at high thinking, answering every question in the harness. All other models are evaluated using the provider's default reasoning settings."
+}
